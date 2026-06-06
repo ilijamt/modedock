@@ -7,3 +7,4 @@ build/
 .swiftpm/
 Packages/*/Package.resolved
 docs/
+.vscode/

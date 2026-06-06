@@ -1,16 +1,20 @@
 import AppKit
+import ModeDockCore
 import SwiftUI
 
 @MainActor
 final class MenuBarController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let panel: MenuPanel
+    /// The panel grows downward when its content changes, so its top edge stays put.
+    private var topLeft: NSPoint?
 
-    init(onOpenSettings: @escaping () -> Void) {
+    init(screens: ScreenController, onOpenSettings: @escaping () -> Void) {
         panel = MenuPanel()
         super.init()
 
         let content = MenuView(
+            screens: screens,
             onOpenSettings: { [weak self] in
                 self?.close()
                 onOpenSettings()
@@ -32,18 +36,25 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 
     func show() {
-        panel.setFrameOrigin(origin(for: panel.frame.size))
+        let origin = origin(for: panel.frame.size)
+        topLeft = NSPoint(x: origin.x, y: origin.y + panel.frame.height)
+        panel.setFrameOrigin(origin)
         panel.makeKeyAndOrderFront(nil)
         statusItem.button?.highlight(true)
     }
 
     func close() {
         panel.orderOut(nil)
+        topLeft = nil
         statusItem.button?.highlight(false)
     }
 
     func windowDidResignKey(_ notification: Notification) {
         close()
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        if let topLeft { panel.setFrameTopLeftPoint(topLeft) }
     }
 
     @objc private func statusItemClicked() {
@@ -92,18 +103,25 @@ private final class MenuPanel: NSPanel {
     }
 
     func setContent(_ view: some View) {
-        let hosting = NSHostingView(rootView: view)
-        hosting.setFrameSize(hosting.fittingSize)
-
-        let background = NSVisualEffectView(frame: NSRect(origin: .zero, size: hosting.fittingSize))
-        background.material = .popover
-        background.state = .active
-        background.wantsLayer = true
-        background.layer?.cornerRadius = 10
-        background.layer?.masksToBounds = true
-        background.addSubview(hosting)
-
-        contentView = background
-        setContentSize(hosting.fittingSize)
+        let root =
+            view
+            .background(VisualEffectBackground())
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        let controller = NSHostingController(rootView: root)
+        // Resize the panel whenever the SwiftUI content changes size (e.g. a display appears).
+        controller.sizingOptions = [.preferredContentSize]
+        contentViewController = controller
     }
+}
+
+private struct VisualEffectBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .popover
+        view.state = .active
+        view.blendingMode = .behindWindow
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }

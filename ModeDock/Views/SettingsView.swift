@@ -10,12 +10,17 @@ struct SettingsView: View {
             AboutView()
                 .tabItem { Label("About", systemImage: "info.circle") }
         }
-        .frame(width: 420, height: 220)
+        .frame(width: 460, height: 320)
     }
+}
+
+enum SettingsKey {
+    static let showDDCStandby = "showDDCStandby"
 }
 
 private struct GeneralSettingsView: View {
     @Environment(LaunchAtLogin.self) private var launchAtLogin
+    @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
 
     var body: some View {
         Form {
@@ -32,6 +37,18 @@ private struct GeneralSettingsView: View {
                     .foregroundStyle(.red)
             }
             KeyboardShortcuts.Recorder("Open ModeDock:", name: .togglePanel)
+            KeyboardShortcuts.Recorder("Turn all screens on:", name: .turnAllScreensOn)
+
+            Section {
+                Toggle("Show Standby for external monitors", isOn: $showDDCStandby)
+            } footer: {
+                Text(
+                    "Standby powers a monitor down over DDC. Some monitors then only wake when you press "
+                        + "their power button. Turn Off is the safer choice."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .onAppear { launchAtLogin.refresh() }

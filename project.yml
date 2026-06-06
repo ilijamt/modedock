@@ -28,6 +28,8 @@ targets:
     dependencies:
       - package: ModeDockKit
         product: ModeDockCore
+      - package: ModeDockKit
+        product: DisplayKit
       - package: KeyboardShortcuts
     info:
       path: ModeDock/Info.plist
@@ -51,3 +53,4 @@ schemes:
     test:
       targets:
         - package: ModeDockKit/ModeDockCoreTests
+        - package: ModeDockKit/DisplayKitTests
