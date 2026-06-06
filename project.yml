@@ -1,0 +1,53 @@
+name: ModeDock
+options:
+  bundleIdPrefix: com.matoski
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: 62ZG72DFVN
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+packages:
+  ModeDockKit:
+    path: Packages/ModeDockKit
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: 2.0.0
+
+targets:
+  ModeDock:
+    type: application
+    platform: macOS
+    sources:
+      - ModeDock
+    dependencies:
+      - package: ModeDockKit
+        product: ModeDockCore
+      - package: KeyboardShortcuts
+    info:
+      path: ModeDock/Info.plist
+      properties:
+        CFBundleDisplayName: ModeDock
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.utilities
+        NSHumanReadableCopyright: Copyright © 2026 Ilija Matoski. MIT License.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.matoski.modedock
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        COMBINE_HIDPI_IMAGES: YES
+
+schemes:
+  ModeDock:
+    build:
+      targets:
+        ModeDock: all
+    test:
+      targets:
+        - package: ModeDockKit/ModeDockCoreTests
