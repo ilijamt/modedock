@@ -1,0 +1,134 @@
+import AppKit
+import SwiftUI
+
+extension EnvironmentValues {
+    /// Use the system glass material (macOS 26) instead of hand-drawn fills.
+    @Entry var useGlass = false
+}
+
+private struct Surface<S: Shape>: ViewModifier {
+    @Environment(\.useGlass) private var useGlass
+    let shape: S
+    var tint: Color?
+
+    func body(content: Content) -> some View {
+        if useGlass, #available(macOS 26.0, *) {
+            content.glassEffect(.regular.tint(tint).interactive(), in: shape)
+        } else if let tint {
+            content.background(tint, in: shape)
+        } else {
+            content
+                .background(.primary.opacity(0.06), in: shape)
+                .overlay(shape.stroke(.primary.opacity(0.06)))
+        }
+    }
+}
+
+extension View {
+    func surface(_ shape: some Shape, tint: Color? = nil) -> some View {
+        modifier(Surface(shape: shape, tint: tint))
+    }
+}
+
+/// A rounded, translucent tile like the ones in Control Center.
+struct Card<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .surface(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// Round on/off button: filled with the accent colour when on.
+struct CircleToggle: View {
+    let systemImage: String
+    let isOn: Bool
+    var size: CGFloat = 28
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: size * 0.45, weight: .semibold))
+                .foregroundStyle(isOn ? .white : .primary)
+                .frame(width: size, height: size)
+                .surface(Circle(), tint: isOn ? .accentColor : nil)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// A square action tile with an icon and a short label, for one-tap actions.
+struct ActionTile: View {
+    let title: String
+    let systemImage: String
+    var isOn = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(isOn ? .white : .primary)
+                    .frame(width: 28, height: 28)
+                    .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.1)), in: Circle())
+                Text(title)
+                    .font(.caption)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .surface(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// A section with a clickable header that collapses its content.
+struct CollapsibleSection<Content: View>: View {
+    let title: String
+    let isExpanded: Bool
+    let onToggle: () -> Void
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button(action: onToggle) {
+                HStack {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                content
+            }
+        }
+    }
+}
+
+/// The translucent background used by menu-bar popovers.
+struct VisualEffectBackground: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .popover
+        view.state = .active
+        view.blendingMode = .behindWindow
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}

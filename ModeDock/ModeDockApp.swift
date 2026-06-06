@@ -25,12 +25,20 @@ extension KeyboardShortcuts.Name {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let launchAtLogin = LaunchAtLogin()
     private let screens = ScreenController()
-    private lazy var settingsWindow = SettingsWindowController(launchAtLogin: launchAtLogin)
+    private let modes = DisplayModeController()
+    private lazy var confirmation = ModeConfirmationWindow(modes: modes)
+    private lazy var settingsWindow = SettingsWindowController(
+        launchAtLogin: launchAtLogin, screens: screens, modes: modes)
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        menuBar = MenuBarController(screens: screens) { [weak self] in
+        AppAppearance.apply()
+        modes.onConfirmationNeeded = { [weak self] change in
+            self?.menuBar?.close()
+            self?.confirmation.show(for: change)
+        }
+        menuBar = MenuBarController(screens: screens, modes: modes) { [weak self] in
             self?.settingsWindow.show()
         }
         displayObserver = DisplayObserver { [weak self] in

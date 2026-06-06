@@ -6,6 +6,7 @@ import PrivateAPI
 public enum DisplayError: Error, Equatable, LocalizedError {
     case unsupported
     case wouldDisableLastDisplay
+    case modeUnavailable
     case coreGraphics(Int32)
     case commandFailed(String)
 
@@ -13,6 +14,7 @@ public enum DisplayError: Error, Equatable, LocalizedError {
         switch self {
         case .unsupported: "This version of macOS can't turn screens off."
         case .wouldDisableLastDisplay: "At least one screen has to stay on."
+        case .modeUnavailable: "That resolution isn't available on this screen anymore."
         case .coreGraphics(let code): "macOS couldn't change the screen (error \(code))."
         case .commandFailed(let command): "\(command) failed."
         }
@@ -46,7 +48,7 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
                 ),
                 name: names[id] ?? (CGDisplayIsBuiltin(id) != 0 ? "Built-in Display" : "Display \(id)"),
                 isBuiltin: CGDisplayIsBuiltin(id) != 0,
-                isEnabled: CGDisplayIsActive(id) != 0,
+                isEnabled: CGDisplayIsActive(id) != 0 || CGDisplayMirrorsDisplay(id) != kCGNullDirectDisplay,
                 isMain: CGDisplayIsMain(id) != 0
             )
         }
@@ -84,5 +86,14 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
             },
             uniquingKeysWith: { first, _ in first }
         )
+    }
+}
+
+/// Which private APIs this macOS version provides.
+public enum DisplayCapabilities {
+    public static var canDisableDisplays: Bool { PrivateAPI.configureDisplayEnabled != nil }
+    public static var canUseDDC: Bool {
+        PrivateAPI.avServiceCreateWithService != nil && PrivateAPI.avServiceWriteI2C != nil
+            && PrivateAPI.avServiceReadI2C != nil
     }
 }

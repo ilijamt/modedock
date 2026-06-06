@@ -6,15 +6,18 @@ import SwiftUI
 final class MenuBarController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let panel: MenuPanel
+    private let nativeMenu: NativeMenu
     /// The panel grows downward when its content changes, so its top edge stays put.
     private var topLeft: NSPoint?
 
-    init(screens: ScreenController, onOpenSettings: @escaping () -> Void) {
+    init(screens: ScreenController, modes: DisplayModeController, onOpenSettings: @escaping () -> Void) {
         panel = MenuPanel()
+        nativeMenu = NativeMenu(screens: screens, modes: modes, onOpenSettings: onOpenSettings)
         super.init()
 
         let content = MenuView(
             screens: screens,
+            modes: modes,
             onOpenSettings: { [weak self] in
                 self?.close()
                 onOpenSettings()
@@ -32,7 +35,25 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 
     func toggle() {
-        panel.isVisible ? close() : show()
+        if PanelStyle.current == .menu {
+            close()
+            showMenu()
+        } else {
+            panel.isVisible ? close() : show()
+        }
+    }
+
+    /// Under the status item when it's on the mouse's screen; otherwise at the mouse pointer.
+    private func showMenu() {
+        let menu = nativeMenu.build()
+        let mouse = NSEvent.mouseLocation
+        if let button = statusItem.button, let itemFrame = button.window?.frame,
+            NSScreen.screens.contains(where: { $0.frame.contains(itemFrame) && NSMouseInRect(mouse, $0.frame, false) })
+        {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+        } else {
+            menu.popUp(positioning: nil, at: mouse, in: nil)
+        }
     }
 
     func show() {
@@ -112,16 +133,4 @@ private final class MenuPanel: NSPanel {
         controller.sizingOptions = [.preferredContentSize]
         contentViewController = controller
     }
-}
-
-private struct VisualEffectBackground: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .popover
-        view.state = .active
-        view.blendingMode = .behindWindow
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
