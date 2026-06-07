@@ -29,8 +29,8 @@ enum SettingsTab: String, CaseIterable {
     /// Fixed sizes keep the window from jumping between tabs by a few points.
     var height: CGFloat {
         switch self {
-        case .general: 250
-        case .menu: 250
+        case .general: 340
+        case .menu: 560
         case .displays: 500
         case .shortcuts: 150
         case .about: 250
@@ -38,10 +38,12 @@ enum SettingsTab: String, CaseIterable {
     }
 
     @MainActor @ViewBuilder
-    func content(screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController) -> some View
-    {
+    func content(
+        screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
+        power: PowerController
+    ) -> some View {
         switch self {
-        case .general: GeneralSettingsView(modes: modes)
+        case .general: GeneralSettingsView(modes: modes, power: power)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
         case .shortcuts: ShortcutSettingsView()
@@ -52,8 +54,10 @@ enum SettingsTab: String, CaseIterable {
 
 private struct GeneralSettingsView: View {
     let modes: DisplayModeController
+    let power: PowerController
     @Environment(LaunchAtLogin.self) private var launchAtLogin
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.system.rawValue
+    @AppStorage(SettingsKey.keepScreensOn) private var keepScreensOn = true
     @State private var confirmingReset = false
 
     var body: some View {
@@ -74,6 +78,15 @@ private struct GeneralSettingsView: View {
                 Text(error)
                     .font(.caption)
                     .foregroundStyle(.red)
+            }
+
+            Section {
+                Toggle("Keep screens on during Keep Awake", isOn: $keepScreensOn)
+                    .onChange(of: keepScreensOn) { power.setKeepScreensOn(keepScreensOn) }
+            } footer: {
+                Text("When off, the screens can still go dark, but the Mac stays awake. Also in the Keep Awake menu.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {
@@ -105,9 +118,14 @@ private struct GeneralSettingsView: View {
 private struct MenuSettingsView: View {
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
     @AppStorage(SettingsKey.hiddenSections) private var hiddenSections = ""
+    @AppStorage(SettingsKey.collapsedSections) private var collapsedSections = ""
+    @State private var dragging: MenuSection?
+    @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
     @AppStorage(PanelStyle.key) private var panelStyle = PanelStyle.cards.rawValue
 
-    private var layout: MenuLayout { MenuLayout(order: sectionOrder, hidden: hiddenSections, collapsed: "") }
+    private var layout: MenuLayout {
+        MenuLayout(order: sectionOrder, hidden: hiddenSections, collapsed: collapsedSections)
+    }
 
     var body: some View {
         Form {
@@ -122,25 +140,116 @@ private struct MenuSettingsView: View {
             }
 
             Section {
+                // A grouped Form doesn't support onMove on macOS, so rows are dragged and dropped instead.
                 ForEach(layout.order) { section in
-                    Toggle(isOn: visibility(of: section)) {
-                        Label(section.title, systemImage: section.systemImage)
+                    HStack {
+                        HStack {
+                            Image(systemName: "line.3.horizontal")
+                                .foregroundStyle(.tertiary)
+                            Image(systemName: section.systemImage).frame(width: 22)
+                            Text(section.title)
+                            Spacer()
+                        }
+                        .contentShape(Rectangle())
+                        .onHover { inside in
+                            // The open hand says "you can grab this", as in other reorderable lists.
+                            if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+                        }
+                        .help("Drag to change the order")
+                        Picker("Starts", selection: expansion(of: section)) {
+                            Text("Open").tag(true)
+                            Text("Collapsed").tag(false)
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                        .disabled(layout.hidden.contains(section))
+                        .help("Whether the section is open or collapsed in the panel")
+                        Toggle("Show \(section.title)", isOn: visibility(of: section))
+                            .toggleStyle(.switch)
+                            .labelsHidden()
                     }
-                }
-                .onMove { from, to in
-                    var order = layout.order
-                    order.move(fromOffsets: from, toOffset: to)
-                    sectionOrder = MenuLayout.encode(order)
+                    .contentShape(Rectangle())
+                    .opacity(dragging == section ? 0.4 : 1)
+                    .onDrag {
+                        dragging = section
+                        return NSItemProvider(object: section.rawValue as NSString)
+                    } preview: {
+                        Label(section.title, systemImage: section.systemImage).padding(6)
+                    }
+                    .onDrop(
+                        of: [.text],
+                        delegate: SectionDropDelegate(target: section, dragging: $dragging) { move($0, to: $1) }
+                    )
+                    .contextMenu {
+                        Button("Move Up") { move(section, by: -1) }
+                            .disabled(layout.order.first == section)
+                        Button("Move Down") { move(section, by: 1) }
+                            .disabled(layout.order.last == section)
+                    }
                 }
             } header: {
                 Text("Sections")
             } footer: {
-                Text("Turn sections on or off, and drag them to change their order in the menu.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "Show or hide sections and choose whether they start open or collapsed. Drag them, or right-click one, to change their order. Clicking a section title in the panel also opens or collapses it."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            ForEach(layout.order) { section in
+                Section {
+                    ForEach(PanelItem.allCases.filter { $0.section == section }) { item in
+                        Toggle(item.title, isOn: itemVisibility(item))
+                    }
+                } header: {
+                    Text("Show in \(section.title)")
+                }
+                .disabled(layout.hidden.contains(section))
             }
         }
         .formStyle(.grouped)
+        // A drop anywhere else in the window ends the drag, so the dragged row doesn't stay faded.
+        .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
+    }
+
+    /// Puts `section` where `target` is, shifting the others.
+    private func move(_ section: MenuSection, to target: MenuSection) {
+        var order = layout.order
+        guard section != target, let from = order.firstIndex(of: section),
+            let to = order.firstIndex(of: target)
+        else { return }
+        order.remove(at: from)
+        order.insert(section, at: to)
+        withAnimation(.snappy(duration: 0.2)) { sectionOrder = MenuLayout.encode(order) }
+    }
+
+    private func move(_ section: MenuSection, by offset: Int) {
+        let order = layout.order
+        guard let index = order.firstIndex(of: section), order.indices.contains(index + offset) else { return }
+        move(section, to: order[index + offset])
+    }
+
+    private func itemVisibility(_ item: PanelItem) -> Binding<Bool> {
+        Binding(
+            get: { !PanelItem.hidden(in: hiddenItems).contains(item) },
+            set: { visible in
+                var hidden = PanelItem.hidden(in: hiddenItems)
+                if visible { hidden.remove(item) } else { hidden.insert(item) }
+                hiddenItems = hidden.map(\.rawValue).sorted().joined(separator: ",")
+            }
+        )
+    }
+
+    private func expansion(of section: MenuSection) -> Binding<Bool> {
+        Binding(
+            get: { !layout.collapsed.contains(section) },
+            set: { open in
+                var collapsed = layout.collapsed
+                if open { collapsed.remove(section) } else { collapsed.insert(section) }
+                collapsedSections = MenuLayout.encode(collapsed)
+            }
+        )
     }
 
     private func visibility(of section: MenuSection) -> Binding<Bool> {
@@ -293,5 +402,43 @@ private struct AboutView: View {
             .help("Copy details about your screens and macOS, to paste into a bug report.")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Covers the gaps between rows and the rest of the window: keeps the move cursor there and ends
+/// the drag on drop, so the dragged row doesn't stay faded.
+private struct EndDragDelegate: DropDelegate {
+    @Binding var dragging: MenuSection?
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        NSCursor.closedHand.set()
+        return DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging = nil
+        return true
+    }
+}
+
+/// Reorders the section rows while dragging, as the pointer passes over them, and shows the move
+/// cursor rather than the copy one.
+private struct SectionDropDelegate: DropDelegate {
+    let target: MenuSection
+    @Binding var dragging: MenuSection?
+    let move: (MenuSection, MenuSection) -> Void
+
+    func dropEntered(info: DropInfo) {
+        if let dragging, dragging != target { move(dragging, target) }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        NSCursor.closedHand.set()
+        return DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging = nil
+        return true
     }
 }

@@ -8,15 +8,17 @@ final class NativeMenu {
     private let screens: ScreenController
     private let modes: DisplayModeController
     private let brightness: BrightnessController
+    private let power: PowerController
     private let onOpenSettings: () -> Void
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
-        onOpenSettings: @escaping () -> Void
+        power: PowerController, onOpenSettings: @escaping () -> Void
     ) {
         self.screens = screens
         self.modes = modes
         self.brightness = brightness
+        self.power = power
         self.onOpenSettings = onOpenSettings
     }
 
@@ -29,27 +31,50 @@ final class NativeMenu {
         let menu = NSMenu()
         // Pop-up menus don't inherit NSApp.appearance, so ModeDock's Appearance setting is applied here.
         menu.appearance = NSApp.appearance
+        let layout = MenuLayout(
+            order: defaults.string(forKey: SettingsKey.sectionOrder) ?? "",
+            hidden: defaults.string(forKey: SettingsKey.hiddenSections) ?? "", collapsed: "")
+        let hidden = PanelItem.hiddenNow
+        for (index, section) in layout.visible.enumerated() {
+            if index > 0 { menu.addItem(.separator()) }
+            switch section {
+            case .screens: addScreenItems(to: menu, hidden: hidden)
+            case .power: addPowerItems(to: menu, hidden: hidden)
+            }
+        }
+
+        menu.addItem(.separator())
+        addAppItems(to: menu)
+        return menu
+    }
+
+    private func addScreenItems(to menu: NSMenu, hidden: Set<PanelItem>) {
         menu.addItem(.sectionHeader(title: "Screens"))
         for screen in screens.screens {
-            menu.addItem(screenItem(screen, showStandby: defaults.bool(forKey: SettingsKey.showDDCStandby)))
-            if screen.display.isEnabled, let level = brightness.screens[screen.id] {
+            menu.addItem(
+                screenItem(screen, showStandby: UserDefaults.standard.bool(forKey: SettingsKey.showDDCStandby)))
+            if screen.display.isEnabled, !hidden.contains(.brightness), let level = brightness.screens[screen.id] {
                 let item = NSMenuItem()
                 item.view = BrightnessMenuView(display: screen.display, level: level, brightness: brightness)
                 menu.addItem(item)
             }
         }
 
-        menu.addItem(.separator())
-        if modes.canMirror || modes.isMirroring {
+        if !hidden.isSuperset(of: [.mirror, .sleepScreens, .allOn]) { menu.addItem(.separator()) }
+        if !hidden.contains(.mirror) && (modes.canMirror || modes.isMirroring) {
             let mirror = ActionItem("Mirror Screens") { [modes] in modes.setMirroring(!modes.isMirroring) }
             mirror.state = modes.isMirroring ? .on : .off
             menu.addItem(mirror)
         }
-        menu.addItem(ActionItem("Sleep All Screens") { [screens] in screens.sleepAllDisplays() })
-        let allOn = ActionItem("Turn All On") { [screens] in Task { await screens.restoreAll() } }
-        allOn.keyEquivalent = "o"
-        allOn.keyEquivalentModifierMask = [.control, .option, .command]
-        menu.addItem(allOn)
+        if !hidden.contains(.sleepScreens) {
+            menu.addItem(ActionItem("Sleep All Screens") { [screens] in screens.sleepAllDisplays() })
+        }
+        if !hidden.contains(.allOn) {
+            let allOn = ActionItem("Turn All On") { [screens] in Task { await screens.restoreAll() } }
+            allOn.keyEquivalent = "o"
+            allOn.keyEquivalentModifierMask = [.control, .option, .command]
+            menu.addItem(allOn)
+        }
 
         if let error = screens.lastError ?? modes.lastError {
             let item = NSMenuItem(title: error, action: nil, keyEquivalent: "")
@@ -57,10 +82,71 @@ final class NativeMenu {
             item.isEnabled = false
             menu.addItem(item)
         }
+    }
 
-        menu.addItem(.separator())
-        addAppItems(to: menu)
-        return menu
+    private func addPowerItems(to menu: NSMenu, hidden: Set<PanelItem>) {
+        menu.addItem(.sectionHeader(title: "Power"))
+        if !hidden.contains(.keepAwake) { menu.addItem(keepAwakeItem()) }
+
+        if !hidden.contains(.battery) {
+            power.refreshBattery()
+            if let battery = power.battery {
+                let item = NSMenuItem(title: "Battery: \(battery.summary)", action: nil, keyEquivalent: "")
+                item.image = NSImage(systemSymbolName: battery.systemImage, accessibilityDescription: nil)
+                item.isEnabled = false
+                menu.addItem(item)
+            }
+        }
+
+        if !hidden.contains(.sleepMac) {
+            let sleep = ActionItem("Sleep Mac") { [power] in power.sleep() }
+            sleep.image = NSImage(systemSymbolName: "powersleep", accessibilityDescription: nil)
+            menu.addItem(sleep)
+        }
+        if !hidden.contains(.lock) {
+            let lock = ActionItem("Lock Screen") { [power] in power.lockScreen() }
+            lock.image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)
+            menu.addItem(lock)
+        }
+
+        if let error = power.lastError {
+            let item = NSMenuItem(title: error, action: nil, keyEquivalent: "")
+            item.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
+            item.isEnabled = false
+            menu.addItem(item)
+        }
+    }
+
+    private func keepAwakeItem() -> NSMenuItem {
+
+        let keepAwake = NSMenuItem(title: "Keep Awake", action: nil, keyEquivalent: "")
+        keepAwake.image = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)
+        keepAwake.state = power.isKeepingAwake ? .on : .off
+        if #available(macOS 15.0, *) {
+            keepAwake.subtitle =
+                switch power.keepAwake?.endsAt {
+                case .some(let endsAt): "On until \(endsAt.formatted(date: .omitted, time: .shortened))"
+                case .none: power.isKeepingAwake ? "On until turned off" : "Off"
+                }
+        }
+        let durations = NSMenu()
+        if power.isKeepingAwake {
+            durations.addItem(ActionItem("Turn Off") { [power] in power.stopKeepAwake() })
+            durations.addItem(.separator())
+        }
+        for duration in PowerController.Duration.allCases {
+            let item = ActionItem(duration.title) { [power] in KeepAwakeSettings.start(duration, power: power) }
+            item.state = power.keepAwake?.duration == duration ? .on : .off
+            durations.addItem(item)
+        }
+        durations.addItem(.separator())
+        let screensOn = ActionItem("Keep Screens On") { [power] in
+            KeepAwakeSettings.setKeepScreensOn(!KeepAwakeSettings.keepScreensOn, power: power)
+        }
+        screensOn.state = KeepAwakeSettings.keepScreensOn ? .on : .off
+        durations.addItem(screensOn)
+        keepAwake.submenu = durations
+        return keepAwake
     }
 
     /// The right-click menu of the status item.

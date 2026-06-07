@@ -7,6 +7,8 @@ struct RowsScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
     let brightness: BrightnessController
+    @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
+    private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -16,31 +18,12 @@ struct RowsScreensSection: View {
                 }
             }
 
-            RowGroup {
-                if modes.canMirror || modes.isMirroring {
-                    Row {
-                        Text("Mirror Screens")
-                        Spacer()
-                        Toggle(
-                            "Mirror Screens",
-                            isOn: Binding(get: { modes.isMirroring }, set: { modes.setMirroring($0) })
-                        )
-                        .toggleStyle(.switch)
-                        .labelsHidden()
+            if !actions.isEmpty {
+                RowGroup {
+                    ForEach(Array(actions.enumerated()), id: \.element) { index, action in
+                        if index > 0 { Divider() }
+                        actionRow(action)
                     }
-                    Divider()
-                }
-                Row {
-                    Button("Sleep All Screens") { controller.sleepAllDisplays() }
-                        .buttonStyle(.plain)
-                    Spacer()
-                }
-                Divider()
-                Row {
-                    Button("Turn All On") { Task { await controller.restoreAll() } }
-                        .buttonStyle(.plain)
-                    Spacer()
-                    Text("⌃⌥⌘O").foregroundStyle(.secondary)
                 }
             }
 
@@ -53,6 +36,43 @@ struct RowsScreensSection: View {
         }
         .controlSize(.small)
     }
+
+    /// The optional rows under the screens, in order, without the hidden ones.
+    private var actions: [PanelItem] {
+        [PanelItem.mirror, .sleepScreens, .allOn].filter { item in
+            guard !hidden.contains(item) else { return false }
+            return item != .mirror || modes.canMirror || modes.isMirroring
+        }
+    }
+
+    @ViewBuilder private func actionRow(_ item: PanelItem) -> some View {
+        switch item {
+        case .mirror:
+            Row {
+                Text("Mirror Screens")
+                Spacer()
+                Toggle(
+                    "Mirror Screens",
+                    isOn: Binding(get: { modes.isMirroring }, set: { modes.setMirroring($0) })
+                )
+                .toggleStyle(.switch)
+                .labelsHidden()
+            }
+        case .sleepScreens:
+            Row {
+                Button("Sleep All Screens") { controller.sleepAllDisplays() }
+                    .buttonStyle(.plain)
+                Spacer()
+            }
+        default:
+            Row {
+                Button("Turn All On") { Task { await controller.restoreAll() } }
+                    .buttonStyle(.plain)
+                Spacer()
+                Text("⌃⌥⌘O").foregroundStyle(.secondary)
+            }
+        }
+    }
 }
 
 private struct ScreenRows: View {
@@ -60,6 +80,7 @@ private struct ScreenRows: View {
     let controller: ScreenController
     let modes: DisplayModeController
     let brightness: BrightnessController
+    @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
 
     private var display: Display { screen.display }
     private var screenModes: DisplayModeController.ScreenModes? { modes.screens[screen.id] }
@@ -113,7 +134,7 @@ private struct ScreenRows: View {
                 }
             }
 
-            if let level = brightness.screens[screen.id] {
+            if !PanelItem.hidden(in: hiddenItems).contains(.brightness), let level = brightness.screens[screen.id] {
                 Divider()
                 Row {
                     Text("Brightness")

@@ -36,10 +36,16 @@ public enum PrivateAPI {
     public static let autoBrightnessEnabled: GetFlag? = symbol("DisplayServicesAmbientLightCompensationEnabled")
     public static let setAutoBrightness: SetFlag? = symbol("DisplayServicesEnableAmbientLightCompensation")
 
+    public typealias LockScreen = @convention(c) () -> Int32
+
+    /// Locks the screen right away, like Control-Command-Q.
+    public static let lockScreen: LockScreen? = symbol("SACLockScreenImmediate")
+
     nonisolated(unsafe) private static let handles: [UnsafeMutableRawPointer?] = [
         dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY),
         dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
         dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY),
+        dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_LAZY),
         UnsafeMutableRawPointer(bitPattern: -2),  // RTLD_DEFAULT
     ]
 

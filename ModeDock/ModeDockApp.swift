@@ -29,9 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var screens = ScreenController(ddc: ddc)
     private let modes = DisplayModeController()
     private lazy var brightness = BrightnessController(ddc: ddc)
+    private let power = PowerController()
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
-        launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness)
+        launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power)
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
@@ -48,8 +49,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.confirmation.show(for: change)
         }
         menuBar = MenuBarController(
-            screens: screens, modes: modes, brightness: brightness,
-            onShow: { [weak self] in self?.refreshBrightness() },
+            screens: screens, modes: modes, brightness: brightness, power: power,
+            onShow: { [weak self] in
+                self?.refreshBrightness()
+                self?.power.refreshBattery()
+            },
             onOpenSettings: { [weak self] in self?.settingsWindow.show() }
         )
         displayObserver = DisplayObserver { [weak self] in

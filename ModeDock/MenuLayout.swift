@@ -2,20 +2,62 @@ import SwiftUI
 
 /// The feature areas shown in the panel. New areas (Brightness, Power, ...) are added here.
 enum MenuSection: String, CaseIterable, Identifiable {
-    case screens
+    case screens, power
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .screens: "Screens"
+        case .power: "Power"
         }
     }
 
     var systemImage: String {
         switch self {
         case .screens: "display.2"
+        case .power: "bolt.fill"
         }
+    }
+}
+
+/// Optional parts of a section, each of which can be hidden in Settings → Menu.
+enum PanelItem: String, CaseIterable, Identifiable {
+    case brightness, sleepScreens, mirror, allOn
+    case keepAwake, battery, sleepMac, lock
+
+    var id: String { rawValue }
+
+    var section: MenuSection {
+        switch self {
+        case .brightness, .sleepScreens, .mirror, .allOn: .screens
+        case .keepAwake, .battery, .sleepMac, .lock: .power
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .brightness: "Brightness sliders"
+        case .sleepScreens: "Sleep screens"
+        case .mirror: "Mirror screens"
+        case .allOn: "Turn all on"
+        case .keepAwake: "Keep Awake"
+        case .battery: "Battery"
+        case .sleepMac: "Sleep Mac"
+        case .lock: "Lock screen"
+        }
+    }
+
+    /// Hidden until turned on: the battery is already in the menu bar on most Macs.
+    static let defaultHidden = "battery"
+
+    static func hidden(in value: String) -> Set<PanelItem> {
+        Set(value.split(separator: ",").compactMap { PanelItem(rawValue: String($0)) })
+    }
+
+    /// For AppKit code; SwiftUI views read the same key with @AppStorage.
+    static var hiddenNow: Set<PanelItem> {
+        hidden(in: UserDefaults.standard.string(forKey: SettingsKey.hiddenItems) ?? defaultHidden)
     }
 }
 
@@ -50,14 +92,20 @@ enum SettingsKey {
     static let sectionOrder = "menuSectionOrder"
     static let hiddenSections = "menuHiddenSections"
     static let collapsedSections = "menuCollapsedSections"
+    static let hiddenItems = "menuHiddenItems"
     /// Milliseconds between DDC brightness writes while dragging.
     static let ddcWriteInterval = "ddcWriteInterval"
     static let ddcWriteIntervalDefault = 50
+    /// Minutes, 0 for "until turned off": what Keep Awake uses when it's switched on.
+    static let keepAwakeDuration = "keepAwakeDuration"
+    /// Keep Awake also stops the screens from sleeping.
+    static let keepScreensOn = "keepScreensOn"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 
     /// Every preference shown in Settings, for "Reset Settings".
     static let all = [
-        showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, ddcWriteInterval,
+        showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
+        keepAwakeDuration, keepScreensOn,
         PanelStyle.key, AppAppearance.key,
     ]
 }

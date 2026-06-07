@@ -6,6 +6,7 @@ struct MenuView: View {
     let screens: ScreenController
     let modes: DisplayModeController
     let brightness: BrightnessController
+    let power: PowerController
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -36,6 +37,12 @@ struct MenuView: View {
                                 .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
                         } else {
                             ScreensSection(controller: screens, modes: modes, brightness: brightness)
+                        }
+                    case .power:
+                        if style == .rows {
+                            RowsPowerSection(power: power)
+                        } else {
+                            PowerSection(power: power)
                         }
                     }
                 }
@@ -102,6 +109,8 @@ private struct ScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
     let brightness: BrightnessController
+    @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
+    private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
 
     var body: some View {
         VStack(spacing: 8) {
@@ -110,22 +119,26 @@ private struct ScreensSection: View {
             }
 
             HStack(spacing: 8) {
-                ActionTile(title: "Sleep", systemImage: "moon.fill") {
-                    controller.sleepAllDisplays()
+                if !hidden.contains(.sleepScreens) {
+                    ActionTile(title: "Sleep", systemImage: "moon.fill") {
+                        controller.sleepAllDisplays()
+                    }
+                    .help("Sleep all screens. Move the mouse or press a key to wake them.")
                 }
-                .help("Sleep all screens. Move the mouse or press a key to wake them.")
 
-                if modes.canMirror || modes.isMirroring {
+                if !hidden.contains(.mirror) && (modes.canMirror || modes.isMirroring) {
                     ActionTile(title: "Mirror", systemImage: "rectangle.on.rectangle", isOn: modes.isMirroring) {
                         modes.setMirroring(!modes.isMirroring)
                     }
                     .help("Show the main screen's content on every screen that's on.")
                 }
 
-                ActionTile(title: "All On", systemImage: "power") {
-                    Task { await controller.restoreAll() }
+                if !hidden.contains(.allOn) {
+                    ActionTile(title: "All On", systemImage: "power") {
+                        Task { await controller.restoreAll() }
+                    }
+                    .help("Turn every screen back on (⌃⌥⌘O).")
                 }
-                .help("Turn every screen back on (⌃⌥⌘O).")
             }
 
             if let error = controller.lastError ?? modes.lastError {
@@ -173,6 +186,7 @@ private struct ScreenCard: View {
     let modes: DisplayModeController
     let brightness: BrightnessController
     @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
+    @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
 
     private var display: Display { screen.display }
     private var screenModes: DisplayModeController.ScreenModes? { modes.screens[screen.id] }
@@ -181,7 +195,9 @@ private struct ScreenCard: View {
         Card {
             VStack(alignment: .leading, spacing: 8) {
                 header
-                if display.isEnabled, !screen.isInStandby, let level = brightness.screens[screen.id] {
+                if display.isEnabled, !screen.isInStandby, !PanelItem.hidden(in: hiddenItems).contains(.brightness),
+                    let level = brightness.screens[screen.id]
+                {
                     BrightnessSlider(display: display, level: level, brightness: brightness)
                         .controlSize(.small)
                         .padding(.leading, 34)
