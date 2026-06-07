@@ -10,6 +10,10 @@ public final class DisplayModeController {
         public var options: [ResolutionOption]
         public var current: DisplayMode?
         public var isMain: Bool
+        /// The mode macOS marks as the default for this display, if it reports one.
+        public var defaultMode: DisplayMode? = nil
+
+        public var isAtDefault: Bool { defaultMode == nil || defaultMode?.id == current?.id }
     }
 
     /// A mode change waiting for the user to keep it; reverted automatically at `deadline`.
@@ -101,6 +105,19 @@ public final class DisplayModeController {
         reload()
     }
 
+    /// Switches back to the display's default mode. It's the mode macOS itself picks, so it
+    /// doesn't ask for confirmation.
+    public func resetToDefault(_ display: CGDirectDisplayID) {
+        guard let mode = screens[display]?.defaultMode, let identity = identity(of: display) else { return }
+        if !isConfirmed(mode, on: identity) { markConfirmed(mode, on: identity) }
+        select(mode, for: display)
+    }
+
+    /// Forgets which modes were kept, so switching to them asks for confirmation again.
+    public func forgetConfirmedModes() {
+        defaults.removeObject(forKey: Self.confirmedKey)
+    }
+
     public func makeMain(_ display: CGDirectDisplayID) {
         let origins = configurator.origins(of: displays.map(\.id))
         guard let shifted = DisplayArrangement.origins(makingMain: display, from: origins) else { return }
@@ -138,7 +155,8 @@ public final class DisplayModeController {
                     ScreenModes(
                         options: ModeCatalog.options(from: modes, showAll: showAllModes),
                         current: configurator.currentMode(for: id),
-                        isMain: origins[id] == .zero
+                        isMain: origins[id] == .zero,
+                        defaultMode: modes.first(where: \.isDefault)
                     )
                 )
             })

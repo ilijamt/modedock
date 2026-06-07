@@ -89,6 +89,7 @@ public struct CoreGraphicsDisplayConfigurator: DisplayConfiguring {
     }
 
     private static let nativeFlag: UInt32 = 0x0200_0000  // kDisplayModeNativeFlag
+    private static let defaultFlag: UInt32 = 0x0000_0004  // kDisplayModeDefaultFlag
 
     private static func mode(_ cgMode: CGDisplayMode) -> DisplayMode {
         DisplayMode(
@@ -99,7 +100,8 @@ public struct CoreGraphicsDisplayConfigurator: DisplayConfiguring {
             pixelHeight: cgMode.pixelHeight,
             refreshRate: cgMode.refreshRate,
             isUsableForDesktop: cgMode.isUsableForDesktopGUI(),
-            isNative: cgMode.ioFlags & nativeFlag != 0
+            isNative: cgMode.ioFlags & nativeFlag != 0,
+            isDefault: cgMode.ioFlags & defaultFlag != 0
         )
     }
 }

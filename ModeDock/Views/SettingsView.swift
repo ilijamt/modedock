@@ -29,20 +29,21 @@ enum SettingsTab: String, CaseIterable {
     /// Fixed sizes keep the window from jumping between tabs by a few points.
     var height: CGFloat {
         switch self {
-        case .general: 150
+        case .general: 250
         case .menu: 250
-        case .displays: 360
+        case .displays: 500
         case .shortcuts: 150
         case .about: 250
         }
     }
 
     @MainActor @ViewBuilder
-    func content(screens: ScreenController, modes: DisplayModeController) -> some View {
+    func content(screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController) -> some View
+    {
         switch self {
-        case .general: GeneralSettingsView()
+        case .general: GeneralSettingsView(modes: modes)
         case .menu: MenuSettingsView()
-        case .displays: DisplaySettingsView()
+        case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
         case .shortcuts: ShortcutSettingsView()
         case .about: AboutView(screens: screens, modes: modes)
         }
@@ -50,8 +51,10 @@ enum SettingsTab: String, CaseIterable {
 }
 
 private struct GeneralSettingsView: View {
+    let modes: DisplayModeController
     @Environment(LaunchAtLogin.self) private var launchAtLogin
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.system.rawValue
+    @State private var confirmingReset = false
 
     var body: some View {
         Form {
@@ -72,9 +75,30 @@ private struct GeneralSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.red)
             }
+
+            Section {
+                LabeledContent("ModeDock settings") {
+                    Button("Reset Settings…") { confirmingReset = true }
+                }
+            } footer: {
+                Text(
+                    "Puts every ModeDock setting and keyboard shortcut back to its default. Screens are "
+                        + "reset in Displays. Launch at login stays as it is."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
         .onAppear { launchAtLogin.refresh() }
+        .confirmationDialog("Reset ModeDock settings?", isPresented: $confirmingReset) {
+            Button("Reset Settings", role: .destructive) { ScreenDefaults.resetSettings(modes: modes) }
+        } message: {
+            Text(
+                "Appearance, panel style, menu sections, display options and shortcuts go back to their "
+                    + "defaults. ModeDock will ask again before keeping a new resolution."
+            )
+        }
     }
 }
 
@@ -132,6 +156,9 @@ private struct MenuSettingsView: View {
 }
 
 private struct DisplaySettingsView: View {
+    let screens: ScreenController
+    let modes: DisplayModeController
+    let brightness: BrightnessController
     @AppStorage(SettingsKey.showAllModes) private var showAllModes = false
     @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
     @AppStorage(SettingsKey.ddcWriteInterval) private var ddcWriteInterval = SettingsKey.ddcWriteIntervalDefault
@@ -168,6 +195,31 @@ private struct DisplaySettingsView: View {
             }
 
             Section {
+                ForEach(screens.screens.filter(\.display.isEnabled)) { screen in
+                    LabeledContent(screen.display.name) {
+                        Button("Reset to Defaults") {
+                            ScreenDefaults.reset(screen.id, modes: modes, brightness: brightness)
+                        }
+                        .disabled(ScreenDefaults.isAtDefault(screen.id, modes: modes, brightness: brightness))
+                    }
+                }
+                LabeledContent("All screens") {
+                    Button("Reset All") {
+                        ScreenDefaults.resetAll(screens: screens, modes: modes, brightness: brightness)
+                    }
+                }
+            } header: {
+                Text("Reset")
+            } footer: {
+                Text(
+                    "Goes back to the resolution and refresh rate macOS picks for the screen, removes "
+                        + "software dimming, and turns automatic brightness back on."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section {
                 Toggle("Show Standby for external monitors", isOn: $showDDCStandby)
             } footer: {
                 Text(
@@ -179,6 +231,8 @@ private struct DisplaySettingsView: View {
             }
         }
         .formStyle(.grouped)
+        // Keeps the reset buttons' enabled state current while the window is open.
+        .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
     }
 
     private var steps: [Int] { SettingsKey.ddcWriteIntervalSteps }

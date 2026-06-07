@@ -8,12 +8,17 @@ final class SettingsWindowController {
     private let launchAtLogin: LaunchAtLogin
     private let screens: ScreenController
     private let modes: DisplayModeController
+    private let brightness: BrightnessController
     private var window: NSWindow?
 
-    init(launchAtLogin: LaunchAtLogin, screens: ScreenController, modes: DisplayModeController) {
+    init(
+        launchAtLogin: LaunchAtLogin, screens: ScreenController, modes: DisplayModeController,
+        brightness: BrightnessController
+    ) {
         self.launchAtLogin = launchAtLogin
         self.screens = screens
         self.modes = modes
+        self.brightness = brightness
     }
 
     func show() {
@@ -30,7 +35,7 @@ final class SettingsWindowController {
         let tabs = NSTabViewController()
         tabs.tabStyle = .toolbar
         for tab in SettingsTab.allCases {
-            let view = tab.content(screens: screens, modes: modes)
+            let view = tab.content(screens: screens, modes: modes, brightness: brightness)
                 .environment(launchAtLogin)
                 .frame(width: 480, height: tab.height)
             let controller = NSHostingController(rootView: view)

@@ -39,6 +39,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
             button.image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "ModeDock")
             button.target = self
             button.action = #selector(statusItemClicked)
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
     }
 
@@ -88,7 +89,16 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 
     @objc private func statusItemClicked() {
-        toggle()
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            close()
+            let menu = nativeMenu.buildContextMenu()
+            if let button = statusItem.button {
+                menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+            }
+        } else {
+            toggle()
+        }
     }
 
     /// Always on the screen under the mouse: below the status item when it is on that screen,

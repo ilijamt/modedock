@@ -13,6 +13,8 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
     public let refreshRate: Double
     public let isUsableForDesktop: Bool
     public let isNative: Bool
+    /// The mode macOS picks for this display out of the box ("Default for display").
+    public let isDefault: Bool
 
     public var isHiDPI: Bool { pixelWidth > width }
 
@@ -23,7 +25,7 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
 
     public init(
         id: Int32, width: Int, height: Int, pixelWidth: Int, pixelHeight: Int,
-        refreshRate: Double, isUsableForDesktop: Bool = true, isNative: Bool = false
+        refreshRate: Double, isUsableForDesktop: Bool = true, isNative: Bool = false, isDefault: Bool = false
     ) {
         self.id = id
         self.width = width
@@ -33,6 +35,7 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
         self.refreshRate = refreshRate
         self.isUsableForDesktop = isUsableForDesktop
         self.isNative = isNative
+        self.isDefault = isDefault
     }
 }
 

@@ -31,7 +31,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var brightness = BrightnessController(ddc: ddc)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
-        launchAtLogin: launchAtLogin, screens: screens, modes: modes)
+        launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness)
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 

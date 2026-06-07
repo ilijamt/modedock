@@ -54,6 +54,12 @@ enum SettingsKey {
     static let ddcWriteInterval = "ddcWriteInterval"
     static let ddcWriteIntervalDefault = 50
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
+
+    /// Every preference shown in Settings, for "Reset Settings".
+    static let all = [
+        showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, ddcWriteInterval,
+        PanelStyle.key, AppAppearance.key,
+    ]
 }
 
 /// How the menu-bar panel looks. Chosen in Settings → Menu.

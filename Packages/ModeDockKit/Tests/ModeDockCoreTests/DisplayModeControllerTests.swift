@@ -47,7 +47,8 @@ private final class FakeConfigurator: DisplayConfiguring {
 }
 
 private let native = DisplayMode(
-    id: 1, width: 1920, height: 1080, pixelWidth: 3840, pixelHeight: 2160, refreshRate: 60, isNative: true)
+    id: 1, width: 1920, height: 1080, pixelWidth: 3840, pixelHeight: 2160, refreshRate: 60, isNative: true,
+    isDefault: true)
 private let small = DisplayMode(id: 2, width: 1280, height: 720, pixelWidth: 2560, pixelHeight: 1440, refreshRate: 60)
 private let external = Display(
     id: 5, identity: DisplayIdentity(vendor: 19501, model: 29046, serial: 42),
@@ -93,6 +94,21 @@ struct DisplayModeControllerTests {
         // Back to the starting mode, then to the confirmed one again: no more prompts.
         controller.select(native, for: 5)
         controller.select(small, for: 5)
+        #expect(controller.pending == nil)
+        #expect(prompted == 1)
+    }
+
+    @Test func resetGoesBackToTheDefaultModeWithoutAsking() {
+        let (controller, configurator) = make()
+        var prompted = 0
+        controller.onConfirmationNeeded = { _ in prompted += 1 }
+        controller.select(small, for: 5)
+        controller.confirm()
+        #expect(controller.screens[5]?.isAtDefault == false)
+
+        controller.resetToDefault(5)
+        #expect(configurator.current[5] == native)
+        #expect(controller.screens[5]?.isAtDefault == true)
         #expect(controller.pending == nil)
         #expect(prompted == 1)
     }

@@ -156,6 +156,18 @@ struct BrightnessControllerTests {
         #expect(controller.screens[1] == .init(value: 0.9, backend: .system, autoBrightness: false))
     }
 
+    @Test func resetRemovesDimmingAndTurnsAutoBackOn() async {
+        let (controller, system, ddc) = await make()
+        controller.set(0.3, for: 7)
+        controller.setAutoBrightness(false, for: 1)
+
+        for id: CGDirectDisplayID in [1, 5, 7] { controller.resetToDefault(for: id) }
+        #expect(system.dimming[7] == 1)
+        #expect(controller.screens[7]?.value == 1)
+        #expect(system.auto[1] == true)
+        #expect(await ddc.writes.isEmpty)
+    }
+
     @Test func skipsScreensThatAreOff() async {
         let (controller, _, _) = await make()
         var off = monitor

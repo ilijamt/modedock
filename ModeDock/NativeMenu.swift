@@ -59,6 +59,19 @@ final class NativeMenu {
         }
 
         menu.addItem(.separator())
+        addAppItems(to: menu)
+        return menu
+    }
+
+    /// The right-click menu of the status item.
+    func buildContextMenu() -> NSMenu {
+        let menu = NSMenu()
+        menu.appearance = NSApp.appearance
+        addAppItems(to: menu)
+        return menu
+    }
+
+    private func addAppItems(to menu: NSMenu) {
         menu.addItem(
             ActionItem("Copy Diagnostics") { [screens, modes] in Diagnostics.copy(screens: screens, modes: modes) })
         let settings = ActionItem("Settings…", action: onOpenSettings)
@@ -67,7 +80,6 @@ final class NativeMenu {
         let quit = ActionItem("Quit ModeDock") { NSApp.terminate(nil) }
         quit.keyEquivalent = "q"
         menu.addItem(quit)
-        return menu
     }
 
     private func screenItem(_ screen: ScreenController.Screen, showStandby: Bool) -> NSMenuItem {
@@ -84,6 +96,8 @@ final class NativeMenu {
         }
 
         let submenu = NSMenu()
+        // Otherwise AppKit enables every item with a target and ignores `isEnabled` below.
+        submenu.autoenablesItems = false
         if display.isEnabled, let screenModes {
             submenu.addItem(.sectionHeader(title: "Resolution"))
             for option in screenModes.options {

@@ -124,6 +124,14 @@ public final class BrightnessController {
         }
     }
 
+    /// Removes software dimming and turns automatic brightness back on where there's a light
+    /// sensor. DDC and built-in levels have no factory value to go back to, so they're left alone.
+    public func resetToDefault(for display: CGDirectDisplayID) {
+        guard let screen = screens[display] else { return }
+        if screen.backend == .software { set(1, for: display) }
+        if screen.autoBrightness == false { setAutoBrightness(true, for: display) }
+    }
+
     /// Removes software dimming from every screen. Call before quitting.
     public func resetSoftwareDimming() {
         system.resetSoftwareDimming()
