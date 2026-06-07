@@ -7,17 +7,25 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let panel: MenuPanel
     private let nativeMenu: NativeMenu
+    /// Called each time the panel or menu opens, to pick up changes made elsewhere.
+    private let onShow: () -> Void
     /// The panel grows downward when its content changes, so its top edge stays put.
     private var topLeft: NSPoint?
 
-    init(screens: ScreenController, modes: DisplayModeController, onOpenSettings: @escaping () -> Void) {
+    init(
+        screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
+        onShow: @escaping () -> Void, onOpenSettings: @escaping () -> Void
+    ) {
         panel = MenuPanel()
-        nativeMenu = NativeMenu(screens: screens, modes: modes, onOpenSettings: onOpenSettings)
+        nativeMenu = NativeMenu(
+            screens: screens, modes: modes, brightness: brightness, onOpenSettings: onOpenSettings)
+        self.onShow = onShow
         super.init()
 
         let content = MenuView(
             screens: screens,
             modes: modes,
+            brightness: brightness,
             onOpenSettings: { [weak self] in
                 self?.close()
                 onOpenSettings()
@@ -35,6 +43,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 
     func toggle() {
+        if !panel.isVisible { onShow() }
         if PanelStyle.current == .menu {
             close()
             showMenu()

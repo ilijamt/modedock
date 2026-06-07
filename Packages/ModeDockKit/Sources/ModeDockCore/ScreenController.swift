@@ -37,7 +37,7 @@ public final class ScreenController {
 
     public init(
         system: DisplaySystem = CoreGraphicsDisplaySystem(),
-        ddc: DDCControlling = DDCService(),
+        ddc: DDCControlling = makeDDCService(),
         defaults: UserDefaults = .standard
     ) {
         self.system = system

@@ -24,8 +24,11 @@ extension KeyboardShortcuts.Name {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let launchAtLogin = LaunchAtLogin()
-    private let screens = ScreenController()
+    /// Shared so screen standby and brightness never talk to a monitor at the same time.
+    private let ddc = makeDDCService()
+    private lazy var screens = ScreenController(ddc: ddc)
     private let modes = DisplayModeController()
+    private lazy var brightness = BrightnessController(ddc: ddc)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
         launchAtLogin: launchAtLogin, screens: screens, modes: modes)
@@ -34,18 +37,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppAppearance.apply()
+        applyDDCWriteInterval()
+        NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyDDCWriteInterval() }
+        }
         modes.onConfirmationNeeded = { [weak self] change in
             self?.menuBar?.close()
             self?.confirmation.show(for: change)
         }
-        menuBar = MenuBarController(screens: screens, modes: modes) { [weak self] in
-            self?.settingsWindow.show()
-        }
+        menuBar = MenuBarController(
+            screens: screens, modes: modes, brightness: brightness,
+            onShow: { [weak self] in self?.refreshBrightness() },
+            onOpenSettings: { [weak self] in self?.settingsWindow.show() }
+        )
         displayObserver = DisplayObserver { [weak self] in
             guard let self else { return }
-            Task { await self.screens.displaysChanged() }
+            Task {
+                await self.screens.displaysChanged()
+                await self.brightness.refresh(displays: self.screens.screens.map(\.display))
+            }
         }
-        Task { await screens.start() }
+        Task {
+            await screens.start()
+            await brightness.refresh(displays: screens.screens.map(\.display))
+        }
 
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
             self?.menuBar?.toggle()
@@ -56,8 +73,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Never leave a screen off or in standby after quitting.
+    private func applyDDCWriteInterval() {
+        let milliseconds = UserDefaults.standard.object(forKey: SettingsKey.ddcWriteInterval) as? Int
+        brightness.ddcWriteInterval = .milliseconds(milliseconds ?? SettingsKey.ddcWriteIntervalDefault)
+    }
+
+    private func refreshBrightness() {
+        Task { await brightness.refresh(displays: screens.screens.map(\.display)) }
+    }
+
+    /// Never leave a screen off, in standby or dimmed after quitting.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        brightness.resetSoftwareDimming()
         Task {
             await screens.restoreAll()
             displayObserver?.stop()

@@ -5,6 +5,7 @@ public enum DDCPacket {
     public static let hostAddress: UInt32 = 0x51
 
     public enum VCP {
+        public static let brightness: UInt8 = 0x10
         public static let powerMode: UInt8 = 0xD6
     }
 

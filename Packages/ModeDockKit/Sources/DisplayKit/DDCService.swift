@@ -20,7 +20,14 @@ public protocol DDCControlling: Sendable {
     /// Rescans the I/O Registry; call after displays are connected or disconnected.
     func refresh() async
     func read(_ code: UInt8, from display: DisplayIdentity) async throws -> DDCPacket.Reply
-    func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity) async throws
+    /// Sends the value `attempts` times; many monitors drop a single write now and then.
+    func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) async throws
+}
+
+extension DDCControlling {
+    public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity) async throws {
+        try await write(code, value: value, to: display, attempts: 2)
+    }
 }
 
 /// DDC over the Apple Silicon `IOAVService` I²C interface. Calls block for tens of
@@ -59,12 +66,12 @@ public actor DDCService: DDCControlling {
         throw lastError
     }
 
-    public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity) throws {
+    public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) throws {
         let service = try service(for: display)
-        // Many monitors drop a single write; sending it twice is what other DDC tools do too.
-        try send(DDCPacket.setVCP(code, value: value), to: service)
-        usleep(20_000)
-        try send(DDCPacket.setVCP(code, value: value), to: service)
+        for attempt in 0..<max(attempts, 1) {
+            if attempt > 0 { usleep(20_000) }
+            try send(DDCPacket.setVCP(code, value: value), to: service)
+        }
     }
 
     private func service(for display: DisplayIdentity) throws -> CFTypeRef {

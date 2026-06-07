@@ -5,6 +5,7 @@ import SwiftUI
 struct MenuView: View {
     let screens: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -31,10 +32,10 @@ struct MenuView: View {
                     switch section {
                     case .screens:
                         if style == .rows {
-                            RowsScreensSection(controller: screens, modes: modes)
-                                .modifier(ModeRefresher(controller: screens, modes: modes))
+                            RowsScreensSection(controller: screens, modes: modes, brightness: brightness)
+                                .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
                         } else {
-                            ScreensSection(controller: screens, modes: modes)
+                            ScreensSection(controller: screens, modes: modes, brightness: brightness)
                         }
                     }
                 }
@@ -100,11 +101,12 @@ struct MenuView: View {
 private struct ScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
 
     var body: some View {
         VStack(spacing: 8) {
             ForEach(controller.screens) { screen in
-                ScreenCard(screen: screen, controller: controller, modes: modes)
+                ScreenCard(screen: screen, controller: controller, modes: modes, brightness: brightness)
             }
 
             HStack(spacing: 8) {
@@ -133,14 +135,15 @@ private struct ScreensSection: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .modifier(ModeRefresher(controller: controller, modes: modes))
+        .modifier(ModeRefresher(controller: controller, modes: modes, brightness: brightness))
     }
 }
 
-/// Reloads display modes whenever the screens or the "show all" setting change.
+/// Reloads display modes and brightness whenever the screens or the "show all" setting change.
 struct ModeRefresher: ViewModifier {
     let controller: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
     @AppStorage(SettingsKey.showAllModes) private var showAllModes = false
 
     func body(content: Content) -> some View {
@@ -148,10 +151,19 @@ struct ModeRefresher: ViewModifier {
             .onAppear(perform: refresh)
             .onChange(of: controller.screens) { refresh() }
             .onChange(of: showAllModes) { refresh() }
+            // Automatic brightness and the brightness keys change the level behind our back.
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1))
+                    brightness.syncSystemBrightness()
+                }
+            }
     }
 
     private func refresh() {
-        modes.refresh(displays: controller.screens.map(\.display), showAllModes: showAllModes)
+        let displays = controller.screens.map(\.display)
+        modes.refresh(displays: displays, showAllModes: showAllModes)
+        Task { await brightness.refresh(displays: displays) }
     }
 }
 
@@ -159,6 +171,7 @@ private struct ScreenCard: View {
     let screen: ScreenController.Screen
     let controller: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
     @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
 
     private var display: Display { screen.display }
@@ -166,47 +179,58 @@ private struct ScreenCard: View {
 
     var body: some View {
         Card {
-            HStack(spacing: 10) {
-                Image(systemName: display.isBuiltin ? "laptopcomputer" : "display")
-                    .font(.system(size: 16))
-                    .foregroundStyle(display.isEnabled ? .primary : .secondary)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(display.name)
-                            .font(.system(size: 13, weight: .medium))
-                            .lineLimit(1)
-                        if screenModes?.isMain == true && display.isEnabled {
-                            Text("Main")
-                                .font(.caption2.weight(.semibold))
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(.primary.opacity(0.1), in: Capsule())
-                        }
-                    }
-                    subtitle
+            VStack(alignment: .leading, spacing: 8) {
+                header
+                if display.isEnabled, !screen.isInStandby, let level = brightness.screens[screen.id] {
+                    BrightnessSlider(display: display, level: level, brightness: brightness)
+                        .controlSize(.small)
+                        .padding(.leading, 34)
                 }
-
-                Spacer(minLength: 4)
-
-                if showDDCStandby && screen.supportsDDC && display.isEnabled {
-                    CircleToggle(systemImage: "moon.zzz", isOn: screen.isInStandby, size: 24) {
-                        Task { await controller.setStandby(!screen.isInStandby, screen: screen.id) }
-                    }
-                    .help(
-                        screen.isInStandby
-                            ? "Wake the monitor over DDC."
-                            : "Put the monitor in standby over DDC. Some monitors only wake with their power button.")
-                }
-
-                CircleToggle(systemImage: "power", isOn: display.isEnabled) {
-                    controller.setEnabled(!display.isEnabled, screen: screen.id)
-                }
-                .disabled(display.isEnabled && !screen.canDisable)
-                .opacity(display.isEnabled && !screen.canDisable ? 0.5 : 1)
-                .help(powerHelp)
             }
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            Image(systemName: display.isBuiltin ? "laptopcomputer" : "display")
+                .font(.system(size: 16))
+                .foregroundStyle(display.isEnabled ? .primary : .secondary)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 6) {
+                    Text(display.name)
+                        .font(.system(size: 13, weight: .medium))
+                        .lineLimit(1)
+                    if screenModes?.isMain == true && display.isEnabled {
+                        Text("Main")
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(.primary.opacity(0.1), in: Capsule())
+                    }
+                }
+                subtitle
+            }
+
+            Spacer(minLength: 4)
+
+            if showDDCStandby && screen.supportsDDC && display.isEnabled {
+                CircleToggle(systemImage: "moon.zzz", isOn: screen.isInStandby, size: 24) {
+                    Task { await controller.setStandby(!screen.isInStandby, screen: screen.id) }
+                }
+                .help(
+                    screen.isInStandby
+                        ? "Wake the monitor over DDC."
+                        : "Put the monitor in standby over DDC. Some monitors only wake with their power button.")
+            }
+
+            CircleToggle(systemImage: "power", isOn: display.isEnabled) {
+                controller.setEnabled(!display.isEnabled, screen: screen.id)
+            }
+            .disabled(display.isEnabled && !screen.canDisable)
+            .opacity(display.isEnabled && !screen.canDisable ? 0.5 : 1)
+            .help(powerHelp)
         }
     }
 

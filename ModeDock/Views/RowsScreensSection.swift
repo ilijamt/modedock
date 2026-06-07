@@ -6,12 +6,13 @@ import SwiftUI
 struct RowsScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
 
     var body: some View {
         VStack(spacing: 10) {
             ForEach(controller.screens) { screen in
                 RowGroup {
-                    ScreenRows(screen: screen, controller: controller, modes: modes)
+                    ScreenRows(screen: screen, controller: controller, modes: modes, brightness: brightness)
                 }
             }
 
@@ -58,6 +59,7 @@ private struct ScreenRows: View {
     let screen: ScreenController.Screen
     let controller: ScreenController
     let modes: DisplayModeController
+    let brightness: BrightnessController
 
     private var display: Display { screen.display }
     private var screenModes: DisplayModeController.ScreenModes? { modes.screens[screen.id] }
@@ -111,6 +113,27 @@ private struct ScreenRows: View {
                 }
             }
 
+            if let level = brightness.screens[screen.id] {
+                Divider()
+                Row {
+                    Text("Brightness")
+                    BrightnessSlider(display: display, level: level, brightness: brightness, showsAuto: false)
+                }
+                if let auto = level.autoBrightness {
+                    Divider()
+                    Row {
+                        Text("Automatic Brightness")
+                        Spacer()
+                        Toggle(
+                            "Automatic Brightness",
+                            isOn: Binding(get: { auto }, set: { brightness.setAutoBrightness($0, for: screen.id) })
+                        )
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                    }
+                }
+            }
+
             if !screenModes.isMain {
                 Divider()
                 Row {
@@ -160,7 +183,7 @@ private struct ScreenRows: View {
 }
 
 /// A rounded group of rows, like a grouped Form section.
-private struct RowGroup<Content: View>: View {
+struct RowGroup<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -169,7 +192,7 @@ private struct RowGroup<Content: View>: View {
     }
 }
 
-private struct Row<Content: View>: View {
+struct Row<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {

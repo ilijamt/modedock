@@ -50,6 +50,10 @@ enum SettingsKey {
     static let sectionOrder = "menuSectionOrder"
     static let hiddenSections = "menuHiddenSections"
     static let collapsedSections = "menuCollapsedSections"
+    /// Milliseconds between DDC brightness writes while dragging.
+    static let ddcWriteInterval = "ddcWriteInterval"
+    static let ddcWriteIntervalDefault = 50
+    static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 }
 
 /// How the menu-bar panel looks. Chosen in Settings → Menu.

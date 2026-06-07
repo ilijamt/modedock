@@ -19,8 +19,26 @@ public enum PrivateAPI {
     public static let avServiceWriteI2C: AVServiceI2C? = symbol("IOAVServiceWriteI2C")
     public static let avServiceReadI2C: AVServiceI2C? = symbol("IOAVServiceReadI2C")
 
+    public typealias CanChangeBrightness = @convention(c) (CGDirectDisplayID) -> Bool
+    public typealias GetBrightness = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
+    public typealias SetBrightness = @convention(c) (CGDirectDisplayID, Float) -> Int32
+
+    /// Built-in and Apple displays (Studio Display, Pro Display XDR).
+    public static let canChangeBrightness: CanChangeBrightness? = symbol("DisplayServicesCanChangeBrightness")
+    public static let getBrightness: GetBrightness? = symbol("DisplayServicesGetBrightness")
+    public static let setBrightness: SetBrightness? = symbol("DisplayServicesSetBrightness")
+
+    public typealias GetFlag = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Bool>) -> Int32
+    public typealias SetFlag = @convention(c) (CGDirectDisplayID, Bool) -> Int32
+
+    /// Automatic brightness ("ambient light compensation"), for displays with a light sensor.
+    public static let hasAutoBrightness: CanChangeBrightness? = symbol("DisplayServicesHasAmbientLightCompensation")
+    public static let autoBrightnessEnabled: GetFlag? = symbol("DisplayServicesAmbientLightCompensationEnabled")
+    public static let setAutoBrightness: SetFlag? = symbol("DisplayServicesEnableAmbientLightCompensation")
+
     nonisolated(unsafe) private static let handles: [UnsafeMutableRawPointer?] = [
         dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY),
+        dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
         dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY),
         UnsafeMutableRawPointer(bitPattern: -2),  // RTLD_DEFAULT
     ]

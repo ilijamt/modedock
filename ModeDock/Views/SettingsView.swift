@@ -31,7 +31,7 @@ enum SettingsTab: String, CaseIterable {
         switch self {
         case .general: 150
         case .menu: 250
-        case .displays: 270
+        case .displays: 360
         case .shortcuts: 150
         case .about: 250
         }
@@ -134,6 +134,7 @@ private struct MenuSettingsView: View {
 private struct DisplaySettingsView: View {
     @AppStorage(SettingsKey.showAllModes) private var showAllModes = false
     @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
+    @AppStorage(SettingsKey.ddcWriteInterval) private var ddcWriteInterval = SettingsKey.ddcWriteIntervalDefault
 
     var body: some View {
         Form {
@@ -143,6 +144,24 @@ private struct DisplaySettingsView: View {
                 Text(
                     "Includes other aspect ratios, low-resolution versions of HiDPI sizes, and modes "
                         + "macOS doesn't offer for the desktop. Some may not display correctly."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section {
+                LabeledContent("Monitor brightness updates") {
+                    HStack {
+                        Slider(value: intervalStep, in: 0...Double(steps.count - 1), step: 1)
+                        Text(verbatim: "\(ddcWriteInterval) ms")
+                            .monospacedDigit()
+                            .frame(width: 52, alignment: .trailing)
+                    }
+                }
+            } footer: {
+                Text(
+                    "How often ModeDock sends a new brightness to an external monitor while you drag. "
+                        + "Monitors react differently: try a few values and keep the one that looks smoothest."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -160,6 +179,20 @@ private struct DisplaySettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var steps: [Int] { SettingsKey.ddcWriteIntervalSteps }
+
+    /// The slider moves through the preset steps rather than every millisecond.
+    private var intervalStep: Binding<Double> {
+        Binding(
+            get: {
+                let nearest = steps.indices.min {
+                    abs(steps[$0] - ddcWriteInterval) < abs(steps[$1] - ddcWriteInterval)
+                }
+                return Double(nearest ?? 0)
+            },
+            set: { ddcWriteInterval = steps[Int($0.rounded())] })
     }
 }
 
