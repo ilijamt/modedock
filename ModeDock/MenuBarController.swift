@@ -131,6 +131,9 @@ private final class MenuPanel: NSPanel {
         )
         level = .popUpMenu
         isOpaque = false
+        // ModeDock is rarely the active app while its panels are open, and tooltips are hidden
+        // for inactive apps unless the window opts in.
+        allowsToolTipsWhenApplicationIsInactive = true
         backgroundColor = .clear
         hasShadow = true
         isReleasedWhenClosed = false
