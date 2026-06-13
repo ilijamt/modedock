@@ -187,20 +187,33 @@ private struct ScreenCard: View {
     let brightness: BrightnessController
     @AppStorage(SettingsKey.showDDCStandby) private var showDDCStandby = false
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
+    @State private var showingModes = false
 
     private var display: Display { screen.display }
     private var screenModes: DisplayModeController.ScreenModes? { modes.screens[screen.id] }
 
     var body: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                header
-                if display.isEnabled, !screen.isInStandby, !PanelItem.hidden(in: hiddenItems).contains(.brightness),
-                    let level = brightness.screens[screen.id]
-                {
-                    BrightnessSlider(display: display, level: level, brightness: brightness)
-                        .controlSize(.small)
-                        .padding(.leading, 34)
+        VStack(spacing: 6) {
+            Card {
+                VStack(alignment: .leading, spacing: 8) {
+                    header
+                    if display.isEnabled, !screen.isInStandby,
+                        !PanelItem.hidden(in: hiddenItems).contains(.brightness),
+                        let level = brightness.screens[screen.id]
+                    {
+                        BrightnessSlider(display: display, level: level, brightness: brightness)
+                            .controlSize(.small)
+                            .padding(.leading, 34)
+                    }
+                }
+            }
+            // Below the card rather than inside it: controls inside interactive glass have
+            // crashed SwiftUI on macOS 26.
+            if let change = modes.pending, change.display == screen.id {
+                PendingResolutionStrip(change: change, modes: modes)
+            } else if showingModes, display.isEnabled, let screenModes {
+                ResolutionList(display: screen.id, screenModes: screenModes, modes: modes) {
+                    showingModes = false
                 }
             }
         }
@@ -256,82 +269,33 @@ private struct ScreenCard: View {
         } else if screen.isInStandby {
             Text("Standby").font(.caption).foregroundStyle(.orange)
         } else if let screenModes {
-            ModeMenu(display: screen.id, screenModes: screenModes, modes: modes)
+            Button {
+                showingModes.toggle()
+            } label: {
+                HStack(spacing: 3) {
+                    Text(verbatim: summary(screenModes.current))
+                    Image(systemName: showingModes ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 8, weight: .bold))
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(modes.pending != nil)
+            .help("Change resolution and refresh rate")
         }
+    }
+
+    private func summary(_ mode: DisplayMode?) -> String {
+        guard let mode else { return "Resolution" }
+        let size = "\(mode.width) × \(mode.height)"
+        return mode.refreshRate > 0 ? "\(size) · \(Int(mode.refreshRate.rounded())) Hz" : size
     }
 
     private var powerHelp: String {
         if !display.isEnabled { return "Turn the screen back on." }
         if !screen.canDisable { return "At least one screen has to stay on." }
         return "Turn the screen off. Its windows move to your other screens."
-    }
-}
-
-private struct ModeMenu: View {
-    let display: CGDirectDisplayID
-    let screenModes: DisplayModeController.ScreenModes
-    let modes: DisplayModeController
-
-    var body: some View {
-        Menu {
-            ForEach(screenModes.options) { option in
-                let isCurrent = option.modes.contains { $0.id == screenModes.current?.id }
-                if option.modes.count == 1, let mode = option.modes.first {
-                    Button(checked(isCurrent, label(option))) { modes.select(mode, for: display) }
-                } else {
-                    Menu(checked(isCurrent, label(option))) {
-                        ForEach(option.modes) { mode in
-                            Button(checked(mode.id == screenModes.current?.id, rate(mode))) {
-                                modes.select(mode, for: display)
-                            }
-                        }
-                    }
-                }
-            }
-            if !screenModes.isMain {
-                Divider()
-                Button("Use as Main Screen") { modes.makeMain(display) }
-            }
-        } label: {
-            HStack(spacing: 3) {
-                Text(summary)
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .bold))
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .contentShape(Rectangle())
-        }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .disabled(modes.pending != nil)
-        .help("Change resolution and refresh rate")
-    }
-
-    private var summary: String {
-        guard let current = screenModes.current else { return "Resolution" }
-        let size = "\(current.width) × \(current.height)"
-        return current.refreshRate > 0 ? "\(size) · \(rate(current))" : size
-    }
-
-    private func label(_ option: ResolutionOption) -> String {
-        var text = "\(option.width) × \(option.height)"
-        // Same wording as System Settings for the 1x copy of a HiDPI size.
-        let hasHiDPIVersion = screenModes.options.contains {
-            $0.isHiDPI && $0.width == option.width && $0.height == option.height
-        }
-        if !option.isHiDPI && hasHiDPIVersion { text += " (low resolution)" }
-        if option.isNative { text += " · Native" }
-        return text
-    }
-
-    private func rate(_ mode: DisplayMode) -> String {
-        mode.refreshRate > 0 ? "\(Int(mode.refreshRate.rounded())) Hz" : "Default"
-    }
-
-    private func checked(_ isCurrent: Bool, _ text: String) -> String {
-        isCurrent ? "✓ \(text)" : text
     }
 }

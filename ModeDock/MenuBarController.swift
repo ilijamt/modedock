@@ -11,6 +11,10 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     private let onShow: () -> Void
     /// The panel grows downward when its content changes, so its top edge stays put.
     private var topLeft: NSPoint?
+    /// Called when the panel closes, for example to move a pending prompt into its own window.
+    var onClose: (() -> Void)?
+
+    var isPanelVisible: Bool { panel.isVisible }
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
@@ -75,7 +79,17 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         statusItem.button?.highlight(true)
     }
 
+    /// Moves the open panel back under the status item, after the screens changed size.
+    func reposition() {
+        guard panel.isVisible else { return }
+        let origin = origin(for: panel.frame.size)
+        topLeft = NSPoint(x: origin.x, y: origin.y + panel.frame.height)
+        panel.setFrameOrigin(origin)
+    }
+
     func close() {
+        let wasVisible = panel.isVisible
+        defer { if wasVisible { onClose?() } }
         panel.orderOut(nil)
         topLeft = nil
         statusItem.button?.highlight(false)

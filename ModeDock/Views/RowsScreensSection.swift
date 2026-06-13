@@ -16,6 +16,9 @@ struct RowsScreensSection: View {
                 RowGroup {
                     ScreenRows(screen: screen, controller: controller, modes: modes, brightness: brightness)
                 }
+                if let change = modes.pending, change.display == screen.id {
+                    PendingResolutionStrip(change: change, modes: modes)
+                }
             }
 
             if !actions.isEmpty {

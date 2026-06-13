@@ -51,9 +51,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyDDCWriteInterval() }
         }
+        // Changes made in the panel are confirmed inline; the panel only needs to move back under
+        // the menu bar once the screen has its new size. Anything else gets the prompt window.
         modes.onConfirmationNeeded = { [weak self] change in
-            self?.menuBar?.close()
-            self?.confirmation.show(for: change)
+            guard let self else { return }
+            if let menuBar = self.menuBar, menuBar.isPanelVisible {
+                Task {
+                    try? await Task.sleep(for: .milliseconds(400))
+                    menuBar.reposition()
+                }
+            } else {
+                self.confirmation.show(for: change)
+            }
         }
         menuBar = MenuBarController(
             screens: screens, modes: modes, brightness: brightness, power: power,
@@ -63,6 +72,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onOpenSettings: { [weak self] in self?.settingsWindow.show() }
         )
+        menuBar?.onClose = { [weak self] in
+            // Never leave a change waiting for confirmation without a visible prompt.
+            if let change = self?.modes.pending { self?.confirmation.show(for: change) }
+        }
         displayObserver = DisplayObserver { [weak self] in
             guard let self else { return }
             Task {
