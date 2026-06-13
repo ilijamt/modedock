@@ -19,6 +19,9 @@ extension KeyboardShortcuts.Name {
     static let togglePanel = Self("togglePanel", default: .init(.m, modifiers: [.control, .option, .command]))
     static let turnAllScreensOn = Self(
         "turnAllScreensOn", default: .init(.o, modifiers: [.control, .option, .command]))
+
+    /// The current shortcut as shown in menus ("⌃⌥⌘O"), or nil when the user cleared it.
+    @MainActor var shortcutText: String? { KeyboardShortcuts.getShortcut(for: self)?.description }
 }
 
 @MainActor

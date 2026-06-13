@@ -1,4 +1,5 @@
 import DisplayKit
+import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
 
@@ -30,12 +31,7 @@ struct RowsScreensSection: View {
                 }
             }
 
-            if let error = controller.lastError ?? modes.lastError {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            ErrorLabel(controller.lastError ?? modes.lastError)
         }
         .controlSize(.small)
     }
@@ -72,7 +68,9 @@ struct RowsScreensSection: View {
                 Button("Turn All On") { Task { await controller.restoreAll() } }
                     .buttonStyle(.plain)
                 Spacer()
-                Text("⌃⌥⌘O").foregroundStyle(.secondary)
+                if let shortcut = KeyboardShortcuts.Name.turnAllScreensOn.shortcutText {
+                    Text(verbatim: shortcut).foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -90,7 +88,7 @@ private struct ScreenRows: View {
 
     var body: some View {
         Row {
-            Image(systemName: display.isBuiltin ? "laptopcomputer" : "display")
+            Image(systemName: display.systemImage)
                 .frame(width: 20)
             Text(display.name).lineLimit(1)
             if screenModes?.isMain == true && display.isEnabled {
@@ -115,21 +113,21 @@ private struct ScreenRows: View {
                 Spacer()
                 Picker("Resolution", selection: resolution(screenModes)) {
                     ForEach(screenModes.options) { option in
-                        Text(verbatim: label(option, in: screenModes)).tag(option.id)
+                        Text(verbatim: screenModes.label(for: option)).tag(option.id)
                     }
                 }
                 .labelsHidden()
                 .fixedSize()
             }
 
-            if let option = currentOption(screenModes), option.modes.count > 1 {
+            if let option = screenModes.option(containing: screenModes.current), option.modes.count > 1 {
                 Divider()
                 Row {
                     Text("Refresh Rate")
                     Spacer()
                     Picker("Refresh Rate", selection: refreshRate(screenModes, option)) {
                         ForEach(option.modes) { mode in
-                            Text(verbatim: "\(Int(mode.refreshRate.rounded())) Hz").tag(mode.id)
+                            Text(verbatim: mode.refreshRateText).tag(mode.id)
                         }
                     }
                     .labelsHidden()
@@ -169,19 +167,14 @@ private struct ScreenRows: View {
         }
     }
 
-    private func currentOption(_ screenModes: DisplayModeController.ScreenModes) -> ResolutionOption? {
-        screenModes.options.first { $0.modes.contains { $0.id == screenModes.current?.id } }
-    }
-
-    /// Picking a size keeps the current refresh rate when that size offers it, otherwise the highest.
     private func resolution(_ screenModes: DisplayModeController.ScreenModes) -> Binding<String> {
         Binding(
-            get: { currentOption(screenModes)?.id ?? "" },
+            get: { screenModes.option(containing: screenModes.current)?.id ?? "" },
             set: { id in
-                guard let option = screenModes.options.first(where: { $0.id == id }) else { return }
-                let rate = screenModes.current.map { Int($0.refreshRate.rounded()) }
-                let mode = option.modes.first { Int($0.refreshRate.rounded()) == rate } ?? option.modes.first
-                if let mode { modes.select(mode, for: screen.id) }
+                guard let option = screenModes.options.first(where: { $0.id == id }),
+                    let mode = screenModes.mode(for: option)
+                else { return }
+                modes.select(mode, for: screen.id)
             })
     }
 
@@ -193,16 +186,6 @@ private struct ScreenRows: View {
             set: { id in
                 if let mode = option.modes.first(where: { $0.id == id }) { modes.select(mode, for: screen.id) }
             })
-    }
-
-    private func label(_ option: ResolutionOption, in screenModes: DisplayModeController.ScreenModes) -> String {
-        var text = "\(option.width) × \(option.height)"
-        let hasHiDPIVersion = screenModes.options.contains {
-            $0.isHiDPI && $0.width == option.width && $0.height == option.height
-        }
-        if !option.isHiDPI && hasHiDPIVersion { text += " (low resolution)" }
-        if option.isNative { text += " · Native" }
-        return text
     }
 }
 

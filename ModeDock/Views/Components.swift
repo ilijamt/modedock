@@ -90,6 +90,24 @@ struct ActionTile: View {
     }
 }
 
+/// A controller's last error under a section; nothing when there is none.
+struct ErrorLabel: View {
+    let message: String?
+
+    init(_ message: String?) {
+        self.message = message
+    }
+
+    var body: some View {
+        if let message {
+            Label(message, systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 /// A section with a clickable header that collapses its content.
 struct CollapsibleSection<Content: View>: View {
     let title: String

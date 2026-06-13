@@ -3,6 +3,20 @@ import DisplayKit
 import ModeDockCore
 import SwiftUI
 
+extension Display {
+    var systemImage: String { isBuiltin ? "laptopcomputer" : "display" }
+}
+
+extension DisplayMode {
+    /// "1920 × 1080 · 60 Hz", without the rate when the display doesn't report one.
+    var summary: String {
+        let size = "\(width) × \(height)"
+        return refreshRate > 0 ? "\(size) · \(refreshRateText)" : size
+    }
+
+    var refreshRateText: String { "\(roundedRefreshRate) Hz" }
+}
+
 extension DisplayModeController.ScreenModes {
     func option(containing mode: DisplayMode?) -> ResolutionOption? {
         options.first { $0.modes.contains { $0.id == mode?.id } }
@@ -10,8 +24,25 @@ extension DisplayModeController.ScreenModes {
 
     /// Picking a size keeps the current refresh rate when that size offers it, otherwise the highest.
     func mode(for option: ResolutionOption) -> DisplayMode? {
-        let rate = current.map { Int($0.refreshRate.rounded()) }
-        return option.modes.first { Int($0.refreshRate.rounded()) == rate } ?? option.modes.first
+        let rate = current?.roundedRefreshRate
+        return option.modes.first { $0.roundedRefreshRate == rate } ?? option.modes.first
+    }
+
+    func isCurrent(_ option: ResolutionOption) -> Bool {
+        option.modes.contains { $0.id == current?.id }
+    }
+
+    /// The 1x copy of a size that also exists in HiDPI.
+    func isLowResolution(_ option: ResolutionOption) -> Bool {
+        !option.isHiDPI && options.contains { $0.isHiDPI && $0.width == option.width && $0.height == option.height }
+    }
+
+    /// "1920 × 1080 (low resolution) · Native", for menus and pop-up buttons.
+    func label(for option: ResolutionOption) -> String {
+        var text = "\(option.width) × \(option.height)"
+        if isLowResolution(option) { text += " (low resolution)" }
+        if option.isNative { text += " · Native" }
+        return text
     }
 }
 
@@ -63,7 +94,7 @@ struct ResolutionList: View {
     }
 
     private func row(_ option: ResolutionOption) -> some View {
-        let isCurrent = option.modes.contains { $0.id == screenModes.current?.id }
+        let isCurrent = screenModes.isCurrent(option)
         return HStack(spacing: 3) {
             Button {
                 if let mode = screenModes.mode(for: option) { select(mode) }
@@ -76,7 +107,9 @@ struct ResolutionList: View {
                         .lineLimit(1)
                         .layoutPriority(2)
                     if option.isNative { tag("Native") }
-                    if isLowResolution(option) { tag("1x").help("Low resolution: the 1x version of a HiDPI size") }
+                    if screenModes.isLowResolution(option) {
+                        tag("1x").help("Low resolution: the 1x version of a HiDPI size")
+                    }
                     Spacer(minLength: 4)
                 }
                 .contentShape(Rectangle())
@@ -89,7 +122,7 @@ struct ResolutionList: View {
                     Button {
                         select(mode)
                     } label: {
-                        Text(verbatim: "\(Int(mode.refreshRate.rounded()))")
+                        Text(verbatim: "\(mode.roundedRefreshRate)")
                             .font(.caption2.weight(.medium))
                             .monospacedDigit()
                             .foregroundStyle(selected ? .white : .secondary)
@@ -101,7 +134,7 @@ struct ResolutionList: View {
                     .buttonStyle(.plain)
                     .fixedSize()
                     .layoutPriority(3)
-                    .help("\(Int(mode.refreshRate.rounded())) Hz")
+                    .help(mode.refreshRateText)
                 }
             }
         }
@@ -121,12 +154,6 @@ struct ResolutionList: View {
             .truncationMode(.tail)
     }
 
-    /// The 1x copy of a size that also exists in HiDPI.
-    private func isLowResolution(_ option: ResolutionOption) -> Bool {
-        !option.isHiDPI
-            && screenModes.options.contains { $0.isHiDPI && $0.width == option.width && $0.height == option.height }
-    }
-
     private func select(_ mode: DisplayMode) {
         modes.select(mode, for: display)
         onPicked()
@@ -141,16 +168,7 @@ struct PendingResolutionStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Keep this resolution?").font(.callout.weight(.medium))
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let remaining = max(0, Int(change.deadline.timeIntervalSince(context.date).rounded(.up)))
-                Text(
-                    verbatim:
-                        "Going back to \(change.previous.width) × \(change.previous.height) in \(remaining) s."
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .monospacedDigit()
-            }
+            RevertCountdown(change: change).font(.caption)
             HStack {
                 Spacer()
                 Button("Revert") { modes.revert() }
@@ -161,5 +179,20 @@ struct PendingResolutionStrip: View {
         }
         .padding(10)
         .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// "Going back to 1920 × 1080 in 12 s.", counting down to the automatic revert.
+struct RevertCountdown: View {
+    let change: DisplayModeController.PendingChange
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let remaining = max(0, Int(change.deadline.timeIntervalSince(context.date).rounded(.up)))
+            // Plain string: Text would format the numbers for the locale ("1.920").
+            Text(verbatim: "Going back to \(change.previous.width) × \(change.previous.height) in \(remaining) s.")
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
     }
 }

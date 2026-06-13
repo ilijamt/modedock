@@ -196,10 +196,7 @@ public final class PowerController {
     /// `minutes` nil keeps the Mac awake until turned off.
     public func startKeepAwake(minutes: Int?, keepScreensOn: Bool) {
         stopKeepAwake()
-        guard let id = system.preventSleep(keepScreensOn: keepScreensOn, reason: "Keep Awake in ModeDock") else {
-            report(PowerError.assertionRefused)
-            return
-        }
+        guard let id = preventSleep(keepScreensOn: keepScreensOn) else { return }
         assertion = id
         lastError = nil
         let minutes = minutes.flatMap { $0 > 0 ? $0 : nil }
@@ -217,10 +214,7 @@ public final class PowerController {
     /// Switches between keeping the screens on and letting them sleep, without restarting the timer.
     public func setKeepScreensOn(_ keepScreensOn: Bool) {
         guard let old = assertion else { return }
-        guard let id = system.preventSleep(keepScreensOn: keepScreensOn, reason: "Keep Awake in ModeDock") else {
-            report(PowerError.assertionRefused)
-            return
-        }
+        guard let id = preventSleep(keepScreensOn: keepScreensOn) else { return }
         // The new assertion is in place before the old one goes, so there's no gap to fall asleep in.
         assertion = id
         system.allowSleep(old)
@@ -236,28 +230,20 @@ public final class PowerController {
 
     /// Keep Awake only holds off idle sleep, so it doesn't block this.
     public func sleep() {
-        do {
-            try system.sleep()
-            lastError = nil
-        } catch {
-            report(error)
-        }
+        lastError = errorMessage { try system.sleep() }
     }
 
     public func lockScreen() {
-        do {
-            try system.lockScreen()
-            lastError = nil
-        } catch {
-            report(error)
-        }
+        lastError = errorMessage { try system.lockScreen() }
     }
 
     public func refreshBattery() {
         battery = system.battery()
     }
 
-    private func report(_ error: Error) {
-        lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+    private func preventSleep(keepScreensOn: Bool) -> UInt32? {
+        let id = system.preventSleep(keepScreensOn: keepScreensOn, reason: "Keep Awake in ModeDock")
+        if id == nil { lastError = PowerError.assertionRefused.localizedDescription }
+        return id
     }
 }

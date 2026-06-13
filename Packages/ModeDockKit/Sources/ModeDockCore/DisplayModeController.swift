@@ -63,20 +63,15 @@ public final class DisplayModeController {
         let previous = configurator.currentMode(for: display)
         guard previous?.id != mode.id else { return }
         // The mode the user is leaving works, so switching back to it never needs a prompt.
-        if let previous, !isConfirmed(previous, on: identity) { markConfirmed(previous, on: identity) }
-        do {
-            try configurator.setMode(mode, for: display)
-            lastError = nil
-        } catch {
-            report(error)
-            return
-        }
+        if let previous { markConfirmed(previous, on: identity) }
+        lastError = errorMessage { try configurator.setMode(mode, for: display) }
+        guard lastError == nil else { return }
         reload()
 
         guard let previous, !isConfirmed(mode, on: identity) else { return }
         let change = PendingChange(
             display: display, previous: previous, new: mode,
-            deadline: Date().addingTimeInterval(confirmationTimeout.seconds))
+            deadline: Date().addingTimeInterval(confirmationTimeout / .seconds(1)))
         pending = change
         onConfirmationNeeded?(change)
         revertTask = Task { [weak self, confirmationTimeout] in
@@ -100,7 +95,7 @@ public final class DisplayModeController {
         do {
             try configurator.setMode(change.previous, for: change.display)
         } catch {
-            report(error)
+            lastError = error.localizedDescription
         }
         reload()
     }
@@ -109,7 +104,7 @@ public final class DisplayModeController {
     /// doesn't ask for confirmation.
     public func resetToDefault(_ display: CGDirectDisplayID) {
         guard let mode = screens[display]?.defaultMode, let identity = identity(of: display) else { return }
-        if !isConfirmed(mode, on: identity) { markConfirmed(mode, on: identity) }
+        markConfirmed(mode, on: identity)
         select(mode, for: display)
     }
 
@@ -121,12 +116,7 @@ public final class DisplayModeController {
     public func makeMain(_ display: CGDirectDisplayID) {
         let origins = configurator.origins(of: displays.map(\.id))
         guard let shifted = DisplayArrangement.origins(makingMain: display, from: origins) else { return }
-        do {
-            try configurator.setOrigins(shifted)
-            lastError = nil
-        } catch {
-            report(error)
-        }
+        lastError = errorMessage { try configurator.setOrigins(shifted) }
         reload()
     }
 
@@ -134,12 +124,7 @@ public final class DisplayModeController {
     public func setMirroring(_ on: Bool) {
         let ids = displays.map(\.id)
         let main = ids.first { screens[$0]?.isMain == true } ?? ids.first
-        do {
-            try configurator.setMirroring(ids, to: on ? main : nil)
-            lastError = nil
-        } catch {
-            report(error)
-        }
+        lastError = errorMessage { try configurator.setMirroring(ids, to: on ? main : nil) }
         reload()
     }
 
@@ -176,19 +161,9 @@ public final class DisplayModeController {
     }
 
     private func markConfirmed(_ mode: DisplayMode, on identity: DisplayIdentity) {
+        guard !isConfirmed(mode, on: identity) else { return }
         var confirmed = defaults.dictionary(forKey: Self.confirmedKey) as? [String: [String]] ?? [:]
         confirmed[storageKey(identity), default: []].append(mode.key)
         defaults.set(confirmed, forKey: Self.confirmedKey)
-    }
-
-    private func report(_ error: Error) {
-        lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-    }
-}
-
-extension Duration {
-    fileprivate var seconds: TimeInterval {
-        let (seconds, attoseconds) = components
-        return TimeInterval(seconds) + TimeInterval(attoseconds) / 1e18
     }
 }

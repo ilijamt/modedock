@@ -1,4 +1,5 @@
 import DisplayKit
+import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
 
@@ -137,16 +138,14 @@ private struct ScreensSection: View {
                     ActionTile(title: "All On", systemImage: "power") {
                         Task { await controller.restoreAll() }
                     }
-                    .help("Turn every screen back on (⌃⌥⌘O).")
+                    .help(
+                        KeyboardShortcuts.Name.turnAllScreensOn.shortcutText.map {
+                            "Turn every screen back on (\($0))."
+                        } ?? "Turn every screen back on.")
                 }
             }
 
-            if let error = controller.lastError ?? modes.lastError {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            ErrorLabel(controller.lastError ?? modes.lastError)
         }
         .modifier(ModeRefresher(controller: controller, modes: modes, brightness: brightness))
     }
@@ -221,7 +220,7 @@ private struct ScreenCard: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            Image(systemName: display.isBuiltin ? "laptopcomputer" : "display")
+            Image(systemName: display.systemImage)
                 .font(.system(size: 16))
                 .foregroundStyle(display.isEnabled ? .primary : .secondary)
                 .frame(width: 24)
@@ -273,7 +272,7 @@ private struct ScreenCard: View {
                 showingModes.toggle()
             } label: {
                 HStack(spacing: 3) {
-                    Text(verbatim: summary(screenModes.current))
+                    Text(verbatim: screenModes.current?.summary ?? "Resolution")
                     Image(systemName: showingModes ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }
@@ -285,12 +284,6 @@ private struct ScreenCard: View {
             .disabled(modes.pending != nil)
             .help("Change resolution and refresh rate")
         }
-    }
-
-    private func summary(_ mode: DisplayMode?) -> String {
-        guard let mode else { return "Resolution" }
-        let size = "\(mode.width) × \(mode.height)"
-        return mode.refreshRate > 0 ? "\(size) · \(Int(mode.refreshRate.rounded())) Hz" : size
     }
 
     private var powerHelp: String {

@@ -18,9 +18,11 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
 
     public var isHiDPI: Bool { pixelWidth > width }
 
+    public var roundedRefreshRate: Int { Int(refreshRate.rounded()) }
+
     /// Identifies the same mode across reconnects, where `id` may change.
     public var key: String {
-        "\(width)x\(height)\(isHiDPI ? "@2x" : "")@\(Int(refreshRate.rounded()))"
+        "\(width)x\(height)\(isHiDPI ? "@2x" : "")@\(roundedRefreshRate)"
     }
 
     public init(
@@ -50,7 +52,7 @@ public struct ResolutionOption: Identifiable, Hashable, Sendable {
 
     public var id: String { "\(width)x\(height)\(isHiDPI ? "@2x" : "")" }
 
-    var refreshRates: Set<Int> { Set(modes.map { Int($0.refreshRate.rounded()) }) }
+    var refreshRates: Set<Int> { Set(modes.map(\.roundedRefreshRate)) }
 }
 
 public enum ModeCatalog {
@@ -112,7 +114,7 @@ public enum ModeCatalog {
     /// Several modes can share a size and refresh rate (different pixel encodings); keep one,
     /// preferring the native and then the largest backing size.
     private static func uniqueByRefreshRate(_ modes: [DisplayMode]) -> [DisplayMode] {
-        let byRate = Dictionary(grouping: modes) { Int($0.refreshRate.rounded()) }
+        let byRate = Dictionary(grouping: modes, by: \.roundedRefreshRate)
         return byRate.values
             .compactMap { group in
                 group.max { ($0.isNative ? 1 : 0, $0.pixelWidth) < ($1.isNative ? 1 : 0, $1.pixelWidth) }

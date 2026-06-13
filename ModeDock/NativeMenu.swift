@@ -1,5 +1,6 @@
 import AppKit
 import DisplayKit
+import KeyboardShortcuts
 import ModeDockCore
 
 /// The "Native menu" panel style: a regular NSMenu, rebuilt each time it opens.
@@ -71,17 +72,12 @@ final class NativeMenu {
         }
         if !hidden.contains(.allOn) {
             let allOn = ActionItem("Turn All On") { [screens] in Task { await screens.restoreAll() } }
-            allOn.keyEquivalent = "o"
-            allOn.keyEquivalentModifierMask = [.control, .option, .command]
+            // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
+            allOn.setShortcut(KeyboardShortcuts.getShortcut(for: .turnAllScreensOn))
             menu.addItem(allOn)
         }
 
-        if let error = screens.lastError ?? modes.lastError {
-            let item = NSMenuItem(title: error, action: nil, keyEquivalent: "")
-            item.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
-            item.isEnabled = false
-            menu.addItem(item)
-        }
+        addError(screens.lastError ?? modes.lastError, to: menu)
     }
 
     private func addPowerItems(to menu: NSMenu, hidden: Set<PanelItem>) {
@@ -109,16 +105,18 @@ final class NativeMenu {
             menu.addItem(lock)
         }
 
-        if let error = power.lastError {
-            let item = NSMenuItem(title: error, action: nil, keyEquivalent: "")
-            item.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
-            item.isEnabled = false
-            menu.addItem(item)
-        }
+        addError(power.lastError, to: menu)
+    }
+
+    private func addError(_ message: String?, to menu: NSMenu) {
+        guard let message else { return }
+        let item = NSMenuItem(title: message, action: nil, keyEquivalent: "")
+        item.image = NSImage(systemSymbolName: "exclamationmark.triangle.fill", accessibilityDescription: nil)
+        item.isEnabled = false
+        menu.addItem(item)
     }
 
     private func keepAwakeItem() -> NSMenuItem {
-
         let keepAwake = NSMenuItem(title: "Keep Awake", action: nil, keyEquivalent: "")
         keepAwake.image = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)
         keepAwake.state = power.isKeepingAwake ? .on : .off
@@ -183,8 +181,7 @@ final class NativeMenu {
         if screenModes?.isMain == true && display.isEnabled { title += " (Main)" }
 
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-        item.image = NSImage(
-            systemSymbolName: display.isBuiltin ? "laptopcomputer" : "display", accessibilityDescription: nil)
+        item.image = NSImage(systemSymbolName: display.systemImage, accessibilityDescription: nil)
         if #available(macOS 15.0, *) {
             item.subtitle = subtitle(screen, screenModes)
         }
@@ -195,19 +192,19 @@ final class NativeMenu {
         if display.isEnabled, let screenModes {
             submenu.addItem(.sectionHeader(title: "Resolution"))
             for option in screenModes.options {
-                let isCurrent = option.modes.contains { $0.id == screenModes.current?.id }
+                let isCurrent = screenModes.isCurrent(option)
                 if option.modes.count == 1, let mode = option.modes.first {
-                    let modeItem = ActionItem(label(option, in: screenModes)) { [modes] in
+                    let modeItem = ActionItem(screenModes.label(for: option)) { [modes] in
                         modes.select(mode, for: screen.id)
                     }
                     modeItem.state = isCurrent ? .on : .off
                     submenu.addItem(modeItem)
                 } else {
-                    let sizeItem = NSMenuItem(title: label(option, in: screenModes), action: nil, keyEquivalent: "")
+                    let sizeItem = NSMenuItem(title: screenModes.label(for: option), action: nil, keyEquivalent: "")
                     sizeItem.state = isCurrent ? .on : .off
                     let rates = NSMenu()
                     for mode in option.modes {
-                        let rateItem = ActionItem("\(Int(mode.refreshRate.rounded())) Hz") { [modes] in
+                        let rateItem = ActionItem(mode.refreshRateText) { [modes] in
                             modes.select(mode, for: screen.id)
                         }
                         rateItem.state = mode.id == screenModes.current?.id ? .on : .off
@@ -249,19 +246,7 @@ final class NativeMenu {
     {
         guard screen.display.isEnabled else { return "Off" }
         if screen.isInStandby { return "Standby" }
-        guard let current = screenModes?.current else { return "" }
-        let size = "\(current.width) × \(current.height)"
-        return current.refreshRate > 0 ? "\(size) · \(Int(current.refreshRate.rounded())) Hz" : size
-    }
-
-    private func label(_ option: ResolutionOption, in screenModes: DisplayModeController.ScreenModes) -> String {
-        var text = "\(option.width) × \(option.height)"
-        let hasHiDPIVersion = screenModes.options.contains {
-            $0.isHiDPI && $0.width == option.width && $0.height == option.height
-        }
-        if !option.isHiDPI && hasHiDPIVersion { text += " (low resolution)" }
-        if option.isNative { text += " · Native" }
-        return text
+        return screenModes?.current?.summary ?? ""
     }
 }
 
@@ -278,9 +263,8 @@ private final class BrightnessMenuView: NSView {
         self.brightness = brightness
         super.init(frame: NSRect(x: 0, y: 0, width: 280, height: 26))
 
-        let minimum = level.backend == .software ? BrightnessController.softwareMinimum : 0
         let slider = NSSlider(
-            value: level.value, minValue: minimum, maxValue: 1, target: self, action: #selector(changed(_:)))
+            value: level.value, minValue: level.minimum, maxValue: 1, target: self, action: #selector(changed(_:)))
         slider.isContinuous = true
         slider.controlSize = .small
         slider.toolTip = "Brightness of \(display.name)"

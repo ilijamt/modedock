@@ -51,13 +51,7 @@ private struct ConfirmationView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text("Keep this resolution?").font(.headline)
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                let remaining = max(0, Int(change.deadline.timeIntervalSince(context.date).rounded(.up)))
-                // Plain string: Text would format the numbers for the locale ("1.920").
-                Text(verbatim: "Going back to \(change.previous.width) × \(change.previous.height) in \(remaining) s.")
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-            }
+            RevertCountdown(change: change)
             HStack {
                 Button("Revert") { modes.revert() }
                     .keyboardShortcut(.cancelAction)

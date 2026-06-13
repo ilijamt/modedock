@@ -83,39 +83,28 @@ public final class ScreenController {
     public func setEnabled(_ enabled: Bool, screen id: CGDirectDisplayID) {
         let enabledIDs = Set(screens.filter(\.display.isEnabled).map(\.id))
         if !enabled && !DisplayPolicy.canDisable(id, enabled: enabledIDs) {
-            report(DisplayError.wouldDisableLastDisplay)
+            lastError = DisplayError.wouldDisableLastDisplay.localizedDescription
             return
         }
-        do {
+        lastError = errorMessage {
             try system.setEnabled(enabled, display: id)
             if enabled { disabled.remove(id) } else { disabled.insert(id) }
-            lastError = nil
-        } catch {
-            report(error)
         }
         refresh()
     }
 
     public func setStandby(_ on: Bool, screen id: CGDirectDisplayID) async {
         guard let identity = screens.first(where: { $0.id == id })?.display.identity else { return }
-        do {
+        lastError = await errorMessage {
             let mode = on ? DDCPacket.PowerMode.off : DDCPacket.PowerMode.on
             try await ddc.write(DDCPacket.VCP.powerMode, value: mode, to: identity)
             if on { standby.insert(identity) } else { standby.remove(identity) }
-            lastError = nil
-        } catch {
-            report(error)
         }
         refresh()
     }
 
     public func sleepAllDisplays() {
-        do {
-            try system.sleepAllDisplays()
-            lastError = nil
-        } catch {
-            report(error)
-        }
+        lastError = errorMessage { try system.sleepAllDisplays() }
     }
 
     /// Turns every display back on: the ones ModeDock disabled and the ones it put in standby.
@@ -137,7 +126,7 @@ public final class ScreenController {
                 log.info("re-enabled display \(id, privacy: .public)")
             } catch {
                 log.error("re-enabling display \(id, privacy: .public) failed: \(error, privacy: .public)")
-                report(error)
+                lastError = error.localizedDescription
             }
         }
     }
@@ -168,9 +157,5 @@ public final class ScreenController {
                     canDisable: DisplayPolicy.canDisable(display.id, enabled: enabledIDs)
                 )
             }
-    }
-
-    private func report(_ error: Error) {
-        lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 }

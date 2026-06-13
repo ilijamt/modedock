@@ -14,7 +14,7 @@ struct BrightnessSlider: View {
             Image(systemName: "sun.min").foregroundStyle(.secondary)
             Slider(
                 value: Binding(get: { level.value }, set: { brightness.set($0, for: display.id) }),
-                in: (level.backend == .software ? BrightnessController.softwareMinimum : 0)...1
+                in: level.minimum...1
             )
             Image(systemName: "sun.max").foregroundStyle(.secondary)
             if showsAuto, let auto = level.autoBrightness {

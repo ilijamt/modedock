@@ -117,12 +117,7 @@ struct PowerSection: View {
                 }
             }
 
-            if let error = power.lastError {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            ErrorLabel(power.lastError)
         }
         .modifier(BatteryRefresher(power: power))
     }
@@ -284,12 +279,7 @@ struct RowsPowerSection: View {
                 }
             }
 
-            if let error = power.lastError {
-                Label(error, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            ErrorLabel(power.lastError)
         }
         .controlSize(.small)
         .modifier(BatteryRefresher(power: power))

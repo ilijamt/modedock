@@ -12,10 +12,13 @@ public final class BrightnessController {
         public var backend: BrightnessBackend
         /// nil when the screen has no light sensor.
         public var autoBrightness: Bool? = nil
+
+        /// The lowest value `set` accepts.
+        public var minimum: Double { backend == .software ? BrightnessController.softwareMinimum : 0 }
     }
 
     /// Software dimming never goes fully black, so the screen stays usable.
-    public static let softwareMinimum = 0.15
+    public nonisolated static let softwareMinimum = 0.15
 
     public private(set) var screens: [CGDirectDisplayID: ScreenBrightness] = [:]
     public private(set) var lastError: String?
@@ -92,19 +95,13 @@ public final class BrightnessController {
 
     public func set(_ value: Double, for display: CGDirectDisplayID) {
         guard var screen = screens[display] else { return }
-        let minimum = screen.backend == .software ? Self.softwareMinimum : 0
-        screen.value = min(max(value, minimum), 1)
+        screen.value = min(max(value, screen.minimum), 1)
         screens[display] = screen
         changes[display, default: 0] += 1
 
         switch screen.backend {
         case .system:
-            do {
-                try system.setBrightness(screen.value, of: display)
-                lastError = nil
-            } catch {
-                report(error)
-            }
+            lastError = errorMessage { try system.setBrightness(screen.value, of: display) }
         case .ddc(let maximum):
             pendingDDC[display] = screen.value
             startDDCWriter(for: display, maximum: maximum)
@@ -115,12 +112,9 @@ public final class BrightnessController {
 
     public func setAutoBrightness(_ enabled: Bool, for display: CGDirectDisplayID) {
         guard screens[display]?.autoBrightness != nil else { return }
-        do {
+        lastError = errorMessage {
             try system.setAutoBrightness(enabled, of: display)
             screens[display]?.autoBrightness = system.autoBrightness(of: display)
-            lastError = nil
-        } catch {
-            report(error)
         }
     }
 
@@ -160,19 +154,12 @@ public final class BrightnessController {
                 } else {
                     break
                 }
-                do {
+                self.lastError = await errorMessage {
                     try await self.ddc.write(DDCPacket.VCP.brightness, value: raw, to: identity, attempts: 1)
-                    self.lastError = nil
-                } catch {
-                    self.report(error)
                 }
                 try? await Task.sleep(for: self.ddcWriteInterval)
             }
             self?.ddcWriters.remove(display)
         }
-    }
-
-    private func report(_ error: Error) {
-        lastError = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
     }
 }
