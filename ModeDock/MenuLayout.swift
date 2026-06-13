@@ -98,6 +98,8 @@ enum SettingsKey {
     static let ddcWriteIntervalDefault = 50
     /// Minutes, 0 for "until turned off": what Keep Awake uses when it's switched on.
     static let keepAwakeDuration = "keepAwakeDuration"
+    /// The last custom Keep Awake duration, in minutes.
+    static let keepAwakeCustomMinutes = "keepAwakeCustomMinutes"
     /// Keep Awake also stops the screens from sleeping.
     static let keepScreensOn = "keepScreensOn"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
@@ -105,7 +107,7 @@ enum SettingsKey {
     /// Every preference shown in Settings, for "Reset Settings".
     static let all = [
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
-        keepAwakeDuration, keepScreensOn,
+        keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
         PanelStyle.key, AppAppearance.key,
     ]
 }

@@ -134,11 +134,19 @@ final class NativeMenu {
             durations.addItem(ActionItem("Turn Off") { [power] in power.stopKeepAwake() })
             durations.addItem(.separator())
         }
-        for duration in PowerController.Duration.allCases {
-            let item = ActionItem(duration.title) { [power] in KeepAwakeSettings.start(duration, power: power) }
-            item.state = power.keepAwake?.duration == duration ? .on : .off
+        for minutes in PowerController.presets {
+            let item = ActionItem(PowerController.title(minutes: minutes)) { [power] in
+                KeepAwakeSettings.start(minutes: minutes, power: power)
+            }
+            item.state = power.isKeepingAwake && power.keepAwake?.minutes == minutes ? .on : .off
             durations.addItem(item)
         }
+        let custom = ActionItem("Custom…") { [power] in CustomKeepAwakeWindow.shared.show(power: power) }
+        if let keepAwake = power.keepAwake, !KeepAwakeSettings.isPreset(keepAwake.minutes) {
+            custom.title = "Custom (\(PowerController.title(minutes: keepAwake.minutes)))…"
+            custom.state = .on
+        }
+        durations.addItem(custom)
         durations.addItem(.separator())
         let screensOn = ActionItem("Keep Screens On") { [power] in
             KeepAwakeSettings.setKeepScreensOn(!KeepAwakeSettings.keepScreensOn, power: power)

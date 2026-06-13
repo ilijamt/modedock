@@ -4,19 +4,29 @@ import SwiftUI
 /// Keep Awake preferences shared by every panel style.
 @MainActor
 enum KeepAwakeSettings {
-    /// The duration used when Keep Awake is switched on; the last one picked.
-    static var duration: PowerController.Duration {
-        PowerController.Duration(rawValue: UserDefaults.standard.integer(forKey: SettingsKey.keepAwakeDuration))
-            ?? .indefinitely
+    /// What Keep Awake uses when it's switched on: the last duration picked, nil for "until
+    /// turned off". Stored as minutes, 0 for "until turned off".
+    static var minutes: Int? {
+        let value = UserDefaults.standard.integer(forKey: SettingsKey.keepAwakeDuration)
+        return value > 0 ? value : nil
+    }
+
+    /// Prefills the custom duration field.
+    static var lastCustomMinutes: Int? {
+        get {
+            let value = UserDefaults.standard.integer(forKey: SettingsKey.keepAwakeCustomMinutes)
+            return value > 0 ? value : nil
+        }
+        set { UserDefaults.standard.set(newValue ?? 0, forKey: SettingsKey.keepAwakeCustomMinutes) }
     }
 
     static var keepScreensOn: Bool {
         UserDefaults.standard.object(forKey: SettingsKey.keepScreensOn) as? Bool ?? true
     }
 
-    static func start(_ duration: PowerController.Duration, power: PowerController) {
-        UserDefaults.standard.set(duration.rawValue, forKey: SettingsKey.keepAwakeDuration)
-        power.startKeepAwake(duration, keepScreensOn: keepScreensOn)
+    static func start(minutes: Int?, power: PowerController) {
+        UserDefaults.standard.set(minutes ?? 0, forKey: SettingsKey.keepAwakeDuration)
+        power.startKeepAwake(minutes: minutes, keepScreensOn: keepScreensOn)
     }
 
     static func setKeepScreensOn(_ on: Bool, power: PowerController) {
@@ -25,7 +35,12 @@ enum KeepAwakeSettings {
     }
 
     static func toggle(_ power: PowerController) {
-        if power.isKeepingAwake { power.stopKeepAwake() } else { start(duration, power: power) }
+        if power.isKeepingAwake { power.stopKeepAwake() } else { start(minutes: minutes, power: power) }
+    }
+
+    /// Whether `minutes` is one of the menu presets; anything else shows as "Custom".
+    static func isPreset(_ minutes: Int?) -> Bool {
+        PowerController.presets.contains { $0 == minutes }
     }
 }
 
@@ -74,6 +89,8 @@ private struct BatteryRefresher: ViewModifier {
 /// The Power section in the Cards style.
 struct PowerSection: View {
     let power: PowerController
+    @State private var editingCustom = false
+    @AppStorage(SettingsKey.keepScreensOn) private var keepScreensOn = true
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
     private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
 
@@ -111,22 +128,43 @@ struct PowerSection: View {
     }
 
     private var keepAwakeCard: some View {
-        Card {
-            HStack(spacing: 10) {
-                Image(systemName: "cup.and.saucer.fill")
-                    .font(.system(size: 15))
-                    .foregroundStyle(power.isKeepingAwake ? .primary : .secondary)
-                    .frame(width: 24)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Keep Awake").font(.system(size: 13, weight: .medium))
-                    KeepAwakeMenu(power: power)
+        VStack(spacing: 6) {
+            Card { keepAwakeHeader }
+            // Outside the card: text fields and segmented controls inside interactive glass crash
+            // SwiftUI on macOS 26 (endless recursion while resolving the glass material).
+            if editingCustom {
+                CustomKeepAwakeEditor(power: power) {
+                    editingCustom = false
                 }
-                Spacer(minLength: 4)
-                CircleToggle(systemImage: "power", isOn: power.isKeepingAwake) {
-                    KeepAwakeSettings.toggle(power)
-                }
-                .help(power.isKeepingAwake ? "Let the Mac sleep again." : "Stop the Mac from going to sleep.")
+                .controlSize(.small)
+                .padding(10)
+                .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
+        }
+    }
+
+    private var keepAwakeHeader: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "cup.and.saucer.fill")
+                .font(.system(size: 15))
+                .foregroundStyle(power.isKeepingAwake ? .primary : .secondary)
+                .frame(width: 24)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Keep Awake").font(.system(size: 13, weight: .medium)).lineLimit(1).fixedSize()
+                KeepAwakeMenu(power: power) { editingCustom = true }
+            }
+            Spacer(minLength: 4)
+            CircleToggle(systemImage: "display", isOn: keepScreensOn, size: 24) {
+                KeepAwakeSettings.setKeepScreensOn(!keepScreensOn, power: power)
+            }
+            .help(
+                keepScreensOn
+                    ? "Screens stay on during Keep Awake. Click to let them sleep."
+                    : "Screens can sleep during Keep Awake. Click to keep them on.")
+            CircleToggle(systemImage: "power", isOn: power.isKeepingAwake) {
+                KeepAwakeSettings.toggle(power)
+            }
+            .help(power.isKeepingAwake ? "Let the Mac sleep again." : "Stop the Mac from going to sleep.")
         }
     }
 
@@ -147,17 +185,17 @@ struct PowerSection: View {
 /// Shows whether Keep Awake is on and for how long, and picks the duration.
 private struct KeepAwakeMenu: View {
     let power: PowerController
-    @AppStorage(SettingsKey.keepScreensOn) private var keepScreensOn = true
+    let onCustom: () -> Void
 
     var body: some View {
         Menu {
-            ForEach(PowerController.Duration.allCases) { duration in
-                Button(power.keepAwake?.duration == duration ? "✓ \(duration.title)" : duration.title) {
-                    KeepAwakeSettings.start(duration, power: power)
+            ForEach(PowerController.presets, id: \.self) { minutes in
+                let title = PowerController.title(minutes: minutes)
+                Button(power.isKeepingAwake && power.keepAwake?.minutes == minutes ? "✓ \(title)" : title) {
+                    KeepAwakeSettings.start(minutes: minutes, power: power)
                 }
             }
-            Divider()
-            Toggle("Keep Screens On", isOn: $keepScreensOn)
+            Button(customTitle, action: onCustom)
             if power.isKeepingAwake {
                 Divider()
                 Button("Turn Off") { power.stopKeepAwake() }
@@ -176,7 +214,11 @@ private struct KeepAwakeMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help("Choose how long to keep the Mac awake")
-        .onChange(of: keepScreensOn) { power.setKeepScreensOn(keepScreensOn) }
+    }
+
+    private var customTitle: String {
+        guard let keepAwake = power.keepAwake, !KeepAwakeSettings.isPreset(keepAwake.minutes) else { return "Custom…" }
+        return "✓ Custom (\(PowerController.title(minutes: keepAwake.minutes)))…"
     }
 
     @ViewBuilder private var status: some View {
@@ -187,7 +229,7 @@ private struct KeepAwakeMenu: View {
                     Text(verbatim: " left")
                 }
             } else {
-                Text("On until turned off")
+                Text("Until turned off")
             }
         } else {
             Text("Off")
@@ -198,6 +240,7 @@ private struct KeepAwakeMenu: View {
 /// The Power section in the Rows style.
 struct RowsPowerSection: View {
     let power: PowerController
+    @State private var editingCustom = false
     @AppStorage(SettingsKey.keepScreensOn) private var keepScreensOn = true
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
     private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
@@ -274,10 +317,22 @@ struct RowsPowerSection: View {
             Text("Duration")
             Spacer()
             Picker("Duration", selection: duration) {
-                ForEach(PowerController.Duration.allCases) { Text($0.title).tag($0) }
+                ForEach(PowerController.presets, id: \.self) { minutes in
+                    Text(PowerController.title(minutes: minutes)).tag(minutes ?? 0)
+                }
+                Divider()
+                if let current, !KeepAwakeSettings.isPreset(current) {
+                    Text("Custom (\(PowerController.title(minutes: current)))").tag(current)
+                }
+                Text("Custom…").tag(Self.customTag)
             }
             .labelsHidden()
             .fixedSize()
+        }
+        if editingCustom {
+            CustomKeepAwakeEditor(power: power) { editingCustom = false }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 8)
         }
         Divider()
         Row {
@@ -289,15 +344,27 @@ struct RowsPowerSection: View {
         }
     }
 
+    private static let customTag = -1
+
+    /// The running duration, or the one the power button would use. 0 is "until turned off".
+    private var current: Int? {
+        power.isKeepingAwake ? power.keepAwake?.minutes ?? 0 : KeepAwakeSettings.minutes ?? 0
+    }
+
     /// Picking a duration while Keep Awake is on restarts it with the new one.
-    private var duration: Binding<PowerController.Duration> {
+    private var duration: Binding<Int> {
         Binding(
-            get: { power.keepAwake?.duration ?? KeepAwakeSettings.duration },
-            set: { duration in
+            get: { current ?? 0 },
+            set: { tag in
+                if tag == Self.customTag {
+                    editingCustom = true
+                    return
+                }
+                let minutes = tag > 0 ? tag : nil
                 if power.isKeepingAwake {
-                    KeepAwakeSettings.start(duration, power: power)
+                    KeepAwakeSettings.start(minutes: minutes, power: power)
                 } else {
-                    UserDefaults.standard.set(duration.rawValue, forKey: SettingsKey.keepAwakeDuration)
+                    UserDefaults.standard.set(tag, forKey: SettingsKey.keepAwakeDuration)
                 }
             })
     }

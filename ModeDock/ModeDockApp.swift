@@ -39,6 +39,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppAppearance.apply()
         applyDDCWriteInterval()
+        // Keep Awake only stops idle sleep, so a sleep that happens anyway (Sleep Mac, closing the
+        // lid, Apple menu → Sleep) was asked for: that's the end of the Keep Awake session.
+        NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.willSleepNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.power.stopKeepAwake() }
+        }
         NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in

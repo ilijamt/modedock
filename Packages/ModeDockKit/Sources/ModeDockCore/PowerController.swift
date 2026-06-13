@@ -124,30 +124,57 @@ public enum PowerError: Error, LocalizedError {
 @MainActor
 @Observable
 public final class PowerController {
-    /// How long Keep Awake lasts. `nil` minutes means until it's turned off.
-    public enum Duration: Int, CaseIterable, Identifiable, Sendable {
-        case indefinitely = 0
-        case minutes15 = 15, minutes30 = 30, hour1 = 60, hours2 = 120, hours4 = 240, hours8 = 480
+    /// The durations offered in menus, in minutes; nil is "until turned off".
+    public static let presets: [Int?] = [nil, 15, 30, 60, 120, 240, 480]
 
-        public var id: Int { rawValue }
-        public var minutes: Int? { self == .indefinitely ? nil : rawValue }
-
-        public var title: String {
-            switch self {
-            case .indefinitely: "Until turned off"
-            case .minutes15: "15 minutes"
-            case .minutes30: "30 minutes"
-            case .hour1: "1 hour"
-            case .hours2: "2 hours"
-            case .hours4: "4 hours"
-            case .hours8: "8 hours"
-            }
+    /// "Until turned off", "15 minutes", "2 hours", "1 h 30 min".
+    public static func title(minutes: Int?) -> String {
+        guard let minutes else { return "Until turned off" }
+        let (hours, rest) = minutes.quotientAndRemainder(dividingBy: 60)
+        switch (hours, rest) {
+        case (0, _): return "\(rest) minutes"
+        case (1, 0): return "1 hour"
+        case (_, 0): return "\(hours) hours"
+        default: return "\(hours) h \(rest) min"
         }
     }
 
+    /// Reads a typed duration: "90" (minutes), "45m", "2h", "1h30", "1h 30m", "1:30" or "1.5h".
+    /// Returns nil for anything else, for zero, and for more than a week.
+    public static func minutes(from text: String) -> Int? {
+        let text = text.lowercased().replacingOccurrences(of: " ", with: "")
+        guard !text.isEmpty else { return nil }
+        let total: Double?
+        if let match = text.wholeMatch(of: /(\d+):(\d{1,2})/) {
+            total = Double(match.1).flatMap { hours in Double(match.2).map { hours * 60 + $0 } }
+        } else if let match = text.wholeMatch(
+            of: /(?:(\d+(?:[.,]\d+)?)h(?:ours?|rs?)?)?(?:(\d+)m(?:in(?:utes?|s)?)?)?/),
+            match.1 != nil || match.2 != nil
+        {
+            let hours = match.1.flatMap { Double($0.replacingOccurrences(of: ",", with: ".")) } ?? 0
+            let minutes = match.2.flatMap { Double($0) } ?? 0
+            total = hours * 60 + minutes
+        } else if let match = text.wholeMatch(of: /(\d+)h(\d+)/) {
+            total = Double(match.1).flatMap { hours in Double(match.2).map { hours * 60 + $0 } }
+        } else {
+            total = Double(text)
+        }
+        guard let total, total >= 1, total <= 7 * 24 * 60 else { return nil }
+        return Int(total.rounded())
+    }
+
+    /// Minutes from `now` until the next `time` of day; tomorrow when it has already passed today.
+    public static func minutes(until time: Date, from now: Date = Date(), calendar: Calendar = .current) -> Int {
+        let parts = calendar.dateComponents([.hour, .minute], from: time)
+        let next =
+            calendar.nextDate(after: now, matching: parts, matchingPolicy: .nextTime)
+            ?? now.addingTimeInterval(24 * 3600)
+        return max(1, Int((next.timeIntervalSince(now) / 60).rounded(.up)))
+    }
+
     public struct KeepAwake: Equatable, Sendable {
-        public var duration: Duration
         /// nil when it lasts until turned off.
+        public var minutes: Int?
         public var endsAt: Date?
     }
 
@@ -166,7 +193,8 @@ public final class PowerController {
     public var isKeepingAwake: Bool { keepAwake != nil }
 
     /// Starts Keep Awake, replacing one that's already running.
-    public func startKeepAwake(_ duration: Duration, keepScreensOn: Bool) {
+    /// `minutes` nil keeps the Mac awake until turned off.
+    public func startKeepAwake(minutes: Int?, keepScreensOn: Bool) {
         stopKeepAwake()
         guard let id = system.preventSleep(keepScreensOn: keepScreensOn, reason: "Keep Awake in ModeDock") else {
             report(PowerError.assertionRefused)
@@ -174,9 +202,10 @@ public final class PowerController {
         }
         assertion = id
         lastError = nil
-        let endsAt = duration.minutes.map { Date().addingTimeInterval(TimeInterval($0 * 60)) }
-        keepAwake = KeepAwake(duration: duration, endsAt: endsAt)
-        if let minutes = duration.minutes {
+        let minutes = minutes.flatMap { $0 > 0 ? $0 : nil }
+        let endsAt = minutes.map { Date().addingTimeInterval(TimeInterval($0 * 60)) }
+        keepAwake = KeepAwake(minutes: minutes, endsAt: endsAt)
+        if let minutes {
             expiry = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(minutes * 60))
                 guard !Task.isCancelled else { return }

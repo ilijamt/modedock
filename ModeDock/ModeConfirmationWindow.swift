@@ -73,7 +73,7 @@ private struct ConfirmationView: View {
 
 /// Borderless, non-activating and never hidden on deactivate: macOS may refuse to activate a
 /// background menu-bar app, and a regular panel would then hide itself straight away.
-private final class PromptPanel: NSPanel {
+final class PromptPanel: NSPanel {
     init() {
         super.init(
             contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
