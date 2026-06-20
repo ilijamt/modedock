@@ -62,23 +62,13 @@ private actor FakeDDC: DDCControlling {
     }
 }
 
-private let builtin = Display(
-    id: 1, identity: DisplayIdentity(vendor: 1552, model: 1, serial: 1),
-    name: "Built-in", isBuiltin: true, isEnabled: true, isMain: false)
-private let monitor = Display(
-    id: 5, identity: DisplayIdentity(vendor: 19501, model: 29046, serial: 42),
-    name: "LS28", isBuiltin: false, isEnabled: true, isMain: true)
-private let tv = Display(
-    id: 7, identity: DisplayIdentity(vendor: 4268, model: 3, serial: 0),
-    name: "TV", isBuiltin: false, isEnabled: true, isMain: false)
-
 @MainActor
 struct BrightnessControllerTests {
     private func make() async -> (BrightnessController, FakeBrightnessSystem, FakeDDC) {
         let system = FakeBrightnessSystem(controllable: [1], levels: [1: 0.62])
-        let ddc = FakeDDC(supported: [monitor.identity])
+        let ddc = FakeDDC(supported: [external.identity])
         let controller = BrightnessController(system: system, ddc: ddc, ddcWriteInterval: .milliseconds(20))
-        await controller.refresh(displays: [builtin, monitor, tv])
+        await controller.refresh(displays: [builtin, external, tv])
         return (controller, system, ddc)
     }
 
@@ -118,7 +108,7 @@ struct BrightnessControllerTests {
         let (controller, system, _) = await make()
         controller.set(0.5, for: 7)
         system.dimming = [:]  // macOS dropped the gamma table on a display change
-        await controller.refresh(displays: [builtin, monitor, tv])
+        await controller.refresh(displays: [builtin, external, tv])
         #expect(system.dimming[7] == 0.5)
 
         controller.resetSoftwareDimming()
@@ -139,7 +129,7 @@ struct BrightnessControllerTests {
     @Test func refreshDoesNotUndoAChangeMadeWhileReading() async throws {
         let (controller, _, ddc) = await make()
         await ddc.setReadDelay(.milliseconds(100))
-        let refresh = Task { await controller.refresh(displays: [builtin, monitor, tv]) }
+        let refresh = Task { await controller.refresh(displays: [builtin, external, tv]) }
         try await Task.sleep(for: .milliseconds(20))
         controller.set(0.8, for: 5)
         controller.set(0.1, for: 1)
@@ -170,7 +160,7 @@ struct BrightnessControllerTests {
 
     @Test func skipsScreensThatAreOff() async {
         let (controller, _, _) = await make()
-        var off = monitor
+        var off = external
         off.isEnabled = false
         await controller.refresh(displays: [builtin, off])
         #expect(controller.screens[5] == nil)

@@ -16,6 +16,20 @@ public protocol DisplayConfiguring {
     func setMirroring(_ displays: [CGDirectDisplayID], to source: CGDirectDisplayID?) throws
 }
 
+/// Applies one change as a CoreGraphics configuration transaction, cancelled when the change fails.
+func configureDisplays(_ option: CGConfigureOption, _ change: (CGDisplayConfigRef?) -> CGError) throws {
+    var config: CGDisplayConfigRef?
+    var result = CGBeginDisplayConfiguration(&config)
+    guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
+    result = change(config)
+    guard result == .success else {
+        CGCancelDisplayConfiguration(config)
+        throw DisplayError.coreGraphics(result.rawValue)
+    }
+    result = CGCompleteDisplayConfiguration(config, option)
+    guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
+}
+
 @MainActor
 public struct CoreGraphicsDisplayConfigurator: DisplayConfiguring {
     public init() {}
@@ -73,19 +87,9 @@ public struct CoreGraphicsDisplayConfigurator: DisplayConfiguring {
         return CGDisplayCopyAllDisplayModes(display, options) as? [CGDisplayMode] ?? []
     }
 
-    /// Applies one change as a transaction. `.permanently` makes it survive logout, the same
-    /// as System Settings.
+    /// `.permanently` makes the change survive logout, the same as System Settings.
     private func configure(_ change: (CGDisplayConfigRef?) -> CGError) throws {
-        var config: CGDisplayConfigRef?
-        var result = CGBeginDisplayConfiguration(&config)
-        guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
-        result = change(config)
-        guard result == .success else {
-            CGCancelDisplayConfiguration(config)
-            throw DisplayError.coreGraphics(result.rawValue)
-        }
-        result = CGCompleteDisplayConfiguration(config, .permanently)
-        guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
+        try configureDisplays(.permanently, change)
     }
 
     private static let nativeFlag: UInt32 = 0x0200_0000  // kDisplayModeNativeFlag

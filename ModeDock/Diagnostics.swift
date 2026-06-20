@@ -6,9 +6,8 @@ import ModeDockCore
 @MainActor
 enum Diagnostics {
     static func report(screens: ScreenController, modes: DisplayModeController) -> String {
-        let info = Bundle.main.infoDictionary
         var lines = [
-            "ModeDock \(info?["CFBundleShortVersionString"] as? String ?? "?") (\(info?["CFBundleVersion"] as? String ?? "?"))",
+            "ModeDock \(Bundle.main.versionString)",
             "macOS \(ProcessInfo.processInfo.operatingSystemVersionString)",
             "Private APIs: display enable=\(DisplayCapabilities.canDisableDisplays), DDC=\(DisplayCapabilities.canUseDDC)",
             "Mirroring: \(modes.isMirroring)",
@@ -37,5 +36,14 @@ enum Diagnostics {
     static func copy(screens: ScreenController, modes: DisplayModeController) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report(screens: screens, modes: modes), forType: .string)
+    }
+}
+
+extension Bundle {
+    /// "0.1.0 (1)": the marketing version and the build number.
+    var versionString: String {
+        let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(short) (\(build))"
     }
 }

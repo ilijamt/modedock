@@ -52,20 +52,8 @@ private actor FakeDDC: DDCControlling {
     }
 }
 
-private let builtin = Display(
-    id: 1, identity: DisplayIdentity(vendor: 1552, model: 1, serial: 1),
-    name: "Built-in", isBuiltin: true, isEnabled: true, isMain: false)
-private let external = Display(
-    id: 5, identity: DisplayIdentity(vendor: 19501, model: 29046, serial: 42),
-    name: "LS28", isBuiltin: false, isEnabled: true, isMain: true)
-
 @MainActor
 struct ScreenControllerTests {
-    private func makeDefaults() -> UserDefaults {
-        let name = "ScreenControllerTests-\(UUID().uuidString)"
-        return UserDefaults(suiteName: name) ?? .standard
-    }
-
     private func make(
         _ displays: [Display] = [builtin, external],
         ddc: Set<DisplayIdentity> = [external.identity],
@@ -170,7 +158,7 @@ struct ScreenControllerTests {
         system.displays.append(
             Display(
                 id: 9, identity: DisplayIdentity(vendor: 0x756E_6B6E, model: 0, serial: 0),
-                name: "Placeholder", isBuiltin: false, isEnabled: true, isMain: true))
+                name: "Placeholder", isBuiltin: false, isEnabled: true))
         await controller.displaysChanged()
         #expect(system.displays[0].isEnabled)
     }

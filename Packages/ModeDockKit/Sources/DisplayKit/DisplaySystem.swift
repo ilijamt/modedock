@@ -48,25 +48,15 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
                 ),
                 name: names[id] ?? (CGDisplayIsBuiltin(id) != 0 ? "Built-in Display" : "Display \(id)"),
                 isBuiltin: CGDisplayIsBuiltin(id) != 0,
-                isEnabled: CGDisplayIsActive(id) != 0 || CGDisplayMirrorsDisplay(id) != kCGNullDirectDisplay,
-                isMain: CGDisplayIsMain(id) != 0
+                isEnabled: CGDisplayIsActive(id) != 0 || CGDisplayMirrorsDisplay(id) != kCGNullDirectDisplay
             )
         }
     }
 
     public func setEnabled(_ enabled: Bool, display: CGDirectDisplayID) throws {
         guard let configure = PrivateAPI.configureDisplayEnabled else { throw DisplayError.unsupported }
-        var config: CGDisplayConfigRef?
-        var result = CGBeginDisplayConfiguration(&config)
-        guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
-        result = configure(config, display, enabled)
-        guard result == .success else {
-            CGCancelDisplayConfiguration(config)
-            throw DisplayError.coreGraphics(result.rawValue)
-        }
         // forSession: a display left disabled comes back after logout or reboot.
-        result = CGCompleteDisplayConfiguration(config, .forSession)
-        guard result == .success else { throw DisplayError.coreGraphics(result.rawValue) }
+        try configureDisplays(.forSession) { configure($0, display, enabled) }
     }
 
     public func sleepAllDisplays() throws {

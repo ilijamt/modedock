@@ -167,12 +167,15 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     static let key = "appearance"
 
+    static var current: AppAppearance {
+        UserDefaults.standard.string(forKey: key).flatMap(AppAppearance.init(rawValue:)) ?? .system
+    }
+
     /// Applies to every ModeDock window and menu.
     @MainActor
     static func apply() {
-        let value = UserDefaults.standard.string(forKey: key).flatMap(AppAppearance.init(rawValue:)) ?? .system
         NSApp.appearance =
-            switch value {
+            switch current {
             case .system: nil
             case .light: NSAppearance(named: .aqua)
             case .dark: NSAppearance(named: .darkAqua)

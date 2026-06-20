@@ -23,28 +23,13 @@ public actor IntelDDCService: DDCControlling {
 
     public func read(_ code: UInt8, from display: DisplayIdentity) throws -> DDCPacket.Reply {
         let framebuffer = try framebuffer(for: display)
-        var lastError = DDCError.badReply
-        for _ in 0..<3 {
-            do {
-                try send(DDCPacket.getVCP(code), to: framebuffer)
-                usleep(40_000)
-                let bytes = try receive(count: 11, from: framebuffer)
-                if let reply = DDCPacket.parseReply(bytes, code: code) { return reply }
-                lastError = .badReply
-            } catch let error as DDCError {
-                lastError = error
-            }
-            usleep(20_000)
-        }
-        throw lastError
+        return try DDCExchange.read(
+            code, send: { try send($0, to: framebuffer) }, receive: { try receive(count: 11, from: framebuffer) })
     }
 
     public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) throws {
         let framebuffer = try framebuffer(for: display)
-        for attempt in 0..<max(attempts, 1) {
-            if attempt > 0 { usleep(20_000) }
-            try send(DDCPacket.setVCP(code, value: value), to: framebuffer)
-        }
+        try DDCExchange.write(code, value: value, attempts: attempts) { try send($0, to: framebuffer) }
     }
 
     private func framebuffer(for display: DisplayIdentity) throws -> io_service_t {

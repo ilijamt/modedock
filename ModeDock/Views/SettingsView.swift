@@ -377,19 +377,12 @@ private struct AboutView: View {
     let modes: DisplayModeController
     @State private var copied = false
 
-    private var version: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return "Version \(short) (\(build))"
-    }
-
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: "display.2")
                 .font(.system(size: 40))
             Text("ModeDock").font(.title2.bold())
-            Text(version).foregroundStyle(.secondary)
+            Text(verbatim: "Version \(Bundle.main.versionString)").foregroundStyle(.secondary)
             Text("Free and open source under the MIT License.")
                 .font(.caption)
                 .foregroundStyle(.secondary)

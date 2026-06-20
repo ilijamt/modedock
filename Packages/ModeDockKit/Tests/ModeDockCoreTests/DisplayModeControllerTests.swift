@@ -50,12 +50,6 @@ private let native = DisplayMode(
     id: 1, width: 1920, height: 1080, pixelWidth: 3840, pixelHeight: 2160, refreshRate: 60, isNative: true,
     isDefault: true)
 private let small = DisplayMode(id: 2, width: 1280, height: 720, pixelWidth: 2560, pixelHeight: 1440, refreshRate: 60)
-private let external = Display(
-    id: 5, identity: DisplayIdentity(vendor: 19501, model: 29046, serial: 42),
-    name: "LS28", isBuiltin: false, isEnabled: true, isMain: true)
-private let builtin = Display(
-    id: 1, identity: DisplayIdentity(vendor: 1552, model: 1, serial: 1),
-    name: "Built-in", isBuiltin: true, isEnabled: true, isMain: false)
 
 @MainActor
 struct DisplayModeControllerTests {
@@ -63,9 +57,8 @@ struct DisplayModeControllerTests {
         let configurator = FakeConfigurator(
             modes: [5: [native, small], 1: [native]], current: [5: native, 1: native],
             origins: [5: .zero, 1: CGPoint(x: -1512, y: 98)])
-        let defaults = UserDefaults(suiteName: "DisplayModeControllerTests-\(UUID().uuidString)") ?? .standard
         let controller = DisplayModeController(
-            configurator: configurator, defaults: defaults, confirmationTimeout: timeout)
+            configurator: configurator, defaults: makeDefaults(), confirmationTimeout: timeout)
         controller.refresh(displays: [external, builtin], showAllModes: false)
         return (controller, configurator)
     }

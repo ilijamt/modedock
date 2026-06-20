@@ -4,7 +4,7 @@ import Foundation
 import Observation
 import os
 
-private let log = Logger(subsystem: "com.matoski.modedock", category: "screens")
+private let log = Logger.screens
 
 @MainActor
 @Observable

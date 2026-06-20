@@ -30,6 +30,37 @@ extension DDCControlling {
     }
 }
 
+/// The DDC/CI request and retry timing shared by the DDC services; each one supplies only how
+/// bytes reach the monitor and come back.
+enum DDCExchange {
+    /// Up to three tries, throwing the last try's error.
+    static func read(
+        _ code: UInt8, send: ([UInt8]) throws -> Void, receive: () throws -> [UInt8]
+    ) throws -> DDCPacket.Reply {
+        var lastError = DDCError.badReply
+        for _ in 0..<3 {
+            do {
+                try send(DDCPacket.getVCP(code))
+                // The monitor needs time to prepare its reply.
+                usleep(40_000)
+                if let reply = DDCPacket.parseReply(try receive(), code: code) { return reply }
+                lastError = .badReply
+            } catch let error as DDCError {
+                lastError = error
+            }
+            usleep(20_000)
+        }
+        throw lastError
+    }
+
+    static func write(_ code: UInt8, value: UInt16, attempts: Int, send: ([UInt8]) throws -> Void) throws {
+        for attempt in 0..<max(attempts, 1) {
+            if attempt > 0 { usleep(20_000) }
+            try send(DDCPacket.setVCP(code, value: value))
+        }
+    }
+}
+
 /// DDC over the Apple Silicon `IOAVService` I²C interface. Calls block for tens of
 /// milliseconds, so they run on this actor rather than the main thread.
 public actor DDCService: DDCControlling {
@@ -43,35 +74,12 @@ public actor DDCService: DDCControlling {
 
     public func read(_ code: UInt8, from display: DisplayIdentity) throws -> DDCPacket.Reply {
         let service = try service(for: display)
-        var lastError = DDCError.badReply
-        for _ in 0..<3 {
-            do {
-                try send(DDCPacket.getVCP(code), to: service)
-                usleep(40_000)
-                var buffer = [UInt8](repeating: 0, count: 12)
-                let result = buffer.withUnsafeMutableBytes { raw in
-                    guard let base = raw.baseAddress, let readI2C = PrivateAPI.avServiceReadI2C else {
-                        return kIOReturnUnsupported
-                    }
-                    return readI2C(service, DDCPacket.chipAddress, DDCPacket.hostAddress, base, UInt32(raw.count))
-                }
-                guard result == kIOReturnSuccess else { throw DDCError.io(result) }
-                if let reply = DDCPacket.parseReply(buffer, code: code) { return reply }
-                lastError = .badReply
-            } catch let error as DDCError {
-                lastError = error
-            }
-            usleep(20_000)
-        }
-        throw lastError
+        return try DDCExchange.read(code, send: { try send($0, to: service) }, receive: { try receive(from: service) })
     }
 
     public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) throws {
         let service = try service(for: display)
-        for attempt in 0..<max(attempts, 1) {
-            if attempt > 0 { usleep(20_000) }
-            try send(DDCPacket.setVCP(code, value: value), to: service)
-        }
+        try DDCExchange.write(code, value: value, attempts: attempts) { try send($0, to: service) }
     }
 
     private func service(for display: DisplayIdentity) throws -> CFTypeRef {
@@ -88,6 +96,18 @@ public actor DDCService: DDCControlling {
             return write(service, DDCPacket.chipAddress, DDCPacket.hostAddress, base, UInt32(raw.count))
         }
         guard result == kIOReturnSuccess else { throw DDCError.io(result) }
+    }
+
+    private func receive(from service: CFTypeRef) throws -> [UInt8] {
+        var buffer = [UInt8](repeating: 0, count: 12)
+        let result = buffer.withUnsafeMutableBytes { raw in
+            guard let base = raw.baseAddress, let readI2C = PrivateAPI.avServiceReadI2C else {
+                return kIOReturnUnsupported
+            }
+            return readI2C(service, DDCPacket.chipAddress, DDCPacket.hostAddress, base, UInt32(raw.count))
+        }
+        guard result == kIOReturnSuccess else { throw DDCError.io(result) }
+        return buffer
     }
 
     /// In the I/O Registry each external display's framebuffer (`IOMobileFramebufferShim` or

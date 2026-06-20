@@ -33,12 +33,14 @@ struct MenuView: View {
                 ) {
                     switch section {
                     case .screens:
-                        if style == .rows {
-                            RowsScreensSection(controller: screens, modes: modes, brightness: brightness)
-                                .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
-                        } else {
-                            ScreensSection(controller: screens, modes: modes, brightness: brightness)
+                        Group {
+                            if style == .rows {
+                                RowsScreensSection(controller: screens, modes: modes, brightness: brightness)
+                            } else {
+                                ScreensSection(controller: screens, modes: modes, brightness: brightness)
+                            }
                         }
+                        .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
                     case .power:
                         if style == .rows {
                             RowsPowerSection(power: power)
@@ -147,7 +149,6 @@ private struct ScreensSection: View {
 
             ErrorLabel(controller.lastError ?? modes.lastError)
         }
-        .modifier(ModeRefresher(controller: controller, modes: modes, brightness: brightness))
     }
 }
 
