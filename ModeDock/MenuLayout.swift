@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The feature areas shown in the panel. New areas (Brightness, Power, ...) are added here.
+/// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
 enum MenuSection: String, CaseIterable, Identifiable {
     case screens, power
 
@@ -52,7 +52,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
     static let defaultHidden = "battery"
 
     static func hidden(in value: String) -> Set<PanelItem> {
-        Set(value.split(separator: ",").compactMap { PanelItem(rawValue: String($0)) })
+        Set(CommaSeparated.decode(value))
     }
 
     /// For AppKit code; SwiftUI views read the same key with @AppStorage.
@@ -68,21 +68,31 @@ struct MenuLayout {
     var collapsed: Set<MenuSection>
 
     init(order: String, hidden: String, collapsed: String) {
-        let saved = Self.decode(order)
+        let saved: [MenuSection] = CommaSeparated.decode(order)
         // Sections added in a later version go at the end.
         self.order = saved + MenuSection.allCases.filter { !saved.contains($0) }
-        self.hidden = Set(Self.decode(hidden))
-        self.collapsed = Set(Self.decode(collapsed))
+        self.hidden = Set(CommaSeparated.decode(hidden))
+        self.collapsed = Set(CommaSeparated.decode(collapsed))
     }
 
     var visible: [MenuSection] { order.filter { !hidden.contains($0) } }
+}
 
-    static func encode(_ sections: some Sequence<MenuSection>) -> String {
-        sections.map(\.rawValue).joined(separator: ",")
+/// Lists of ids as user defaults store them: "screens,power". Unknown ids are skipped.
+enum CommaSeparated {
+    static func encode<Value: RawRepresentable<String>>(_ values: some Sequence<Value>) -> String {
+        values.map(\.rawValue).joined(separator: ",")
     }
 
-    private static func decode(_ value: String) -> [MenuSection] {
-        value.split(separator: ",").compactMap { MenuSection(rawValue: String($0)) }
+    static func decode<Value: RawRepresentable<String>>(_ value: String) -> [Value] {
+        value.split(separator: ",").compactMap { Value(rawValue: String($0)) }
+    }
+}
+
+extension Set {
+    /// Inserts `member` when `contains` is true, removes it otherwise.
+    mutating func set(_ member: Element, contains: Bool) {
+        if contains { insert(member) } else { remove(member) }
     }
 }
 

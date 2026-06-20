@@ -7,16 +7,13 @@ enum KeepAwakeSettings {
     /// What Keep Awake uses when it's switched on: the last duration picked, nil for "until
     /// turned off". Stored as minutes, 0 for "until turned off".
     static var minutes: Int? {
-        let value = UserDefaults.standard.integer(forKey: SettingsKey.keepAwakeDuration)
-        return value > 0 ? value : nil
+        get { positiveInt(forKey: SettingsKey.keepAwakeDuration) }
+        set { UserDefaults.standard.set(newValue ?? 0, forKey: SettingsKey.keepAwakeDuration) }
     }
 
     /// Prefills the custom duration field.
     static var lastCustomMinutes: Int? {
-        get {
-            let value = UserDefaults.standard.integer(forKey: SettingsKey.keepAwakeCustomMinutes)
-            return value > 0 ? value : nil
-        }
+        get { positiveInt(forKey: SettingsKey.keepAwakeCustomMinutes) }
         set { UserDefaults.standard.set(newValue ?? 0, forKey: SettingsKey.keepAwakeCustomMinutes) }
     }
 
@@ -25,7 +22,7 @@ enum KeepAwakeSettings {
     }
 
     static func start(minutes: Int?, power: PowerController) {
-        UserDefaults.standard.set(minutes ?? 0, forKey: SettingsKey.keepAwakeDuration)
+        Self.minutes = minutes
         power.startKeepAwake(minutes: minutes, keepScreensOn: keepScreensOn)
     }
 
@@ -41,6 +38,18 @@ enum KeepAwakeSettings {
     /// Whether `minutes` is one of the menu presets; anything else shows as "Custom".
     static func isPreset(_ minutes: Int?) -> Bool {
         PowerController.presets.contains { $0 == minutes }
+    }
+
+    /// "Custom (1 h 30 min)" for a duration that isn't a preset; nil for a preset. 0 is
+    /// "until turned off", like nil.
+    static func customLabel(_ minutes: Int?) -> String? {
+        guard let minutes, minutes > 0, !isPreset(minutes) else { return nil }
+        return "Custom (\(PowerController.title(minutes: minutes)))"
+    }
+
+    private static func positiveInt(forKey key: String) -> Int? {
+        let value = UserDefaults.standard.integer(forKey: key)
+        return value > 0 ? value : nil
     }
 }
 
@@ -212,8 +221,7 @@ private struct KeepAwakeMenu: View {
     }
 
     private var customTitle: String {
-        guard let keepAwake = power.keepAwake, !KeepAwakeSettings.isPreset(keepAwake.minutes) else { return "Custom…" }
-        return "✓ Custom (\(PowerController.title(minutes: keepAwake.minutes)))…"
+        KeepAwakeSettings.customLabel(power.keepAwake?.minutes).map { "✓ \($0)…" } ?? "Custom…"
     }
 
     @ViewBuilder private var status: some View {
@@ -283,7 +291,6 @@ struct RowsPowerSection: View {
         }
         .controlSize(.small)
         .modifier(BatteryRefresher(power: power))
-        .onChange(of: keepScreensOn) { power.setKeepScreensOn(keepScreensOn) }
     }
 
     @ViewBuilder private var keepAwakeRows: some View {
@@ -311,8 +318,8 @@ struct RowsPowerSection: View {
                     Text(PowerController.title(minutes: minutes)).tag(minutes ?? 0)
                 }
                 Divider()
-                if let current, !KeepAwakeSettings.isPreset(current) {
-                    Text("Custom (\(PowerController.title(minutes: current)))").tag(current)
+                if let current, let label = KeepAwakeSettings.customLabel(current) {
+                    Text(label).tag(current)
                 }
                 Text("Custom…").tag(Self.customTag)
             }
@@ -328,9 +335,13 @@ struct RowsPowerSection: View {
         Row {
             Text("Keep Screens On")
             Spacer()
-            Toggle("Keep Screens On", isOn: $keepScreensOn)
-                .toggleStyle(.switch)
-                .labelsHidden()
+            Toggle(
+                "Keep Screens On",
+                isOn: Binding(
+                    get: { keepScreensOn }, set: { KeepAwakeSettings.setKeepScreensOn($0, power: power) })
+            )
+            .toggleStyle(.switch)
+            .labelsHidden()
         }
     }
 
@@ -354,7 +365,7 @@ struct RowsPowerSection: View {
                 if power.isKeepingAwake {
                     KeepAwakeSettings.start(minutes: minutes, power: power)
                 } else {
-                    UserDefaults.standard.set(tag, forKey: SettingsKey.keepAwakeDuration)
+                    KeepAwakeSettings.minutes = minutes
                 }
             })
     }

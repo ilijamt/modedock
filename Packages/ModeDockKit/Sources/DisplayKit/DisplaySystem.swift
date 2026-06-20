@@ -70,12 +70,7 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
     }
 
     public func sleepAllDisplays() throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        process.arguments = ["displaysleepnow"]
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw DisplayError.commandFailed("pmset displaysleepnow") }
+        guard try PMSet.run("displaysleepnow") else { throw DisplayError.commandFailed("pmset displaysleepnow") }
     }
 
     private static func screenNames() -> [CGDirectDisplayID: String] {

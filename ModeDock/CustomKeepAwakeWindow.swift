@@ -13,21 +13,12 @@ final class CustomKeepAwakeWindow {
     func show(power: PowerController) {
         close()
         let panel = PromptPanel()
-        let view = CustomKeepAwakeView(power: power) { [weak self] in self?.close() }
-            .background(VisualEffectBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        let controller = NSHostingController(rootView: view)
-        controller.sizingOptions = [.preferredContentSize]
-        panel.contentViewController = controller
+        panel.setContent(CustomKeepAwakeView(power: power) { [weak self] in self?.close() }, cornerRadius: 14)
         self.panel = panel
 
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main
-        if let frame = screen?.visibleFrame {
-            panel.layoutIfNeeded()
-            panel.setFrameOrigin(
-                NSPoint(x: frame.midX - panel.frame.width / 2, y: frame.midY - panel.frame.height / 2))
-        }
+        // Lay out first so the panel has its final size before it's centered.
+        panel.layoutIfNeeded()
+        panel.center(on: NSScreen.underMouse ?? NSScreen.main)
         panel.orderFrontRegardless()
         panel.makeKey()
     }

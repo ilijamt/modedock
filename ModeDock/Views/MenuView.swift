@@ -99,9 +99,9 @@ struct MenuView: View {
 
     private func toggleCollapsed(_ section: MenuSection) {
         var collapsed = layout.collapsed
-        if collapsed.contains(section) { collapsed.remove(section) } else { collapsed.insert(section) }
+        collapsed.set(section, contains: !collapsed.contains(section))
         withAnimation(.snappy(duration: 0.2)) {
-            collapsedSections = MenuLayout.encode(collapsed)
+            collapsedSections = CommaSeparated.encode(collapsed)
         }
     }
 }

@@ -140,8 +140,8 @@ final class NativeMenu {
             durations.addItem(item)
         }
         let custom = ActionItem("Custom…") { [power] in CustomKeepAwakeWindow.shared.show(power: power) }
-        if let keepAwake = power.keepAwake, !KeepAwakeSettings.isPreset(keepAwake.minutes) {
-            custom.title = "Custom (\(PowerController.title(minutes: keepAwake.minutes)))…"
+        if let label = KeepAwakeSettings.customLabel(power.keepAwake?.minutes) {
+            custom.title = "\(label)…"
             custom.state = .on
         }
         durations.addItem(custom)

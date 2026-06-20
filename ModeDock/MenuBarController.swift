@@ -36,7 +36,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
                 onOpenSettings()
             }
         )
-        panel.setContent(content)
+        panel.setContent(content, cornerRadius: 10)
         panel.delegate = self
 
         statusItem.autosaveName = "ModeDock"
@@ -61,20 +61,17 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     /// Under the status item when it's on the mouse's screen; otherwise at the mouse pointer.
     private func showMenu() {
         let menu = nativeMenu.build()
-        let mouse = NSEvent.mouseLocation
         if let button = statusItem.button, let itemFrame = button.window?.frame,
-            NSScreen.screens.contains(where: { $0.frame.contains(itemFrame) && NSMouseInRect(mouse, $0.frame, false) })
+            NSScreen.underMouse?.frame.contains(itemFrame) == true
         {
             menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
         } else {
-            menu.popUp(positioning: nil, at: mouse, in: nil)
+            menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         }
     }
 
     func show() {
-        let origin = origin(for: panel.frame.size)
-        topLeft = NSPoint(x: origin.x, y: origin.y + panel.frame.height)
-        panel.setFrameOrigin(origin)
+        place()
         panel.makeKeyAndOrderFront(nil)
         statusItem.button?.highlight(true)
     }
@@ -82,6 +79,10 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     /// Moves the open panel back under the status item, after the screens changed size.
     func reposition() {
         guard panel.isVisible else { return }
+        place()
+    }
+
+    private func place() {
         let origin = origin(for: panel.frame.size)
         topLeft = NSPoint(x: origin.x, y: origin.y + panel.frame.height)
         panel.setFrameOrigin(origin)
@@ -120,9 +121,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     /// otherwise (hidden by Bartender, or on another display's menu bar) at the top-right.
     private func origin(for size: NSSize) -> NSPoint {
         let gap: CGFloat = 4
-        let mouse = NSEvent.mouseLocation
-        guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }) ?? NSScreen.main
-        else { return .zero }
+        guard let screen = NSScreen.underMouse ?? NSScreen.main else { return .zero }
         let visible = screen.visibleFrame
 
         if let itemFrame = statusItem.button?.window?.frame, screen.frame.contains(itemFrame) {
@@ -133,41 +132,13 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 }
 
-/// A borderless panel styled like a menu-bar popover. Non-activating, so it doesn't steal
-/// focus from the frontmost app.
-private final class MenuPanel: NSPanel {
+/// The panel under the status item; Esc closes it.
+private final class MenuPanel: FloatingPanel {
     init() {
-        super.init(
-            contentRect: .zero,
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: true
-        )
-        level = .popUpMenu
-        isOpaque = false
-        // ModeDock is rarely the active app while its panels are open, and tooltips are hidden
-        // for inactive apps unless the window opts in.
-        allowsToolTipsWhenApplicationIsInactive = true
-        backgroundColor = .clear
-        hasShadow = true
-        isReleasedWhenClosed = false
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        super.init(level: .popUpMenu)
     }
-
-    override var canBecomeKey: Bool { true }
 
     override func cancelOperation(_ sender: Any?) {
         orderOut(nil)
-    }
-
-    func setContent(_ view: some View) {
-        let root =
-            view
-            .background(VisualEffectBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        let controller = NSHostingController(rootView: root)
-        // Resize the panel whenever the SwiftUI content changes size (e.g. a display appears).
-        controller.sizingOptions = [.preferredContentSize]
-        contentViewController = controller
     }
 }

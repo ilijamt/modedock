@@ -15,23 +15,15 @@ final class ModeConfirmationWindow {
     func show(for change: DisplayModeController.PendingChange) {
         close()
         let panel = PromptPanel()
-        let view = ConfirmationView(modes: modes, change: change) { [weak self] in self?.close() }
-            .background(VisualEffectBackground())
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        let controller = NSHostingController(rootView: view)
-        controller.sizingOptions = [.preferredContentSize]
-        panel.contentViewController = controller
+        panel.setContent(
+            ConfirmationView(modes: modes, change: change) { [weak self] in self?.close() }, cornerRadius: 14)
         self.panel = panel
 
         // The screen's frame changes with the new mode, so wait for macOS to settle first.
         Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
             guard let self, let panel = self.panel else { return }
-            let screen = NSScreen.screens.first { $0.displayID == change.display } ?? NSScreen.main
-            if let frame = screen?.visibleFrame {
-                panel.setFrameOrigin(
-                    NSPoint(x: frame.midX - panel.frame.width / 2, y: frame.midY - panel.frame.height / 2))
-            }
+            panel.center(on: NSScreen.screens.first { $0.displayID == change.display } ?? NSScreen.main)
             panel.orderFrontRegardless()
             panel.makeKey()
         }
@@ -62,32 +54,5 @@ private struct ConfirmationView: View {
         .padding(20)
         .frame(width: 300)
         .onChange(of: modes.pending) { if modes.pending != change { onClose() } }
-    }
-}
-
-/// Borderless, non-activating and never hidden on deactivate: macOS may refuse to activate a
-/// background menu-bar app, and a regular panel would then hide itself straight away.
-final class PromptPanel: NSPanel {
-    init() {
-        super.init(
-            contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
-        hidesOnDeactivate = false
-        level = .modalPanel
-        isOpaque = false
-        // ModeDock is rarely the active app while its panels are open, and tooltips are hidden
-        // for inactive apps unless the window opts in.
-        allowsToolTipsWhenApplicationIsInactive = true
-        backgroundColor = .clear
-        hasShadow = true
-        isReleasedWhenClosed = false
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    }
-
-    override var canBecomeKey: Bool { true }
-}
-
-extension NSScreen {
-    var displayID: CGDirectDisplayID? {
-        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
     }
 }

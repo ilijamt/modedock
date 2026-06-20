@@ -1,3 +1,4 @@
+import DisplayKit
 import Foundation
 import IOKit.ps
 import IOKit.pwr_mgt
@@ -80,12 +81,7 @@ public struct IOKitPowerSystem: PowerSystem {
     }
 
     public func sleep() throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/pmset")
-        process.arguments = ["sleepnow"]
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw PowerError.commandFailed }
+        guard try PMSet.run("sleepnow") else { throw PowerError.commandFailed }
     }
 
     public func lockScreen() throws {

@@ -81,8 +81,11 @@ private struct GeneralSettingsView: View {
             }
 
             Section {
-                Toggle("Keep screens on during Keep Awake", isOn: $keepScreensOn)
-                    .onChange(of: keepScreensOn) { power.setKeepScreensOn(keepScreensOn) }
+                Toggle(
+                    "Keep screens on during Keep Awake",
+                    isOn: Binding(
+                        get: { keepScreensOn }, set: { KeepAwakeSettings.setKeepScreensOn($0, power: power) })
+                )
             } footer: {
                 Text("When off, the screens can still go dark, but the Mac stays awake. Also in the Keep Awake menu.")
                     .font(.caption)
@@ -221,7 +224,7 @@ private struct MenuSettingsView: View {
         else { return }
         order.remove(at: from)
         order.insert(section, at: to)
-        withAnimation(.snappy(duration: 0.2)) { sectionOrder = MenuLayout.encode(order) }
+        withAnimation(.snappy(duration: 0.2)) { sectionOrder = CommaSeparated.encode(order) }
     }
 
     private func move(_ section: MenuSection, by offset: Int) {
@@ -235,8 +238,8 @@ private struct MenuSettingsView: View {
             get: { !PanelItem.hidden(in: hiddenItems).contains(item) },
             set: { visible in
                 var hidden = PanelItem.hidden(in: hiddenItems)
-                if visible { hidden.remove(item) } else { hidden.insert(item) }
-                hiddenItems = hidden.map(\.rawValue).sorted().joined(separator: ",")
+                hidden.set(item, contains: !visible)
+                hiddenItems = CommaSeparated.encode(hidden.sorted { $0.rawValue < $1.rawValue })
             }
         )
     }
@@ -246,8 +249,8 @@ private struct MenuSettingsView: View {
             get: { !layout.collapsed.contains(section) },
             set: { open in
                 var collapsed = layout.collapsed
-                if open { collapsed.remove(section) } else { collapsed.insert(section) }
-                collapsedSections = MenuLayout.encode(collapsed)
+                collapsed.set(section, contains: !open)
+                collapsedSections = CommaSeparated.encode(collapsed)
             }
         )
     }
@@ -257,8 +260,8 @@ private struct MenuSettingsView: View {
             get: { !layout.hidden.contains(section) },
             set: { visible in
                 var hidden = layout.hidden
-                if visible { hidden.remove(section) } else { hidden.insert(section) }
-                hiddenSections = MenuLayout.encode(hidden)
+                hidden.set(section, contains: !visible)
+                hiddenSections = CommaSeparated.encode(hidden)
             }
         )
     }
