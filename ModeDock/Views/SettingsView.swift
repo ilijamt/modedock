@@ -379,8 +379,9 @@ private struct AboutView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: "display.2")
-                .font(.system(size: 40))
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 64, height: 64)
             Text("ModeDock").font(.title2.bold())
             Text(verbatim: "Version \(Bundle.main.versionString)").foregroundStyle(.secondary)
             Text("Free and open source under the MIT License.")
