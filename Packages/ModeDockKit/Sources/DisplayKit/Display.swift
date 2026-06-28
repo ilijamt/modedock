@@ -2,7 +2,7 @@ import CoreGraphics
 
 /// Vendor, model and serial from the EDID. Unlike `CGDirectDisplayID`, this survives
 /// reconnects and reboots.
-public struct DisplayIdentity: Hashable, Sendable {
+public struct DisplayIdentity: Hashable, Codable, Sendable {
     public let vendor: UInt32
     public let model: UInt32
     public let serial: UInt32

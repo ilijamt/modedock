@@ -10,6 +10,7 @@ struct MenuView: View {
     let power: PowerController
     let utilities: UtilitiesController
     let inputs: MonitorInputController
+    let profiles: ProfileController
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -43,6 +44,12 @@ struct MenuView: View {
                             }
                         }
                         .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
+                    case .profiles:
+                        if style == .rows {
+                            RowsProfilesSection(profiles: profiles, screens: screens, modes: modes)
+                        } else {
+                            ProfilesSection(profiles: profiles, screens: screens, modes: modes)
+                        }
                     case .power:
                         if style == .rows {
                             RowsPowerSection(power: power)

@@ -2,13 +2,14 @@ import SwiftUI
 
 /// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
 enum MenuSection: String, CaseIterable, Identifiable {
-    case screens, power, utilities
+    case screens, profiles, power, utilities
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .screens: "Screens"
+        case .profiles: "Profiles"
         case .power: "Power"
         case .utilities: "Utilities"
         }
@@ -17,6 +18,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .screens: "display.2"
+        case .profiles: "rectangle.3.group"
         case .power: "bolt.fill"
         case .utilities: "wrench.and.screwdriver"
         }
@@ -26,6 +28,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
 /// Optional parts of a section, each of which can be hidden in Settings → Menu.
 enum PanelItem: String, CaseIterable, Identifiable {
     case brightness, sleepScreens, mirror, allOn
+    case saveProfile
     case keepAwake, battery, sleepMac, lock
     case darkMode, nightShift, trueTone, dockAutoHide, desktopIcons, hiddenFiles, emptyTrash, ejectDisks
 
@@ -34,6 +37,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
     var section: MenuSection {
         switch self {
         case .brightness, .sleepScreens, .mirror, .allOn: .screens
+        case .saveProfile: .profiles
         case .keepAwake, .battery, .sleepMac, .lock: .power
         case .darkMode, .nightShift, .trueTone, .dockAutoHide, .desktopIcons, .hiddenFiles, .emptyTrash, .ejectDisks:
             .utilities
@@ -46,6 +50,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .sleepScreens: "Sleep screens"
         case .mirror: "Mirror screens"
         case .allOn: "Turn all on"
+        case .saveProfile: "Save current setup"
         case .keepAwake: "Keep Awake"
         case .battery: "Battery"
         case .sleepMac: "Sleep Mac"

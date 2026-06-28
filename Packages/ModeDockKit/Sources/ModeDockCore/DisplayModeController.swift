@@ -58,6 +58,30 @@ public final class DisplayModeController {
         reload()
     }
 
+    /// Reloads modes for the screens that are on, keeping the current "show all" setting.
+    public func refresh(displays: [Display]) {
+        refresh(displays: displays, showAllModes: showAllModes)
+    }
+
+    /// Switches to the mode with `key` without asking for confirmation, for modes known to work
+    /// such as the ones saved in a profile. Does nothing when the display already uses that mode.
+    public func applyKnownMode(key: String, for display: CGDirectDisplayID) throws {
+        if configurator.currentMode(for: display)?.key == key { return }
+        // Several modes can share a key (different pixel encodings); prefer the native, then the largest.
+        guard
+            let mode = configurator.modes(for: display, includeDuplicates: true)
+                .filter({ $0.key == key })
+                .max(by: { ($0.isNative ? 1 : 0, $0.pixelWidth) < ($1.isNative ? 1 : 0, $1.pixelWidth) })
+        else { throw DisplayError.modeUnavailable }
+        if pending?.display == display {
+            revertTask?.cancel()
+            pending = nil
+        }
+        try configurator.setMode(mode, for: display)
+        if let identity = identity(of: display) { markConfirmed(mode, on: identity) }
+        reload()
+    }
+
     public func select(_ mode: DisplayMode, for display: CGDirectDisplayID) {
         guard pending == nil, let identity = identity(of: display) else { return }
         let previous = configurator.currentMode(for: display)

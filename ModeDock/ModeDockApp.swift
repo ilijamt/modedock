@@ -35,9 +35,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let power = PowerController()
     private let utilities = UtilitiesController()
     private lazy var inputs = MonitorInputController(ddc: ddc)
+    private lazy var profiles = ProfileController(screens: screens, modes: modes, brightness: brightness)
+    private lazy var dynamicShortcuts = DynamicShortcuts(profiles: profiles, screens: screens)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
-        launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power)
+        launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power,
+        profiles: profiles)
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
@@ -71,6 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menuBar = MenuBarController(
             screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, inputs: inputs,
+            profiles: profiles,
             onShow: { [weak self] in
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
@@ -88,11 +92,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 await self.screens.displaysChanged()
                 await self.brightness.refresh(displays: self.screens.screens.map(\.display))
                 await self.inputs.refresh(displays: self.screens.screens.map(\.display))
+                await self.profiles.autoApplyIfNeeded()
             }
         }
         Task {
             await screens.start()
             await brightness.refresh(displays: screens.screens.map(\.display))
+            await profiles.autoApplyIfNeeded()
+            dynamicShortcuts.start()
         }
 
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in

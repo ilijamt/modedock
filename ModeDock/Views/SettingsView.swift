@@ -4,13 +4,14 @@ import SwiftUI
 
 /// The Settings tabs, in order. Each becomes a toolbar item in the Settings window.
 enum SettingsTab: String, CaseIterable {
-    case general, menu, displays, shortcuts, about
+    case general, menu, displays, profiles, shortcuts, about
 
     var title: String {
         switch self {
         case .general: "General"
         case .menu: "Menu"
         case .displays: "Displays"
+        case .profiles: "Profiles"
         case .shortcuts: "Shortcuts"
         case .about: "About"
         }
@@ -21,6 +22,7 @@ enum SettingsTab: String, CaseIterable {
         case .general: "gearshape"
         case .menu: "menubar.rectangle"
         case .displays: "display.2"
+        case .profiles: "rectangle.3.group"
         case .shortcuts: "command"
         case .about: "info.circle"
         }
@@ -32,7 +34,8 @@ enum SettingsTab: String, CaseIterable {
         case .general: 340
         case .menu: 560
         case .displays: 500
-        case .shortcuts: 150
+        case .profiles: 460
+        case .shortcuts: 320
         case .about: 250
         }
     }
@@ -40,13 +43,14 @@ enum SettingsTab: String, CaseIterable {
     @MainActor @ViewBuilder
     func content(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
-        power: PowerController
+        power: PowerController, profiles: ProfileController
     ) -> some View {
         switch self {
         case .general: GeneralSettingsView(modes: modes, power: power)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
-        case .shortcuts: ShortcutSettingsView()
+        case .profiles: ProfileSettingsView(profiles: profiles, screens: screens)
+        case .shortcuts: ShortcutSettingsView(screens: screens)
         case .about: AboutView(screens: screens, modes: modes)
         }
     }
@@ -363,12 +367,109 @@ private struct DisplaySettingsView: View {
 }
 
 private struct ShortcutSettingsView: View {
+    let screens: ScreenController
+
     var body: some View {
         Form {
-            KeyboardShortcuts.Recorder("Open ModeDock:", name: .togglePanel)
-            KeyboardShortcuts.Recorder("Turn all screens on:", name: .turnAllScreensOn)
+            Section {
+                KeyboardShortcuts.Recorder("Open ModeDock:", name: .togglePanel)
+                KeyboardShortcuts.Recorder("Turn all screens on:", name: .turnAllScreensOn)
+            }
+
+            Section {
+                ForEach(screens.screens.filter { !$0.display.identity.isPlaceholder }) { screen in
+                    KeyboardShortcuts.Recorder(
+                        "Turn \(screen.display.name) on or off:", name: .toggleScreen(screen.display.identity))
+                }
+            } header: {
+                Text("Screens")
+            } footer: {
+                Text("At least one screen always stays on. Profile shortcuts are set in Profiles.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct ProfileSettingsView: View {
+    let profiles: ProfileController
+    let screens: ScreenController
+    @State private var deleting: DisplayProfile?
+
+    var body: some View {
+        Form {
+            if profiles.profiles.isEmpty {
+                Section {
+                    Text("No profiles yet. Save the current setup to switch back to it later in one click.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ForEach(profiles.profiles) { profile in
+                Section {
+                    TextField("Name", text: name(of: profile))
+                    LabeledContent("Screens") {
+                        Text(verbatim: profile.screenList)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    Toggle("Apply automatically", isOn: autoApply(of: profile))
+                        .help("Apply this profile whenever exactly these screens are connected.")
+                    KeyboardShortcuts.Recorder("Shortcut:", name: .profile(profile.id))
+                    HStack {
+                        Button("Apply") { Task { await profiles.apply(profile) } }
+                            .disabled(profiles.applying != nil)
+                        Button("Update from Current") { profiles.update(profile.id) }
+                            .help(
+                                "Replace this profile's screens, resolutions, arrangement and brightness with the current ones."
+                            )
+                        Spacer()
+                        Button("Delete…", role: .destructive) { deleting = profile }
+                    }
+                } header: {
+                    HStack {
+                        Text(verbatim: profile.name)
+                        if profiles.isActive(profile) {
+                            Text("Current").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+
+            Section {
+                Button("Save Current Setup") { profiles.capture(name: profiles.suggestedName(screens: screens)) }
+                if let error = profiles.lastError {
+                    ErrorLabel(error)
+                }
+            } footer: {
+                Text(
+                    "A profile remembers which screens are on, their resolutions, arrangement, mirroring and "
+                        + "brightness. Screens that aren't connected are skipped when it's applied."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        .confirmationDialog(
+            "Delete \(deleting?.name ?? "the profile")?",
+            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
+            presenting: deleting
+        ) { profile in
+            Button("Delete", role: .destructive) { profiles.deleteWithShortcut(profile.id) }
+        } message: { _ in
+            Text("Its shortcut is removed too. This can't be undone.")
+        }
+    }
+
+    private func name(of profile: DisplayProfile) -> Binding<String> {
+        Binding(get: { profile.name }, set: { profiles.rename(profile.id, to: $0) })
+    }
+
+    private func autoApply(of profile: DisplayProfile) -> Binding<Bool> {
+        Binding(get: { profile.autoApply }, set: { profiles.setAutoApply($0, for: profile.id) })
     }
 }
 

@@ -12,12 +12,13 @@ final class NativeMenu {
     private let power: PowerController
     private let utilities: UtilitiesController
     private let inputs: MonitorInputController
+    private let profiles: ProfileController
     private let onOpenSettings: () -> Void
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
         power: PowerController, utilities: UtilitiesController, inputs: MonitorInputController,
-        onOpenSettings: @escaping () -> Void
+        profiles: ProfileController, onOpenSettings: @escaping () -> Void
     ) {
         self.screens = screens
         self.modes = modes
@@ -25,6 +26,7 @@ final class NativeMenu {
         self.power = power
         self.utilities = utilities
         self.inputs = inputs
+        self.profiles = profiles
         self.onOpenSettings = onOpenSettings
     }
 
@@ -45,6 +47,7 @@ final class NativeMenu {
             if index > 0 { menu.addItem(.separator()) }
             switch section {
             case .screens: addScreenItems(to: menu, hidden: hidden)
+            case .profiles: addProfileItems(to: menu, hidden: hidden)
             case .power: addPowerItems(to: menu, hidden: hidden)
             case .utilities: addUtilityItems(to: menu, hidden: hidden)
             }
@@ -84,6 +87,50 @@ final class NativeMenu {
         }
 
         addError(screens.lastError ?? modes.lastError, to: menu)
+    }
+
+    private func addProfileItems(to menu: NSMenu, hidden: Set<PanelItem>) {
+        menu.addItem(.sectionHeader(title: "Profiles"))
+        if profiles.profiles.isEmpty {
+            let empty = NSMenuItem(title: "No Saved Profiles", action: nil, keyEquivalent: "")
+            empty.isEnabled = false
+            menu.addItem(empty)
+        }
+        for profile in profiles.profiles {
+            let item = ActionItem(profile.name) { [profiles] in Task { await profiles.apply(profile) } }
+            item.state = profiles.isActive(profile) ? .on : .off
+            item.toolTip = profile.screenList
+            if #available(macOS 15.0, *) { item.subtitle = profile.summary }
+            // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
+            item.setShortcut(KeyboardShortcuts.getShortcut(for: .profile(profile.id)))
+            menu.addItem(item)
+        }
+        if !hidden.contains(.saveProfile) {
+            menu.addItem(
+                ActionItem("Save Current Setup…") { [profiles, screens] in
+                    Self.saveProfile(profiles, screens: screens)
+                })
+        }
+        addError(profiles.lastError, to: menu)
+    }
+
+    /// The menu has closed by now, so a regular alert asks for the name.
+    private static func saveProfile(_ profiles: ProfileController, screens: ScreenController) {
+        let suggested = profiles.suggestedName(screens: screens)
+        let alert = NSAlert()
+        alert.messageText = "Save Current Setup"
+        alert.informativeText = "Saves the screens that are on, their resolutions, arrangement and brightness."
+        let field = NSTextField(string: suggested)
+        field.frame = NSRect(x: 0, y: 0, width: 260, height: 24)
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.level = .modalPanel
+        alert.window.initialFirstResponder = field
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        profiles.capture(name: name.isEmpty ? suggested : name)
     }
 
     private func inputItem(_ available: MonitorInputController.Inputs, screen: ScreenController.Screen) -> NSMenuItem {
