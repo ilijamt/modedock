@@ -9,6 +9,7 @@ struct MenuView: View {
     let brightness: BrightnessController
     let power: PowerController
     let utilities: UtilitiesController
+    let inputs: MonitorInputController
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -67,6 +68,7 @@ struct MenuView: View {
         .padding(14)
         .frame(width: 320)
         .environment(\.useGlass, style == .cards)
+        .environment(inputs)
         .background(alignment: .topLeading) { keyboardShortcuts }
     }
 
@@ -188,6 +190,7 @@ struct ModeRefresher: ViewModifier {
 }
 
 private struct ScreenCard: View {
+    @Environment(MonitorInputController.self) private var inputs
     let screen: ScreenController.Screen
     let controller: ScreenController
     let modes: DisplayModeController
@@ -221,6 +224,9 @@ private struct ScreenCard: View {
             } else if showingModes, display.isEnabled, let screenModes {
                 ResolutionList(display: screen.id, screenModes: screenModes, modes: modes) {
                     showingModes = false
+                }
+                if let available = inputs.screens[screen.id] {
+                    InputChips(display: screen.id, inputs: available)
                 }
             }
         }

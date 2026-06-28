@@ -54,6 +54,8 @@ private actor FakeDDC: DDCControlling {
         return DDCPacket.Reply(current: current, maximum: 100)
     }
 
+    func capabilities(of display: DisplayIdentity) throws -> String { throw DDCError.unavailable }
+
     func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) async throws {
         guard supported.contains(display) else { throw DDCError.unavailable }
         writes.append(value)

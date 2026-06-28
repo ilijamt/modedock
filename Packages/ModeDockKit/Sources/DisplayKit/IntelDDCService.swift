@@ -27,6 +27,12 @@ public actor IntelDDCService: DDCControlling {
             code, send: { try send($0, to: framebuffer) }, receive: { try receive(count: 11, from: framebuffer) })
     }
 
+    public func capabilities(of display: DisplayIdentity) throws -> String {
+        let framebuffer = try framebuffer(for: display)
+        return try DDCExchange.capabilities(
+            send: { try send($0, to: framebuffer) }, receive: { try receive(count: 38, from: framebuffer) })
+    }
+
     public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) throws {
         let framebuffer = try framebuffer(for: display)
         try DDCExchange.write(code, value: value, attempts: attempts) { try send($0, to: framebuffer) }

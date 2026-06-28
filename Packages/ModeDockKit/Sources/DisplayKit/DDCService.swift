@@ -22,9 +22,12 @@ public protocol DDCControlling: Sendable {
     func read(_ code: UInt8, from display: DisplayIdentity) async throws -> DDCPacket.Reply
     /// Sends the value `attempts` times; many monitors drop a single write now and then.
     func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) async throws
+    /// The monitor's MCCS capabilities string, which lists the features and values it supports.
+    func capabilities(of display: DisplayIdentity) async throws -> String
 }
 
 extension DDCControlling {
+
     public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity) async throws {
         try await write(code, value: value, to: display, attempts: 2)
     }
@@ -53,6 +56,31 @@ enum DDCExchange {
         throw lastError
     }
 
+    /// Reads the capabilities string piece by piece; each reply carries up to 32 bytes.
+    static func capabilities(send: ([UInt8]) throws -> Void, receive: () throws -> [UInt8]) throws -> String {
+        var data: [UInt8] = []
+        // A capabilities string is a few hundred bytes; the cap only stops a monitor that never ends.
+        for _ in 0..<64 {
+            let offset = UInt16(data.count)
+            var chunk: [UInt8]?
+            var lastError = DDCError.badReply
+            for _ in 0..<3 where chunk == nil {
+                do {
+                    try send(DDCPacket.capabilitiesRequest(offset: offset))
+                    usleep(50_000)
+                    chunk = DDCPacket.parseCapabilitiesReply(try receive(), offset: offset)
+                } catch let error as DDCError {
+                    lastError = error
+                }
+                if chunk == nil { usleep(20_000) }
+            }
+            guard let chunk else { throw lastError }
+            if chunk.isEmpty { break }
+            data += chunk
+        }
+        return String(decoding: data.filter { $0 != 0 }, as: UTF8.self)
+    }
+
     static func write(_ code: UInt8, value: UInt16, attempts: Int, send: ([UInt8]) throws -> Void) throws {
         for attempt in 0..<max(attempts, 1) {
             if attempt > 0 { usleep(20_000) }
@@ -74,7 +102,14 @@ public actor DDCService: DDCControlling {
 
     public func read(_ code: UInt8, from display: DisplayIdentity) throws -> DDCPacket.Reply {
         let service = try service(for: display)
-        return try DDCExchange.read(code, send: { try send($0, to: service) }, receive: { try receive(from: service) })
+        return try DDCExchange.read(
+            code, send: { try send($0, to: service) }, receive: { try receive(count: 12, from: service) })
+    }
+
+    public func capabilities(of display: DisplayIdentity) throws -> String {
+        let service = try service(for: display)
+        return try DDCExchange.capabilities(
+            send: { try send($0, to: service) }, receive: { try receive(count: 38, from: service) })
     }
 
     public func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) throws {
@@ -98,8 +133,8 @@ public actor DDCService: DDCControlling {
         guard result == kIOReturnSuccess else { throw DDCError.io(result) }
     }
 
-    private func receive(from service: CFTypeRef) throws -> [UInt8] {
-        var buffer = [UInt8](repeating: 0, count: 12)
+    private func receive(count: Int, from service: CFTypeRef) throws -> [UInt8] {
+        var buffer = [UInt8](repeating: 0, count: count)
         let result = buffer.withUnsafeMutableBytes { raw in
             guard let base = raw.baseAddress, let readI2C = PrivateAPI.avServiceReadI2C else {
                 return kIOReturnUnsupported

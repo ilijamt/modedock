@@ -34,6 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var brightness = BrightnessController(ddc: ddc)
     private let power = PowerController()
     private let utilities = UtilitiesController()
+    private lazy var inputs = MonitorInputController(ddc: ddc)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
         launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power)
@@ -69,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         menuBar = MenuBarController(
-            screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities,
+            screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, inputs: inputs,
             onShow: { [weak self] in
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
@@ -86,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task {
                 await self.screens.displaysChanged()
                 await self.brightness.refresh(displays: self.screens.screens.map(\.display))
+                await self.inputs.refresh(displays: self.screens.screens.map(\.display))
             }
         }
         Task {
@@ -108,7 +110,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshBrightness() {
-        Task { await brightness.refresh(displays: screens.screens.map(\.display)) }
+        Task {
+            let displays = screens.screens.map(\.display)
+            await brightness.refresh(displays: displays)
+            await inputs.refresh(displays: displays)
+        }
     }
 
     /// Never leave a screen off, in standby or dimmed after quitting.

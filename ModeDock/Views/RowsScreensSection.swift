@@ -81,6 +81,8 @@ private struct ScreenRows: View {
     let controller: ScreenController
     let modes: DisplayModeController
     let brightness: BrightnessController
+    @Environment(MonitorInputController.self) private var inputs
+    @State private var confirmingInput: UInt8?
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
 
     private var display: Display { screen.display }
@@ -135,6 +137,29 @@ private struct ScreenRows: View {
                 }
             }
 
+            if let available = inputs.screens[screen.id] {
+                Divider()
+                Row {
+                    Text("Input")
+                    Spacer()
+                    Picker("Input", selection: inputSelection(available)) {
+                        ForEach(available.available, id: \.self) { Text(available.name(of: $0)).tag($0) }
+                    }
+                    .labelsHidden()
+                    .fixedSize()
+                }
+                if let input = confirmingInput {
+                    InputSwitchConfirmation(name: available.name(of: input)) {
+                        Task { await inputs.select(input, for: screen.id) }
+                        confirmingInput = nil
+                    } onCancel: {
+                        confirmingInput = nil
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 8)
+                }
+            }
+
             if !PanelItem.hidden(in: hiddenItems).contains(.brightness), let level = brightness.screens[screen.id] {
                 Divider()
                 Row {
@@ -165,6 +190,12 @@ private struct ScreenRows: View {
                 }
             }
         }
+    }
+
+    /// Picking another input asks first: ModeDock can't switch back once the monitor shows it.
+    private func inputSelection(_ available: MonitorInputController.Inputs) -> Binding<UInt8> {
+        Binding(
+            get: { available.current }, set: { input in confirmingInput = input == available.current ? nil : input })
     }
 
     private func resolution(_ screenModes: DisplayModeController.ScreenModes) -> Binding<String> {

@@ -11,17 +11,20 @@ final class NativeMenu {
     private let brightness: BrightnessController
     private let power: PowerController
     private let utilities: UtilitiesController
+    private let inputs: MonitorInputController
     private let onOpenSettings: () -> Void
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
-        power: PowerController, utilities: UtilitiesController, onOpenSettings: @escaping () -> Void
+        power: PowerController, utilities: UtilitiesController, inputs: MonitorInputController,
+        onOpenSettings: @escaping () -> Void
     ) {
         self.screens = screens
         self.modes = modes
         self.brightness = brightness
         self.power = power
         self.utilities = utilities
+        self.inputs = inputs
         self.onOpenSettings = onOpenSettings
     }
 
@@ -81,6 +84,33 @@ final class NativeMenu {
         }
 
         addError(screens.lastError ?? modes.lastError, to: menu)
+    }
+
+    private func inputItem(_ available: MonitorInputController.Inputs, screen: ScreenController.Screen) -> NSMenuItem {
+        let item = NSMenuItem(title: "Input", action: nil, keyEquivalent: "")
+        let menu = NSMenu()
+        for input in available.available {
+            let choice = ActionItem(available.name(of: input)) { [inputs] in
+                guard input != available.current, Self.confirmInputSwitch(available.name(of: input)) else { return }
+                Task { await inputs.select(input, for: screen.id) }
+            }
+            choice.state = input == available.current ? .on : .off
+            choice.toolTip = String(format: "Input source 0x%02X", input)
+            menu.addItem(choice)
+        }
+        item.submenu = menu
+        return item
+    }
+
+    private static func confirmInputSwitch(_ name: String) -> Bool {
+        let alert = NSAlert()
+        alert.messageText = "Switch to \(name)?"
+        alert.informativeText = MonitorInputController.switchWarning
+        alert.addButton(withTitle: "Switch")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.level = .modalPanel
+        return alert.runModal() == .alertFirstButtonReturn
     }
 
     private func addUtilityItems(to menu: NSMenu, hidden: Set<PanelItem>) {
@@ -264,6 +294,9 @@ final class NativeMenu {
             }
             if !screenModes.isMain {
                 submenu.addItem(ActionItem("Use as Main Screen") { [modes] in modes.makeMain(screen.id) })
+            }
+            if let available = inputs.screens[screen.id] {
+                submenu.addItem(inputItem(available, screen: screen))
             }
         }
         if showStandby && screen.supportsDDC && display.isEnabled {

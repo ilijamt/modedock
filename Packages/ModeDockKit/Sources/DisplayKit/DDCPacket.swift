@@ -7,6 +7,7 @@ public enum DDCPacket {
     public enum VCP {
         public static let brightness: UInt8 = 0x10
         public static let powerMode: UInt8 = 0xD6
+        public static let inputSource: UInt8 = 0x60
     }
 
     public enum PowerMode {
@@ -44,6 +45,47 @@ public enum DDCPacket {
             current: UInt16(reply[8]) << 8 | UInt16(reply[9]),
             maximum: UInt16(reply[6]) << 8 | UInt16(reply[7])
         )
+    }
+
+    /// Asks for the part of the monitor's capabilities string that starts at `offset`.
+    public static func capabilitiesRequest(offset: UInt16) -> [UInt8] {
+        withChecksum([0x83, 0xF3, UInt8(offset >> 8), UInt8(offset & 0xFF)], seed: 0x6E ^ 0x51)
+    }
+
+    /// Reply layout: 6E <0x80 | length> E3 <offsetHi> <offsetLo> <data…> <checksum>, where length
+    /// counts E3, the offset and the data. Returns the data (empty at the end of the string).
+    public static func parseCapabilitiesReply(_ bytes: [UInt8], offset: UInt16) -> [UInt8]? {
+        guard bytes.count >= 6, bytes[0] == 0x6E, bytes[1] & 0x80 != 0, bytes[2] == 0xE3 else { return nil }
+        let length = Int(bytes[1] & 0x7F)
+        guard length >= 3, bytes.count > 2 + length,
+            UInt16(bytes[3]) << 8 | UInt16(bytes[4]) == offset,
+            checksum(bytes[..<(2 + length)], seed: 0x50) == bytes[2 + length]
+        else { return nil }
+        return Array(bytes[5..<(2 + length)])
+    }
+
+    /// The input sources listed for VCP 0x60 in a capabilities string such as
+    /// "(prot(monitor)…vcp(02 10 60(0F 11 12) D6(01 04))…)".
+    public static func inputSources(inCapabilities capabilities: String) -> [UInt8] {
+        let text = capabilities.uppercased()
+        guard let match = text.firstMatch(of: /(?:^|[^0-9A-F])60\(([0-9A-F ]*)\)/) else { return [] }
+        let digits = match.1.filter { $0 != " " }
+        return stride(from: 0, to: digits.count - 1, by: 2).compactMap { offset in
+            let start = digits.index(digits.startIndex, offsetBy: offset)
+            return UInt8(digits[start...digits.index(after: start)], radix: 16)
+        }
+    }
+
+    /// MCCS names for the common input source values.
+    public static func inputName(_ input: UInt8) -> String {
+        switch input {
+        case 0x01, 0x02: "VGA \(input)"
+        case 0x03, 0x04: "DVI \(input - 0x02)"
+        case 0x0F, 0x10: "DisplayPort \(input - 0x0E)"
+        case 0x11, 0x12: "HDMI \(input - 0x10)"
+        case 0x1B: "USB-C"
+        default: "Input \(String(format: "%02X", input))"
+        }
     }
 
     static func withChecksum(_ data: [UInt8], seed: UInt8) -> [UInt8] {
