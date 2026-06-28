@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
 enum MenuSection: String, CaseIterable, Identifiable {
-    case screens, power
+    case screens, power, utilities
 
     var id: String { rawValue }
 
@@ -10,6 +10,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
         switch self {
         case .screens: "Screens"
         case .power: "Power"
+        case .utilities: "Utilities"
         }
     }
 
@@ -17,6 +18,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
         switch self {
         case .screens: "display.2"
         case .power: "bolt.fill"
+        case .utilities: "wrench.and.screwdriver"
         }
     }
 }
@@ -25,6 +27,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
 enum PanelItem: String, CaseIterable, Identifiable {
     case brightness, sleepScreens, mirror, allOn
     case keepAwake, battery, sleepMac, lock
+    case darkMode, nightShift, trueTone, dockAutoHide, desktopIcons, hiddenFiles, emptyTrash, ejectDisks
 
     var id: String { rawValue }
 
@@ -32,6 +35,8 @@ enum PanelItem: String, CaseIterable, Identifiable {
         switch self {
         case .brightness, .sleepScreens, .mirror, .allOn: .screens
         case .keepAwake, .battery, .sleepMac, .lock: .power
+        case .darkMode, .nightShift, .trueTone, .dockAutoHide, .desktopIcons, .hiddenFiles, .emptyTrash, .ejectDisks:
+            .utilities
         }
     }
 
@@ -45,6 +50,14 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .battery: "Battery"
         case .sleepMac: "Sleep Mac"
         case .lock: "Lock screen"
+        case .darkMode: "Dark Mode"
+        case .nightShift: "Night Shift"
+        case .trueTone: "True Tone"
+        case .dockAutoHide: "Hide Dock"
+        case .desktopIcons: "Desktop icons"
+        case .hiddenFiles: "Hidden files"
+        case .emptyTrash: "Empty Trash"
+        case .ejectDisks: "Eject all disks"
         }
     }
 

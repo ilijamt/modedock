@@ -40,6 +40,12 @@ targets:
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.utilities
         NSHumanReadableCopyright: Copyright © 2026 Ilija Matoski. MIT License.
+        NSAppleEventsUsageDescription: ModeDock asks Finder to empty the Trash.
+    entitlements:
+      path: ModeDock/ModeDock.entitlements
+      properties:
+        # Needed under the hardened runtime to send Apple Events (Finder's "empty trash").
+        com.apple.security.automation.apple-events: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.matoski.modedock

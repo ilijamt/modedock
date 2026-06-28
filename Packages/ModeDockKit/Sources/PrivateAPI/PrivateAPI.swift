@@ -41,11 +41,22 @@ public enum PrivateAPI {
     /// Locks the screen right away, like Control-Command-Q.
     public static let lockScreen: LockScreen? = symbol("SACLockScreenImmediate")
 
+    public typealias GetSwitch = @convention(c) () -> Bool
+    public typealias SetSwitch = @convention(c) (Bool) -> Void
+
+    /// System-wide dark mode, without the Automation permission System Events would need.
+    public static let darkMode: GetSwitch? = symbol("SLSGetAppearanceThemeLegacy")
+    public static let setDarkMode: SetSwitch? = symbol("SLSSetAppearanceThemeLegacy")
+    /// The Dock's "Automatically hide and show the Dock".
+    public static let dockAutoHide: GetSwitch? = symbol("CoreDockGetAutoHideEnabled")
+    public static let setDockAutoHide: SetSwitch? = symbol("CoreDockSetAutoHideEnabled")
+
     nonisolated(unsafe) private static let handles: [UnsafeMutableRawPointer?] = [
         dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight", RTLD_LAZY),
         dlopen("/System/Library/PrivateFrameworks/DisplayServices.framework/DisplayServices", RTLD_LAZY),
         dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY),
         dlopen("/System/Library/PrivateFrameworks/login.framework/login", RTLD_LAZY),
+        dlopen("/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices", RTLD_LAZY),
         UnsafeMutableRawPointer(bitPattern: -2),  // RTLD_DEFAULT
     ]
 

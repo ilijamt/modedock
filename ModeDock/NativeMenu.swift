@@ -10,16 +10,18 @@ final class NativeMenu {
     private let modes: DisplayModeController
     private let brightness: BrightnessController
     private let power: PowerController
+    private let utilities: UtilitiesController
     private let onOpenSettings: () -> Void
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
-        power: PowerController, onOpenSettings: @escaping () -> Void
+        power: PowerController, utilities: UtilitiesController, onOpenSettings: @escaping () -> Void
     ) {
         self.screens = screens
         self.modes = modes
         self.brightness = brightness
         self.power = power
+        self.utilities = utilities
         self.onOpenSettings = onOpenSettings
     }
 
@@ -41,6 +43,7 @@ final class NativeMenu {
             switch section {
             case .screens: addScreenItems(to: menu, hidden: hidden)
             case .power: addPowerItems(to: menu, hidden: hidden)
+            case .utilities: addUtilityItems(to: menu, hidden: hidden)
             }
         }
 
@@ -78,6 +81,43 @@ final class NativeMenu {
         }
 
         addError(screens.lastError ?? modes.lastError, to: menu)
+    }
+
+    private func addUtilityItems(to menu: NSMenu, hidden: Set<PanelItem>) {
+        utilities.refresh()
+        menu.addItem(.sectionHeader(title: "Utilities"))
+        for toggle in UtilityToggle.visible(utilities, hidden: hidden) {
+            let item = ActionItem(toggle.title) { toggle.set(!toggle.isOn) }
+            item.image = NSImage(systemSymbolName: toggle.systemImage, accessibilityDescription: nil)
+            item.state = toggle.isOn ? .on : .off
+            item.toolTip = toggle.help
+            menu.addItem(item)
+        }
+        if !hidden.contains(.emptyTrash) {
+            let trash = ActionItem("Empty Trash…") { [utilities] in Self.confirmEmptyTrash(utilities) }
+            trash.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
+            menu.addItem(trash)
+        }
+        if !hidden.contains(.ejectDisks) {
+            let eject = ActionItem(utilities.ejectTitle) { [utilities] in Task { await utilities.ejectAll() } }
+            eject.image = NSImage(systemSymbolName: "eject.fill", accessibilityDescription: nil)
+            eject.isEnabled = utilities.state.ejectableVolumes > 0 && !utilities.isEjecting
+            menu.addItem(eject)
+        }
+        addError(utilities.lastError, to: menu)
+    }
+
+    /// The menu has closed by now, so a regular alert is used; ModeDock is activated so it shows
+    /// in front.
+    private static func confirmEmptyTrash(_ utilities: UtilitiesController) {
+        let alert = NSAlert()
+        alert.messageText = "Empty the Trash?"
+        alert.informativeText = "The items in the Trash will be deleted. This can't be undone."
+        alert.addButton(withTitle: "Empty Trash")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.level = .modalPanel
+        if alert.runModal() == .alertFirstButtonReturn { utilities.emptyTrash() }
     }
 
     private func addPowerItems(to menu: NSMenu, hidden: Set<PanelItem>) {

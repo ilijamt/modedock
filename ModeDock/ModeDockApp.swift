@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let modes = DisplayModeController()
     private lazy var brightness = BrightnessController(ddc: ddc)
     private let power = PowerController()
+    private let utilities = UtilitiesController()
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
         launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power)
@@ -68,10 +69,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         menuBar = MenuBarController(
-            screens: screens, modes: modes, brightness: brightness, power: power,
+            screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities,
             onShow: { [weak self] in
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
+                self?.utilities.refresh()
             },
             onOpenSettings: { [weak self] in self?.settingsWindow.show() }
         )

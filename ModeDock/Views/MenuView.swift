@@ -8,6 +8,7 @@ struct MenuView: View {
     let modes: DisplayModeController
     let brightness: BrightnessController
     let power: PowerController
+    let utilities: UtilitiesController
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -46,6 +47,12 @@ struct MenuView: View {
                             RowsPowerSection(power: power)
                         } else {
                             PowerSection(power: power)
+                        }
+                    case .utilities:
+                        if style == .rows {
+                            RowsUtilitiesSection(utilities: utilities)
+                        } else {
+                            UtilitiesSection(utilities: utilities)
                         }
                     }
                 }
