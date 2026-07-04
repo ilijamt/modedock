@@ -13,12 +13,13 @@ final class NativeMenu {
     private let utilities: UtilitiesController
     private let inputs: MonitorInputController
     private let profiles: ProfileController
+    private let screenshots: ScreenshotCoordinator
     private let onOpenSettings: () -> Void
 
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
         power: PowerController, utilities: UtilitiesController, inputs: MonitorInputController,
-        profiles: ProfileController, onOpenSettings: @escaping () -> Void
+        profiles: ProfileController, screenshots: ScreenshotCoordinator, onOpenSettings: @escaping () -> Void
     ) {
         self.screens = screens
         self.modes = modes
@@ -27,6 +28,7 @@ final class NativeMenu {
         self.utilities = utilities
         self.inputs = inputs
         self.profiles = profiles
+        self.screenshots = screenshots
         self.onOpenSettings = onOpenSettings
     }
 
@@ -50,6 +52,7 @@ final class NativeMenu {
             case .profiles: addProfileItems(to: menu, hidden: hidden)
             case .power: addPowerItems(to: menu, hidden: hidden)
             case .utilities: addUtilityItems(to: menu, hidden: hidden)
+            case .screenshots: addScreenshotItems(to: menu, hidden: hidden)
             }
         }
 
@@ -195,6 +198,49 @@ final class NativeMenu {
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         if alert.runModal() == .alertFirstButtonReturn { utilities.emptyTrash() }
+    }
+
+    private func addScreenshotItems(to menu: NSMenu, hidden: Set<PanelItem>) {
+        let controller = screenshots.controller
+        controller.refreshPermission()
+        menu.addItem(.sectionHeader(title: "Screenshots"))
+        if !controller.hasPermission {
+            let allow = ActionItem("Allow Screen Recording…") { [controller] in Self.askForScreenRecording(controller) }
+            allow.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: nil)
+            allow.toolTip = "ModeDock needs Screen Recording permission to take screenshots."
+            menu.addItem(allow)
+        }
+        let toClipboard = ScreenshotSettings.savesToClipboard
+        for mode in screenshots.visibleModes(hidden: hidden) {
+            let item = ActionItem(mode.menuTitle) { [screenshots] in screenshots.take(mode) }
+            item.image = NSImage(systemSymbolName: mode.systemImage, accessibilityDescription: nil)
+            item.toolTip = mode.help(savesToClipboard: toClipboard)
+            item.isEnabled = screenshots.isEnabled(mode, savesToClipboard: toClipboard)
+            // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
+            if let shortcut = mode.shortcut { item.setShortcut(KeyboardShortcuts.getShortcut(for: shortcut)) }
+            menu.addItem(item)
+        }
+        addError(controller.lastError, to: menu)
+    }
+
+    /// The menu has closed by now, so a regular alert explains the permission first.
+    private static func askForScreenRecording(_ controller: ScreenshotController) {
+        let alert = NSAlert()
+        alert.messageText = "Allow Screen Recording?"
+        alert.informativeText =
+            "ModeDock needs Screen Recording permission to take screenshots. Allow it when macOS asks, or turn "
+            + "on ModeDock in System Settings → Privacy & Security → Screen Recording. You may need to quit and "
+            + "reopen ModeDock afterwards."
+        alert.addButton(withTitle: "Allow…")
+        alert.addButton(withTitle: "Open Settings")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        alert.window.level = .modalPanel
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: controller.requestPermission()
+        case .alertSecondButtonReturn: ScreenshotSettings.openPrivacySettings()
+        default: break
+        }
     }
 
     private func addPowerItems(to menu: NSMenu, hidden: Set<PanelItem>) {

@@ -36,11 +36,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let utilities = UtilitiesController()
     private lazy var inputs = MonitorInputController(ddc: ddc)
     private lazy var profiles = ProfileController(screens: screens, modes: modes, brightness: brightness)
+    private let screenshots = ScreenshotCoordinator(controller: ScreenshotController())
     private lazy var dynamicShortcuts = DynamicShortcuts(profiles: profiles, screens: screens)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
         launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power,
-        profiles: profiles)
+        profiles: profiles, screenshots: screenshots.controller)
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
@@ -74,14 +75,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         menuBar = MenuBarController(
             screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, inputs: inputs,
-            profiles: profiles,
+            profiles: profiles, screenshots: screenshots,
             onShow: { [weak self] in
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
                 self?.utilities.refresh()
+                self?.screenshots.controller.refreshPermission()
             },
             onOpenSettings: { [weak self] in self?.settingsWindow.show() }
         )
+        screenshots.closePanel = { [weak self] in self?.menuBar?.close() }
         menuBar?.onClose = { [weak self] in
             // Never leave a change waiting for confirmation without a visible prompt.
             if let change = self?.modes.pending { self?.confirmation.show(for: change) }
@@ -104,6 +107,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
             self?.menuBar?.toggle()
+        }
+        for mode in ScreenshotMode.allCases {
+            guard let name = mode.shortcut else { continue }
+            KeyboardShortcuts.onKeyUp(for: name) { [weak self] in self?.screenshots.take(mode) }
         }
         KeyboardShortcuts.onKeyUp(for: .turnAllScreensOn) { [weak self] in
             guard let self else { return }

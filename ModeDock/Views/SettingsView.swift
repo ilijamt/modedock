@@ -4,7 +4,7 @@ import SwiftUI
 
 /// The Settings tabs, in order. Each becomes a toolbar item in the Settings window.
 enum SettingsTab: String, CaseIterable {
-    case general, menu, displays, profiles, shortcuts, about
+    case general, menu, displays, profiles, screenshots, shortcuts, about
 
     var title: String {
         switch self {
@@ -12,6 +12,7 @@ enum SettingsTab: String, CaseIterable {
         case .menu: "Menu"
         case .displays: "Displays"
         case .profiles: "Profiles"
+        case .screenshots: "Screenshots"
         case .shortcuts: "Shortcuts"
         case .about: "About"
         }
@@ -23,6 +24,7 @@ enum SettingsTab: String, CaseIterable {
         case .menu: "menubar.rectangle"
         case .displays: "display.2"
         case .profiles: "rectangle.3.group"
+        case .screenshots: "camera.viewfinder"
         case .shortcuts: "command"
         case .about: "info.circle"
         }
@@ -35,7 +37,8 @@ enum SettingsTab: String, CaseIterable {
         case .menu: 560
         case .displays: 500
         case .profiles: 460
-        case .shortcuts: 320
+        case .screenshots: 600
+        case .shortcuts: 520
         case .about: 250
         }
     }
@@ -43,13 +46,14 @@ enum SettingsTab: String, CaseIterable {
     @MainActor @ViewBuilder
     func content(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
-        power: PowerController, profiles: ProfileController
+        power: PowerController, profiles: ProfileController, screenshots: ScreenshotController
     ) -> some View {
         switch self {
         case .general: GeneralSettingsView(modes: modes, power: power)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
         case .profiles: ProfileSettingsView(profiles: profiles, screens: screens)
+        case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
         case .about: AboutView(screens: screens, modes: modes)
         }
@@ -377,6 +381,18 @@ private struct ShortcutSettingsView: View {
             }
 
             Section {
+                KeyboardShortcuts.Recorder("Capture area:", name: .captureArea)
+                KeyboardShortcuts.Recorder("Capture window:", name: .captureWindow)
+                KeyboardShortcuts.Recorder("Capture screen:", name: .captureScreen)
+            } header: {
+                Text("Screenshots")
+            } footer: {
+                Text("macOS already uses ⇧⌘3, ⇧⌘4 and ⇧⌘5 for its own screenshots.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 ForEach(screens.screens.filter { !$0.display.identity.isPlaceholder }) { screen in
                     KeyboardShortcuts.Recorder(
                         "Turn \(screen.display.name) on or off:", name: .toggleScreen(screen.display.identity))
@@ -390,6 +406,109 @@ private struct ShortcutSettingsView: View {
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+private struct ScreenshotSettingsView: View {
+    let screenshots: ScreenshotController
+    @AppStorage(SettingsKey.screenshotDestination) private var destination = ScreenshotSettings.folder
+    @AppStorage(SettingsKey.screenshotFolder) private var folder = ""
+    @AppStorage(SettingsKey.screenshotFormat) private var format = ScreenshotFormat.png.rawValue
+    @AppStorage(SettingsKey.screenshotPointer) private var includePointer = false
+    @AppStorage(SettingsKey.screenshotShadow) private var windowShadow = true
+    @AppStorage(SettingsKey.screenshotSound) private var playSound = true
+    @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
+    @AppStorage(SettingsKey.screenshotNotice) private var showNotice = true
+
+    private var folderURL: URL { ScreenshotSettings.folderURL(default: screenshots.defaultFolder) }
+
+    var body: some View {
+        Form {
+            Section {
+                Picker("Save to", selection: $destination) {
+                    Text("Folder").tag(ScreenshotSettings.folder)
+                    Text("Clipboard").tag(ScreenshotSettings.clipboard)
+                }
+                LabeledContent("Folder") {
+                    HStack {
+                        Text(verbatim: (folderURL.path as NSString).abbreviatingWithTildeInPath)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .foregroundStyle(.secondary)
+                            .help(folderURL.path)
+                        Button("Choose…", action: chooseFolder)
+                        if !folder.isEmpty {
+                            Button("Use Default") { folder = "" }
+                                .help("Save where macOS saves its own screenshots.")
+                        }
+                    }
+                }
+                .disabled(destination == ScreenshotSettings.clipboard)
+                Picker("Format", selection: $format) {
+                    ForEach(ScreenshotFormat.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                Text("By default, screenshots go where macOS saves its own. All Screens always saves to the folder.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Include the pointer", isOn: $includePointer)
+                Picker("Timer", selection: $delay) {
+                    ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
+                        if seconds == 0 { Text("Off").tag(0) } else { Text("\(seconds) seconds").tag(seconds) }
+                    }
+                }
+                Toggle("Window shadow", isOn: $windowShadow)
+                Toggle("Play sound", isOn: $playSound)
+                Toggle("Show a preview after capturing", isOn: $showNotice)
+            } footer: {
+                Text("The pointer and timer apply to screen captures. The shadow applies to window captures.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                LabeledContent("Screen Recording") {
+                    if screenshots.hasPermission {
+                        Label("Allowed", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        ScreenRecordingButtons(controller: screenshots)
+                    }
+                }
+            } header: {
+                Text("Permission")
+            } footer: {
+                Text(
+                    "macOS asks before any app can capture the screen. After allowing ModeDock in System Settings, "
+                        + "you may need to quit and reopen it."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+        // Picks up a permission granted in System Settings while this window is open.
+        .task {
+            while !Task.isCancelled {
+                screenshots.refreshPermission()
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    private func chooseFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.directoryURL = folderURL
+        panel.prompt = "Choose"
+        panel.message = "Choose where to save screenshots"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        folder = url.path
     }
 }
 

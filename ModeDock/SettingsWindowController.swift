@@ -11,11 +11,13 @@ final class SettingsWindowController {
     private let brightness: BrightnessController
     private let power: PowerController
     private let profiles: ProfileController
+    private let screenshots: ScreenshotController
     private var window: NSWindow?
 
     init(
         launchAtLogin: LaunchAtLogin, screens: ScreenController, modes: DisplayModeController,
-        brightness: BrightnessController, power: PowerController, profiles: ProfileController
+        brightness: BrightnessController, power: PowerController, profiles: ProfileController,
+        screenshots: ScreenshotController
     ) {
         self.launchAtLogin = launchAtLogin
         self.screens = screens
@@ -23,6 +25,7 @@ final class SettingsWindowController {
         self.brightness = brightness
         self.power = power
         self.profiles = profiles
+        self.screenshots = screenshots
     }
 
     func show() {
@@ -40,7 +43,8 @@ final class SettingsWindowController {
         tabs.tabStyle = .toolbar
         for tab in SettingsTab.allCases {
             let view = tab.content(
-                screens: screens, modes: modes, brightness: brightness, power: power, profiles: profiles
+                screens: screens, modes: modes, brightness: brightness, power: power, profiles: profiles,
+                screenshots: screenshots
             )
             .environment(launchAtLogin)
             .frame(width: 480, height: tab.height)

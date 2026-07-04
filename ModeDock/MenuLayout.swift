@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
 enum MenuSection: String, CaseIterable, Identifiable {
-    case screens, profiles, power, utilities
+    case screens, profiles, power, utilities, screenshots
 
     var id: String { rawValue }
 
@@ -12,6 +12,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
         case .profiles: "Profiles"
         case .power: "Power"
         case .utilities: "Utilities"
+        case .screenshots: "Screenshots"
         }
     }
 
@@ -21,6 +22,7 @@ enum MenuSection: String, CaseIterable, Identifiable {
         case .profiles: "rectangle.3.group"
         case .power: "bolt.fill"
         case .utilities: "wrench.and.screwdriver"
+        case .screenshots: "camera.viewfinder"
         }
     }
 }
@@ -31,6 +33,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
     case saveProfile
     case keepAwake, battery, sleepMac, lock
     case darkMode, nightShift, trueTone, dockAutoHide, desktopIcons, hiddenFiles, emptyTrash, ejectDisks
+    case screenshotArea, screenshotWindow, screenshotScreen, screenshotAllScreens
 
     var id: String { rawValue }
 
@@ -41,6 +44,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .keepAwake, .battery, .sleepMac, .lock: .power
         case .darkMode, .nightShift, .trueTone, .dockAutoHide, .desktopIcons, .hiddenFiles, .emptyTrash, .ejectDisks:
             .utilities
+        case .screenshotArea, .screenshotWindow, .screenshotScreen, .screenshotAllScreens: .screenshots
         }
     }
 
@@ -63,6 +67,10 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .hiddenFiles: "Hidden files"
         case .emptyTrash: "Empty Trash"
         case .ejectDisks: "Eject all disks"
+        case .screenshotArea: "Capture area"
+        case .screenshotWindow: "Capture window"
+        case .screenshotScreen: "Capture screen"
+        case .screenshotAllScreens: "Capture all screens"
         }
     }
 
@@ -130,12 +138,26 @@ enum SettingsKey {
     static let keepAwakeCustomMinutes = "keepAwakeCustomMinutes"
     /// Keep Awake also stops the screens from sleeping.
     static let keepScreensOn = "keepScreensOn"
+    /// "folder" or "clipboard".
+    static let screenshotDestination = "screenshotDestination"
+    /// A folder path; empty for the folder macOS saves screenshots to.
+    static let screenshotFolder = "screenshotFolder"
+    static let screenshotFormat = "screenshotFormat"
+    static let screenshotPointer = "screenshotPointer"
+    static let screenshotSound = "screenshotSound"
+    static let screenshotShadow = "screenshotShadow"
+    /// Show a preview card after a capture.
+    static let screenshotNotice = "screenshotNotice"
+    /// Seconds before a screen capture.
+    static let screenshotDelay = "screenshotDelay"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 
     /// Every preference shown in Settings, for "Reset Settings".
     static let all = [
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
+        screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
+        screenshotNotice, screenshotDelay,
         PanelStyle.key, AppAppearance.key,
     ]
 }

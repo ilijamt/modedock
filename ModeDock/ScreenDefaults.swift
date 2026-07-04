@@ -31,7 +31,7 @@ enum ScreenDefaults {
     /// system login item, so it's left as it is.
     static func resetSettings(modes: DisplayModeController) {
         for key in SettingsKey.all { UserDefaults.standard.removeObject(forKey: key) }
-        KeyboardShortcuts.reset(.togglePanel, .turnAllScreensOn)
+        KeyboardShortcuts.reset(.togglePanel, .turnAllScreensOn, .captureArea, .captureWindow, .captureScreen)
         modes.forgetConfirmedModes()
         AppAppearance.apply()
     }

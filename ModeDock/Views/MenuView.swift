@@ -11,6 +11,7 @@ struct MenuView: View {
     let utilities: UtilitiesController
     let inputs: MonitorInputController
     let profiles: ProfileController
+    let screenshots: ScreenshotCoordinator
     let onOpenSettings: () -> Void
 
     @AppStorage(SettingsKey.sectionOrder) private var sectionOrder = ""
@@ -61,6 +62,12 @@ struct MenuView: View {
                             RowsUtilitiesSection(utilities: utilities)
                         } else {
                             UtilitiesSection(utilities: utilities)
+                        }
+                    case .screenshots:
+                        if style == .rows {
+                            RowsScreenshotsSection(screenshots: screenshots)
+                        } else {
+                            ScreenshotsSection(screenshots: screenshots)
                         }
                     }
                 }

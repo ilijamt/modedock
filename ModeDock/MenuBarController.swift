@@ -19,14 +19,14 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     init(
         screens: ScreenController, modes: DisplayModeController, brightness: BrightnessController,
         power: PowerController, utilities: UtilitiesController, inputs: MonitorInputController,
-        profiles: ProfileController,
+        profiles: ProfileController, screenshots: ScreenshotCoordinator,
         onShow: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void
     ) {
         panel = MenuPanel()
         nativeMenu = NativeMenu(
             screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities,
-            inputs: inputs, profiles: profiles, onOpenSettings: onOpenSettings)
+            inputs: inputs, profiles: profiles, screenshots: screenshots, onOpenSettings: onOpenSettings)
         self.onShow = onShow
         super.init()
 
@@ -38,6 +38,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
             utilities: utilities,
             inputs: inputs,
             profiles: profiles,
+            screenshots: screenshots,
             onOpenSettings: { [weak self] in
                 self?.close()
                 onOpenSettings()
