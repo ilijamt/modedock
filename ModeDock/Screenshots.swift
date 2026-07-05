@@ -64,7 +64,7 @@ extension ScreenshotMode {
             case .area: "Drag to select part of the screen. Press Esc to cancel."
             case .window: "Click a window to capture it. Press Esc to cancel."
             case .screen: "Capture the screen under the pointer."
-            case .allScreens: "Capture every screen, one file each."
+            case .allScreens: "Capture every screen."
             }
         guard let shortcut = shortcut?.shortcutText else { return text }
         return "\(text) (\(shortcut))"
@@ -73,12 +73,26 @@ extension ScreenshotMode {
 
 /// The Settings → Screenshots preferences, as the options a capture takes.
 enum ScreenshotSettings {
+    // The values of SettingsKey.screenshotDestination.
     static let folder = "folder"
     static let clipboard = "clipboard"
+    static let both = "both"
     static let delays = [0, 3, 5, 10]
 
-    static var savesToClipboard: Bool {
-        UserDefaults.standard.string(forKey: SettingsKey.screenshotDestination) == clipboard
+    static func savesToFolder(_ value: String) -> Bool { value != clipboard }
+    static func copiesToClipboard(_ value: String) -> Bool { value == clipboard || value == both }
+
+    /// The setting for a combination; at least one of the two stays on.
+    static func value(savesToFolder: Bool, copiesToClipboard: Bool) -> String {
+        switch (savesToFolder, copiesToClipboard) {
+        case (true, true): both
+        case (false, true): clipboard
+        default: folder
+        }
+    }
+
+    private static var destination: String {
+        UserDefaults.standard.string(forKey: SettingsKey.screenshotDestination) ?? folder
     }
 
     /// The chosen folder, or macOS's own screenshot location when none was chosen.
@@ -90,12 +104,15 @@ enum ScreenshotSettings {
     static func options(defaultFolder: URL) -> ScreenshotOptions {
         let defaults = UserDefaults.standard
         return ScreenshotOptions(
-            destination: savesToClipboard ? .clipboard : .folder(folderURL(default: defaultFolder)),
+            destination: ScreenshotDestination(
+                folder: savesToFolder(destination) ? folderURL(default: defaultFolder) : nil,
+                copiesToClipboard: copiesToClipboard(destination)),
             format: defaults.string(forKey: SettingsKey.screenshotFormat).flatMap(ScreenshotFormat.init) ?? .png,
             includePointer: defaults.bool(forKey: SettingsKey.screenshotPointer),
             playSound: defaults.object(forKey: SettingsKey.screenshotSound) as? Bool ?? true,
             windowShadow: defaults.object(forKey: SettingsKey.screenshotShadow) as? Bool ?? true,
-            delay: defaults.integer(forKey: SettingsKey.screenshotDelay)
+            delay: defaults.integer(forKey: SettingsKey.screenshotDelay),
+            combinesScreens: defaults.object(forKey: SettingsKey.screenshotCombineScreens) as? Bool ?? true
         )
     }
 
@@ -140,7 +157,7 @@ final class ScreenshotCoordinator {
             let result = await controller.capture(mode, display: display, options: options)
             switch result {
             case .saved(let files) where ScreenshotSettings.showsNotice:
-                notice.show(.saved(files), controller: controller)
+                notice.show(.saved(files, copied: options.destination.copiesToClipboard), controller: controller)
             case .copied where ScreenshotSettings.showsNotice:
                 notice.show(.copied, controller: controller)
             case .failed:
@@ -156,7 +173,7 @@ final class ScreenshotCoordinator {
 }
 
 enum ScreenshotNotice: Equatable {
-    case saved([URL])
+    case saved([URL], copied: Bool)
     case copied
     case failed(String)
     case permission
@@ -256,7 +273,7 @@ private struct NoticeView: View {
 
     @ViewBuilder private var leading: some View {
         switch notice {
-        case .saved(let files):
+        case .saved(let files, _):
             Button {
                 if let file = files.first { NSWorkspace.shared.open(file) }
             } label: {
@@ -276,7 +293,8 @@ private struct NoticeView: View {
 
     private var title: String {
         switch notice {
-        case .saved(let files): files.count == 1 ? "Screenshot Saved" : "\(files.count) Screenshots Saved"
+        case .saved(let files, let copied):
+            (files.count == 1 ? "Screenshot Saved" : "\(files.count) Screenshots Saved") + (copied ? " and Copied" : "")
         case .copied: "Screenshot Copied"
         case .failed: "Screenshot Failed"
         case .permission: "Screen Recording Needed"
@@ -285,7 +303,7 @@ private struct NoticeView: View {
 
     private var detail: String? {
         switch notice {
-        case .saved(let files):
+        case .saved(let files, _):
             files.first.map { files.count == 1 ? $0.lastPathComponent : $0.deletingLastPathComponent().path }
         case .copied: "Paste it into any app."
         case .failed(let message): message
@@ -295,7 +313,7 @@ private struct NoticeView: View {
 
     @ViewBuilder private var buttons: some View {
         switch notice {
-        case .saved(let files):
+        case .saved(let files, _):
             Button("Show in Finder") {
                 NSWorkspace.shared.activateFileViewerSelecting(files)
                 onClose()
@@ -349,5 +367,70 @@ private struct Thumbnail: View {
             let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options)
         else { return NSWorkspace.shared.icon(forFile: url.path) }
         return NSImage(cgImage: thumbnail, size: .zero)
+    }
+}
+
+/// Hands macOS's ⇧⌘3 and ⇧⌘4 screenshot shortcuts (and their ⌃ clipboard versions) to ModeDock,
+/// and back. macOS keeps them in com.apple.symbolichotkeys; a missing entry means "on".
+@MainActor
+enum SystemScreenshotKeys {
+    private static let domain = "com.apple.symbolichotkeys" as CFString
+    private static let key = "AppleSymbolicHotKeys" as CFString
+    /// ⇧⌘ and ⌃⇧⌘ in the modifier format these entries use.
+    private static let shiftCommand = 1_179_648
+    private static let controlShiftCommand = 1_441_792
+    /// Hot key ID → (character, key code, modifiers), as macOS writes them.
+    private static let entries: [String: [Int]] = [
+        "28": [51, 20, shiftCommand],  // Save picture of screen as a file
+        "29": [51, 20, controlShiftCommand],  // Copy picture of screen to the clipboard
+        "30": [52, 21, shiftCommand],  // Save picture of selected area as a file
+        "31": [52, 21, controlShiftCommand],  // Copy picture of selected area to the clipboard
+    ]
+
+    private static var hotKeys: [String: Any] {
+        CFPreferencesCopyValue(key, domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] ?? [:]
+    }
+
+    /// Whether macOS's own shortcuts are off, so ModeDock can use the keys.
+    static var areTakenOver: Bool {
+        let keys = hotKeys
+        return entries.keys.allSatisfy { ((keys[$0] as? [String: Any])?["enabled"] as? Bool) == false }
+    }
+
+    static func takeOver(_ on: Bool) {
+        var keys = hotKeys
+        for (id, parameters) in entries {
+            var entry = keys[id] as? [String: Any] ?? [:]
+            entry["enabled"] = !on
+            if entry["value"] == nil {
+                entry["value"] = ["parameters": parameters, "type": "standard"]
+            }
+            keys[id] = entry
+        }
+        CFPreferencesSetValue(key, keys as CFDictionary, domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        CFPreferencesSynchronize(domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost)
+        // Makes the change take effect without logging out.
+        let activate = Process()
+        activate.executableURL = URL(
+            fileURLWithPath:
+                "/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings")
+        activate.arguments = ["-u"]
+        try? activate.run()
+        activate.waitUntilExit()
+
+        let screen = KeyboardShortcuts.Shortcut(.three, modifiers: [.shift, .command])
+        let area = KeyboardShortcuts.Shortcut(.four, modifiers: [.shift, .command])
+        if on {
+            KeyboardShortcuts.setShortcut(screen, for: .captureScreen)
+            KeyboardShortcuts.setShortcut(area, for: .captureArea)
+        } else {
+            // Only clear them if they're still the keys handed back to macOS.
+            if KeyboardShortcuts.getShortcut(for: .captureScreen) == screen {
+                KeyboardShortcuts.setShortcut(nil, for: .captureScreen)
+            }
+            if KeyboardShortcuts.getShortcut(for: .captureArea) == area {
+                KeyboardShortcuts.setShortcut(nil, for: .captureArea)
+            }
+        }
     }
 }

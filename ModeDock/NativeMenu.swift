@@ -210,12 +210,11 @@ final class NativeMenu {
             allow.toolTip = "ModeDock needs Screen Recording permission to take screenshots."
             menu.addItem(allow)
         }
-        let toClipboard = ScreenshotSettings.savesToClipboard
         for mode in screenshots.visibleModes(hidden: hidden) {
             let item = ActionItem(mode.menuTitle) { [screenshots] in screenshots.take(mode) }
             item.image = NSImage(systemSymbolName: mode.systemImage, accessibilityDescription: nil)
-            item.toolTip = mode.help(savesToClipboard: toClipboard)
-            item.isEnabled = screenshots.isEnabled(mode, savesToClipboard: toClipboard)
+            item.toolTip = mode.help
+            item.isEnabled = screenshots.canCapture
             // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
             if let shortcut = mode.shortcut { item.setShortcut(KeyboardShortcuts.getShortcut(for: shortcut)) }
             menu.addItem(item)

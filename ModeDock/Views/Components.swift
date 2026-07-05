@@ -67,6 +67,9 @@ struct ActionTile: View {
     let title: String
     let systemImage: String
     var isOn = false
+    /// Shown at the right edge, such as the tile's keyboard shortcut.
+    var detail: String?
+    var detailIsPlaceholder = false
     let action: () -> Void
 
     var body: some View {
@@ -79,6 +82,14 @@ struct ActionTile: View {
                     .font(.caption)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
+                if let detail {
+                    Spacer(minLength: 4)
+                    Text(verbatim: detail)
+                        .font(.caption2)
+                        .lineLimit(1)
+                        .fixedSize()
+                        .foregroundStyle(detailIsPlaceholder ? .tertiary : .secondary)
+                }
             }
             .foregroundStyle(isOn ? .white : .primary)
             .frame(maxWidth: .infinity)
@@ -100,6 +111,27 @@ struct TileGrid<Content: View>: View {
         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: columns), spacing: 6) {
             content
         }
+    }
+}
+
+/// A small capsule button for picking one of a few options, tinted when chosen.
+struct Chip: View {
+    let title: String
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(verbatim: title)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+                .foregroundStyle(isOn ? .white : .primary)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.08)), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 }
 

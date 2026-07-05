@@ -9,38 +9,33 @@ extension ScreenshotCoordinator {
         }
     }
 
-    func isEnabled(_ mode: ScreenshotMode, savesToClipboard: Bool) -> Bool {
-        controller.hasPermission && !controller.isCapturing && !(mode == .allScreens && savesToClipboard)
-    }
-}
-
-extension ScreenshotMode {
-    @MainActor func help(savesToClipboard: Bool) -> String {
-        self == .allScreens && savesToClipboard
-            ? "All Screens saves to a folder. Choose a folder in Settings → Screenshots." : help
-    }
+    var canCapture: Bool { controller.hasPermission && !controller.isCapturing }
 }
 
 /// The Screenshots section in the Cards style: a row of tiles.
 struct ScreenshotsSection: View {
     let screenshots: ScreenshotCoordinator
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
-    @AppStorage(SettingsKey.screenshotDestination) private var destination = ScreenshotSettings.folder
-
     private var controller: ScreenshotController { screenshots.controller }
 
     var body: some View {
-        let toClipboard = destination == ScreenshotSettings.clipboard
         VStack(spacing: 8) {
             if !controller.hasPermission {
                 ScreenRecordingPrompt(controller: controller)
             }
             TileGrid {
                 ForEach(screenshots.visibleModes(hidden: PanelItem.hidden(in: hiddenItems))) { mode in
-                    ActionTile(title: mode.title, systemImage: mode.systemImage) { screenshots.take(mode) }
-                        .disabled(!screenshots.isEnabled(mode, savesToClipboard: toClipboard))
-                        .help(mode.help(savesToClipboard: toClipboard))
+                    let shortcut = mode.shortcut?.shortcutText
+                    ActionTile(
+                        title: mode.title, systemImage: mode.systemImage, detail: shortcut ?? "Not set",
+                        detailIsPlaceholder: shortcut == nil
+                    ) { screenshots.take(mode) }
+                    .disabled(!screenshots.canCapture)
+                    .help(mode.help)
                 }
+            }
+            if !PanelItem.hidden(in: hiddenItems).contains(.screenshotOptions) {
+                ScreenshotOptionsStrip()
             }
             ErrorLabel(controller.lastError)
         }
@@ -52,12 +47,9 @@ struct ScreenshotsSection: View {
 struct RowsScreenshotsSection: View {
     let screenshots: ScreenshotCoordinator
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
-    @AppStorage(SettingsKey.screenshotDestination) private var destination = ScreenshotSettings.folder
-
     private var controller: ScreenshotController { screenshots.controller }
 
     var body: some View {
-        let toClipboard = destination == ScreenshotSettings.clipboard
         let modes = screenshots.visibleModes(hidden: PanelItem.hidden(in: hiddenItems))
         VStack(spacing: 10) {
             if !controller.hasPermission {
@@ -75,15 +67,20 @@ struct RowsScreenshotsSection: View {
                                 Spacer()
                                 if let shortcut = mode.shortcut?.shortcutText {
                                     Text(verbatim: shortcut).foregroundStyle(.secondary)
+                                } else {
+                                    Text("Not set").foregroundStyle(.tertiary)
                                 }
                             }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .disabled(!screenshots.isEnabled(mode, savesToClipboard: toClipboard))
-                        .help(mode.help(savesToClipboard: toClipboard))
+                        .disabled(!screenshots.canCapture)
+                        .help(mode.help)
                     }
                 }
+            }
+            if !PanelItem.hidden(in: hiddenItems).contains(.screenshotOptions) {
+                ScreenshotOptionsStrip()
             }
             ErrorLabel(controller.lastError)
         }
@@ -111,5 +108,48 @@ private struct ScreenRecordingPrompt: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
         .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// Where captures go and the timer, so they can be changed without opening Settings. Outside
+/// the glass cards, and chips rather than a segmented picker, which crashed inside glass.
+struct ScreenshotOptionsStrip: View {
+    @AppStorage(SettingsKey.screenshotDestination) private var destination = ScreenshotSettings.folder
+    @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
+
+    private var savesToFolder: Bool { ScreenshotSettings.savesToFolder(destination) }
+    private var copiesToClipboard: Bool { ScreenshotSettings.copiesToClipboard(destination) }
+
+    /// Turning off the only one that's on does nothing: a capture has to go somewhere.
+    private func set(savesToFolder: Bool, copiesToClipboard: Bool) {
+        guard savesToFolder || copiesToClipboard else { return }
+        destination = ScreenshotSettings.value(savesToFolder: savesToFolder, copiesToClipboard: copiesToClipboard)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Text("Save to").font(.callout)
+                Spacer(minLength: 4)
+                Chip(title: "Folder", isOn: savesToFolder) {
+                    set(savesToFolder: !savesToFolder, copiesToClipboard: copiesToClipboard)
+                }
+                .help("Save a file in the screenshot folder")
+                Chip(title: "Clipboard", isOn: copiesToClipboard) {
+                    set(savesToFolder: savesToFolder, copiesToClipboard: !copiesToClipboard)
+                }
+                .help("Copy the image, ready to paste. Both can be on.")
+            }
+            HStack(spacing: 4) {
+                Text("Timer").font(.callout)
+                Spacer(minLength: 4)
+                ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
+                    Chip(title: seconds == 0 ? "Off" : "\(seconds)s", isOn: delay == seconds) { delay = seconds }
+                        .help(seconds == 0 ? "Capture straight away" : "Wait \(seconds) seconds before capturing")
+                }
+            }
+        }
+        .padding(10)
+        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }

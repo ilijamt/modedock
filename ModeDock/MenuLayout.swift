@@ -33,7 +33,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
     case saveProfile
     case keepAwake, battery, sleepMac, lock
     case darkMode, nightShift, trueTone, dockAutoHide, desktopIcons, hiddenFiles, emptyTrash, ejectDisks
-    case screenshotArea, screenshotWindow, screenshotScreen, screenshotAllScreens
+    case screenshotArea, screenshotWindow, screenshotScreen, screenshotAllScreens, screenshotOptions
 
     var id: String { rawValue }
 
@@ -44,7 +44,8 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .keepAwake, .battery, .sleepMac, .lock: .power
         case .darkMode, .nightShift, .trueTone, .dockAutoHide, .desktopIcons, .hiddenFiles, .emptyTrash, .ejectDisks:
             .utilities
-        case .screenshotArea, .screenshotWindow, .screenshotScreen, .screenshotAllScreens: .screenshots
+        case .screenshotArea, .screenshotWindow, .screenshotScreen, .screenshotAllScreens, .screenshotOptions:
+            .screenshots
         }
     }
 
@@ -71,6 +72,7 @@ enum PanelItem: String, CaseIterable, Identifiable {
         case .screenshotWindow: "Capture window"
         case .screenshotScreen: "Capture screen"
         case .screenshotAllScreens: "Capture all screens"
+        case .screenshotOptions: "Save to and timer"
         }
     }
 
@@ -148,6 +150,8 @@ enum SettingsKey {
     static let screenshotShadow = "screenshotShadow"
     /// Show a preview card after a capture.
     static let screenshotNotice = "screenshotNotice"
+    /// All Screens saves one image of every screen instead of a file each.
+    static let screenshotCombineScreens = "screenshotCombineScreens"
     /// Seconds before a screen capture.
     static let screenshotDelay = "screenshotDelay"
     /// "connected" or "all": which profiles the Next Profile shortcut cycles through.
@@ -161,7 +165,7 @@ enum SettingsKey {
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
         screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
-        screenshotNotice, screenshotDelay, profileCycleScope, brightnessKeysAllScreens,
+        screenshotNotice, screenshotDelay, screenshotCombineScreens, profileCycleScope, brightnessKeysAllScreens,
         PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
     ]
 }

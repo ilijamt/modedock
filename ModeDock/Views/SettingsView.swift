@@ -473,6 +473,7 @@ private struct ShortcutSettingsView: View {
             }
 
             Section {
+                SystemScreenshotKeysToggle()
                 ShortcutRecorder("Capture area", name: .captureArea)
                 ShortcutRecorder("Capture window", name: .captureWindow)
                 ShortcutRecorder("Capture screen", name: .captureScreen)
@@ -480,9 +481,11 @@ private struct ShortcutSettingsView: View {
             } header: {
                 Text("Screenshots")
             } footer: {
-                Text("macOS already uses ⇧⌘3, ⇧⌘4 and ⇧⌘5 for its own screenshots.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "macOS uses ⇧⌘3, ⇧⌘4 and ⇧⌘5 for its own screenshots. Taking over ⇧⌘3 and ⇧⌘4 turns those macOS shortcuts off (and their ⌃ clipboard versions); turning it off gives them back. ⇧⌘5 stays with macOS."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -524,11 +527,33 @@ private struct BrightnessKeysToggle: View {
     }
 }
 
+/// "Use ⇧⌘3 and ⇧⌘4 for ModeDock", which turns the macOS screenshot shortcuts off or back on.
+private struct SystemScreenshotKeysToggle: View {
+    @State private var takenOver = SystemScreenshotKeys.areTakenOver
+
+    var body: some View {
+        Toggle(
+            "Use ⇧⌘3 and ⇧⌘4 for ModeDock",
+            isOn: Binding(
+                get: { takenOver },
+                set: { on in
+                    SystemScreenshotKeys.takeOver(on)
+                    takenOver = SystemScreenshotKeys.areTakenOver
+                })
+        )
+        .help("⇧⌘3 captures the screen and ⇧⌘4 an area, with ModeDock's settings.")
+        .onAppear { takenOver = SystemScreenshotKeys.areTakenOver }
+    }
+}
+
 /// A shortcut recorder with a button that clears it. An empty recorder means no shortcut.
 struct ShortcutRecorder: View {
     let title: String
     let name: KeyboardShortcuts.Name
     @State private var isSet = false
+
+    /// KeyboardShortcuts posts this for every change, but doesn't make the name public.
+    private static let shortcutChanged = Notification.Name("KeyboardShortcuts_shortcutByNameDidChange")
 
     init(_ title: String, name: KeyboardShortcuts.Name) {
         self.title = title
@@ -554,6 +579,10 @@ struct ShortcutRecorder: View {
             }
         }
         .onAppear { isSet = KeyboardShortcuts.getShortcut(for: name) != nil }
+        // Also when a shortcut is set from code, such as when taking over ⇧⌘3 and ⇧⌘4.
+        .onReceive(NotificationCenter.default.publisher(for: Self.shortcutChanged)) { _ in
+            isSet = KeyboardShortcuts.getShortcut(for: name) != nil
+        }
     }
 }
 
@@ -567,16 +596,30 @@ private struct ScreenshotSettingsView: View {
     @AppStorage(SettingsKey.screenshotSound) private var playSound = true
     @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
     @AppStorage(SettingsKey.screenshotNotice) private var showNotice = true
+    @AppStorage(SettingsKey.screenshotCombineScreens) private var combineScreens = true
 
     private var folderURL: URL { ScreenshotSettings.folderURL(default: screenshots.defaultFolder) }
+
+    /// "Save to the folder" or "Copy to the clipboard"; the last one on can't be turned off.
+    private func destinationBinding(folder: Bool) -> Binding<Bool> {
+        Binding(
+            get: {
+                folder
+                    ? ScreenshotSettings.savesToFolder(destination) : ScreenshotSettings.copiesToClipboard(destination)
+            },
+            set: { on in
+                let saves = folder ? on : ScreenshotSettings.savesToFolder(destination)
+                let copies = folder ? ScreenshotSettings.copiesToClipboard(destination) : on
+                guard saves || copies else { return }
+                destination = ScreenshotSettings.value(savesToFolder: saves, copiesToClipboard: copies)
+            })
+    }
 
     var body: some View {
         Form {
             Section {
-                Picker("Save to", selection: $destination) {
-                    Text("Folder").tag(ScreenshotSettings.folder)
-                    Text("Clipboard").tag(ScreenshotSettings.clipboard)
-                }
+                Toggle("Save to the folder", isOn: destinationBinding(folder: true))
+                Toggle("Copy to the clipboard", isOn: destinationBinding(folder: false))
                 LabeledContent("Folder") {
                     HStack {
                         Text(verbatim: (folderURL.path as NSString).abbreviatingWithTildeInPath)
@@ -591,14 +634,21 @@ private struct ScreenshotSettingsView: View {
                         }
                     }
                 }
-                .disabled(destination == ScreenshotSettings.clipboard)
+                .disabled(!ScreenshotSettings.savesToFolder(destination))
                 Picker("Format", selection: $format) {
                     ForEach(ScreenshotFormat.allCases) { Text($0.title).tag($0.rawValue) }
                 }
+                Picker("All Screens saves", selection: $combineScreens) {
+                    Text("One image").tag(true)
+                    Text("A file per screen").tag(false)
+                }
+                .help("One image lays the screens out the way they're arranged in System Settings → Displays.")
             } footer: {
-                Text("By default, screenshots go where macOS saves its own. All Screens always saves to the folder.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "By default, screenshots go where macOS saves its own. With both on, each one is saved and copied. All Screens always copies one image of every screen, laid out like your displays."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section {

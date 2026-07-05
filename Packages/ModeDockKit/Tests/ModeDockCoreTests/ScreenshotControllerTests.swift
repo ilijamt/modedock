@@ -10,9 +10,11 @@ private final class FakeScreenshotSystem: ScreenshotSystem {
     var permissionRequests = 0
     var displays: [CGDirectDisplayID] = [5, 1]
     var files: Set<String> = []
-    var changeCount = 0
+    var copied: [[URL]] = []
+    var arrangements: [[CGRect]?] = []
+    var copySucceeds = true
     var runs: [[String]] = []
-    /// What a capture does: write the files it was given, copy to the clipboard, or nothing (Esc).
+    /// What a capture does: write the files it was given, or nothing (Esc).
     var behaviour: Behaviour = .succeed
     var status: Int32 = 0
 
@@ -24,16 +26,31 @@ private final class FakeScreenshotSystem: ScreenshotSystem {
     func capture(arguments: [String]) async throws -> Int32 {
         runs.append(arguments)
         guard behaviour == .succeed else { return 1 }
-        if arguments.contains("-c") {
-            changeCount += 1
-        } else {
-            files.formUnion(arguments.filter { $0.hasPrefix("/") })
-        }
+        files.formUnion(arguments.filter { $0.hasPrefix("/") })
         return status
     }
 
     func fileExists(_ url: URL) -> Bool { files.contains(url.path) }
-    func pasteboardChangeCount() -> Int { changeCount }
+    func removeFile(_ url: URL) { files.remove(url.path) }
+    func temporaryFolder() -> URL { URL(fileURLWithPath: "/tmp/modedock") }
+
+    func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?) -> Bool {
+        copied.append(files)
+        arrangements.append(bounds)
+        return copySucceeds
+    }
+
+    var combined: [URL] = []
+
+    func combineImages(_ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat) -> Bool {
+        combined.append(file)
+        self.files.insert(file.path)
+        return true
+    }
+
+    func bounds(of display: CGDirectDisplayID) -> CGRect {
+        display == 5 ? CGRect(x: 0, y: 0, width: 1920, height: 1080) : CGRect(x: -1512, y: 98, width: 1512, height: 982)
+    }
     func activeDisplays() -> [CGDirectDisplayID] { displays }
     func defaultFolder() -> URL { URL(fileURLWithPath: "/Users/me/Desktop") }
 }
@@ -73,14 +90,14 @@ struct ScreenshotControllerTests {
             delay: 5)
         #expect(
             ScreenshotController.arguments(mode: .screen, options: options, displayIndex: 1, files: [])
-                == ["-x", "-D", "1", "-C", "-T", "5", "-c", "-t", "jpg"])
+                == ["-x", "-D", "1", "-C", "-T", "5", "-t", "jpg"])
         // The pointer and timer only apply to screen captures; the shadow only to windows.
         #expect(
             ScreenshotController.arguments(mode: .window, options: options, displayIndex: nil, files: [])
-                == ["-x", "-i", "-w", "-o", "-c", "-t", "jpg"])
+                == ["-x", "-i", "-w", "-o", "-t", "jpg"])
         #expect(
             ScreenshotController.arguments(mode: .area, options: options, displayIndex: nil, files: [])
-                == ["-x", "-i", "-s", "-c", "-t", "jpg"])
+                == ["-x", "-i", "-s", "-t", "jpg"])
     }
 
     @Test func savesToATimestampedFile() async {
@@ -128,20 +145,69 @@ struct ScreenshotControllerTests {
                 ]))
     }
 
-    @Test func allScreensNeedsAFolder() async {
+    @Test func copiesToTheClipboardWithoutKeepingFiles() async {
         let system = FakeScreenshotSystem()
         let controller = ScreenshotController(system: system)
-        #expect(await controller.capture(.allScreens, options: options(.clipboard)) == .failed)
-        #expect(system.runs.isEmpty)
-        #expect(controller.lastError != nil)
+        #expect(await controller.capture(.window, options: options(.clipboard), date: date) == .copied)
+        let temporary = URL(fileURLWithPath: "/tmp/modedock/ModeDock 2026-11-15 at 01.23.45.png")
+        #expect(system.copied == [[temporary]])
+        #expect(system.arrangements == [nil])
+        #expect(system.files.isEmpty)
+        #expect(controller.lastSaved.isEmpty)
     }
 
-    @Test func copiesToTheClipboard() async {
+    @Test func allScreensCanBeCopied() async {
         let system = FakeScreenshotSystem()
         let controller = ScreenshotController(system: system)
-        #expect(await controller.capture(.window, options: options(.clipboard)) == .copied)
-        #expect(system.runs.last?.contains("-c") == true)
-        #expect(controller.lastSaved.isEmpty)
+        #expect(await controller.capture(.allScreens, options: options(.clipboard), date: date) == .copied)
+        #expect(system.copied.first?.count == 2)
+        // Copied as one image, laid out like the displays.
+        #expect(
+            system.arrangements.first
+                == [CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: -1512, y: 98, width: 1512, height: 982)])
+    }
+
+    @Test func combinesAllScreensIntoOneFile() async {
+        let system = FakeScreenshotSystem()
+        let controller = ScreenshotController(system: system)
+        var combined = options()
+        combined.combinesScreens = true
+        let expected = folder.appendingPathComponent("ModeDock 2026-11-15 at 01.23.45.png")
+
+        #expect(await controller.capture(.allScreens, options: combined, date: date) == .saved([expected]))
+        #expect(system.combined == [expected])
+        // The per-screen captures were temporary.
+        #expect(system.files == [expected.path])
+    }
+
+    @Test func arrangesScreensLikeTheDisplays() {
+        // A laptop to the left of the main screen, lower down.
+        let layout = ScreenshotController.arrangement(
+            of: [CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: -1512, y: 98, width: 1512, height: 982)],
+            scale: 2)
+        #expect(layout.size == CGSize(width: 6864, height: 2160))
+        // Bottom-left origin: the main screen is at the top right, the laptop at the bottom left.
+        #expect(layout.frames[0] == CGRect(x: 3024, y: 0, width: 3840, height: 2160))
+        #expect(layout.frames[1] == CGRect(x: 0, y: 0, width: 3024, height: 1964))
+    }
+
+    @Test func savesAndCopies() async {
+        let system = FakeScreenshotSystem()
+        let controller = ScreenshotController(system: system)
+        let both = ScreenshotDestination(folder: folder, copiesToClipboard: true)
+        let expected = URL(fileURLWithPath: "/tmp/shots/ModeDock 2026-11-15 at 01.23.45.png")
+        #expect(await controller.capture(.area, options: options(both), date: date) == .saved([expected]))
+        #expect(system.copied == [[expected]])
+        #expect(system.files.contains(expected.path))
+    }
+
+    @Test func aFailedCopyIsAnError() async {
+        let system = FakeScreenshotSystem()
+        system.copySucceeds = false
+        let controller = ScreenshotController(system: system)
+        #expect(await controller.capture(.screen, options: options(.clipboard), date: date) == .failed)
+        #expect(controller.lastError != nil)
+        #expect(system.files.isEmpty)
     }
 
     @Test func cancelledCapturesAreNotErrors() async {
