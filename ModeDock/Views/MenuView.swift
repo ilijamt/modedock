@@ -18,6 +18,8 @@ struct MenuView: View {
     @AppStorage(SettingsKey.hiddenSections) private var hiddenSections = ""
     @AppStorage(SettingsKey.collapsedSections) private var collapsedSections = ""
     @AppStorage(PanelStyle.key) private var panelStyle = PanelStyle.cards.rawValue
+    @AppStorage(PanelLayout.key) private var panelLayout = PanelLayout.tabs.rawValue
+    @AppStorage(PanelLayout.selectedTabKey) private var selectedTabID = ""
 
     private var style: PanelStyle { PanelStyle(rawValue: panelStyle) ?? .cards }
 
@@ -26,64 +28,101 @@ struct MenuView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
+        VStack(alignment: .leading, spacing: 2) {
+            header.padding([.horizontal, .top], 14)
 
-            ForEach(layout.visible) { section in
-                CollapsibleSection(
-                    title: section.title,
-                    isExpanded: !layout.collapsed.contains(section),
-                    onToggle: { toggleCollapsed(section) }
-                ) {
-                    switch section {
-                    case .screens:
-                        Group {
-                            if style == .rows {
-                                RowsScreensSection(controller: screens, modes: modes, brightness: brightness)
-                            } else {
-                                ScreensSection(controller: screens, modes: modes, brightness: brightness)
+            if isTabbed, !layout.visible.isEmpty {
+                PanelTabBar(sections: layout.visible, selected: selectedTab) { selectedTabID = $0.rawValue }
+                    .padding(.horizontal, 14)
+            }
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if isTabbed {
+                        if let section = selectedTab { content(of: section) }
+                    } else {
+                        ForEach(layout.visible) { section in
+                            CollapsibleSection(
+                                title: section.title,
+                                isExpanded: !layout.collapsed.contains(section),
+                                onToggle: { toggleCollapsed(section) }
+                            ) {
+                                content(of: section)
                             }
                         }
-                        .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
-                    case .profiles:
-                        if style == .rows {
-                            RowsProfilesSection(profiles: profiles, screens: screens, modes: modes)
-                        } else {
-                            ProfilesSection(profiles: profiles, screens: screens, modes: modes)
-                        }
-                    case .power:
-                        if style == .rows {
-                            RowsPowerSection(power: power)
-                        } else {
-                            PowerSection(power: power)
-                        }
-                    case .utilities:
-                        if style == .rows {
-                            RowsUtilitiesSection(utilities: utilities)
-                        } else {
-                            UtilitiesSection(utilities: utilities)
-                        }
-                    case .screenshots:
-                        if style == .rows {
-                            RowsScreenshotsSection(screenshots: screenshots)
-                        } else {
-                            ScreenshotsSection(screenshots: screenshots)
-                        }
+                    }
+
+                    if layout.visible.isEmpty {
+                        Text("All sections are hidden. Choose what to show in Settings → Menu.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
+                .padding([.horizontal, .bottom], 14)
+                .padding(.top, 10)
             }
-
-            if layout.visible.isEmpty {
-                Text("All sections are hidden. Choose what to show in Settings → Menu.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .scrollBounceBehavior(.basedOnSize)
+            .modifier(NoScrollEdgeEffect())
+            .frame(maxHeight: maxScrollHeight)
+            // Sized to the content until it reaches the cap, then it scrolls.
+            .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
         .frame(width: 320)
         .environment(\.useGlass, style == .cards)
         .environment(inputs)
         .background(alignment: .topLeading) { keyboardShortcuts }
+    }
+
+    private var isTabbed: Bool { (PanelLayout(rawValue: panelLayout) ?? .tabs) == .tabs }
+
+    /// The chosen tab, or the first section when that one has been hidden.
+    private var selectedTab: MenuSection? {
+        MenuSection(rawValue: selectedTabID).flatMap { layout.visible.contains($0) ? $0 : nil } ?? layout.visible.first
+    }
+
+    /// The screen's height less the header, tab bar and a margin, so the panel never runs off the screen.
+    private var maxScrollHeight: CGFloat {
+        let screen = (NSScreen.underMouse ?? NSScreen.main)?.visibleFrame.height ?? 800
+        return max(200, screen - (isTabbed ? 120 : 80))
+    }
+
+    @ViewBuilder
+    private func content(of section: MenuSection) -> some View {
+        switch section {
+        case .screens:
+            Group {
+                if style == .rows {
+                    RowsScreensSection(controller: screens, modes: modes, brightness: brightness)
+                } else {
+                    ScreensSection(controller: screens, modes: modes, brightness: brightness)
+                }
+            }
+            .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
+        case .profiles:
+            if style == .rows {
+                RowsProfilesSection(profiles: profiles, screens: screens, modes: modes)
+            } else {
+                ProfilesSection(profiles: profiles, screens: screens, modes: modes)
+            }
+        case .power:
+            if style == .rows {
+                RowsPowerSection(power: power)
+            } else {
+                PowerSection(power: power)
+            }
+        case .utilities:
+            if style == .rows {
+                RowsUtilitiesSection(utilities: utilities)
+            } else {
+                UtilitiesSection(utilities: utilities)
+            }
+        case .screenshots:
+            if style == .rows {
+                RowsScreenshotsSection(screenshots: screenshots)
+            } else {
+                ScreenshotsSection(screenshots: screenshots)
+            }
+        }
     }
 
     private var header: some View {
@@ -131,6 +170,55 @@ struct MenuView: View {
     }
 }
 
+/// macOS 26 shades the area above a scroll view, which shows as a band behind the header.
+private struct NoScrollEdgeEffect: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.scrollEdgeEffectHidden(true, for: .all)
+        } else {
+            content
+        }
+    }
+}
+
+/// The icon bar of the Tabs layout, one button per visible section.
+private struct PanelTabBar: View {
+    let sections: [MenuSection]
+    let selected: MenuSection?
+    let onSelect: (MenuSection) -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(sections) { section in
+                let isSelected = section == selected
+                Button {
+                    onSelect(section)
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: section.systemImage)
+                            .font(.system(size: 13, weight: .medium))
+                            .frame(height: 18)
+                        Text(section.title)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .background(
+                        isSelected ? AnyShapeStyle(.primary.opacity(0.1)) : AnyShapeStyle(.clear),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(section.title)
+            }
+        }
+    }
+}
+
 private struct ScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
@@ -144,7 +232,7 @@ private struct ScreensSection: View {
                 ScreenCard(screen: screen, controller: controller, modes: modes, brightness: brightness)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 if !hidden.contains(.sleepScreens) {
                     ActionTile(title: "Sleep", systemImage: "moon.fill") {
                         controller.sleepAllDisplays()

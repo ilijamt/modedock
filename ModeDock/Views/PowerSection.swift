@@ -114,7 +114,7 @@ struct PowerSection: View {
             }
 
             if !hidden.contains(.sleepMac) || !hidden.contains(.lock) {
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     if !hidden.contains(.sleepMac) {
                         ActionTile(title: "Sleep Mac", systemImage: "powersleep") { power.sleep() }
                             .help("Put the Mac to sleep now.")

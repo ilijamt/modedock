@@ -35,7 +35,7 @@ struct ScreenshotsSection: View {
             if !controller.hasPermission {
                 ScreenRecordingPrompt(controller: controller)
             }
-            HStack(spacing: 8) {
+            TileGrid {
                 ForEach(screenshots.visibleModes(hidden: PanelItem.hidden(in: hiddenItems))) { mode in
                     ActionTile(title: mode.title, systemImage: mode.systemImage) { screenshots.take(mode) }
                         .disabled(!screenshots.isEnabled(mode, savesToClipboard: toClipboard))

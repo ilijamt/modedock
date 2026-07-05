@@ -62,7 +62,7 @@ struct CircleToggle: View {
     }
 }
 
-/// A square action tile with an icon and a short label, for one-tap actions.
+/// A compact tile with an icon beside a short label, for one-tap actions. Tinted when on.
 struct ActionTile: View {
     let title: String
     let systemImage: String
@@ -71,22 +71,35 @@ struct ActionTile: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {
+            HStack(spacing: 6) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isOn ? .white : .primary)
-                    .frame(width: 28, height: 28)
-                    .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.1)), in: Circle())
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 16)
                 Text(title)
                     .font(.caption)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
+            .foregroundStyle(isOn ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .surface(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 9)
+            .surface(RoundedRectangle(cornerRadius: 10, style: .continuous), tint: isOn ? .accentColor : nil)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Tiles in equal columns, for sections with more than fit on one row.
+struct TileGrid<Content: View>: View {
+    var columns = 2
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: columns), spacing: 6) {
+            content
+        }
     }
 }
 

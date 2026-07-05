@@ -158,7 +158,7 @@ enum SettingsKey {
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
         screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
         screenshotNotice, screenshotDelay,
-        PanelStyle.key, AppAppearance.key,
+        PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
     ]
 }
 
@@ -189,6 +189,30 @@ enum PanelStyle: String, CaseIterable, Identifiable {
     static var current: PanelStyle {
         UserDefaults.standard.string(forKey: key).flatMap(PanelStyle.init(rawValue:)) ?? .cards
     }
+}
+
+/// Whether the panel lists every section or shows one at a time under a tab bar.
+enum PanelLayout: String, CaseIterable, Identifiable {
+    case list, tabs
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .list: "List"
+        case .tabs: "Tabs"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .list: "Every section in one list that scrolls when it's taller than the screen."
+        case .tabs: "One section at a time, picked from a bar of icons at the top."
+        }
+    }
+
+    static let key = "panelLayout"
+    static let selectedTabKey = "panelSelectedTab"
 }
 
 /// ModeDock's own light or dark appearance, independent of the system setting.

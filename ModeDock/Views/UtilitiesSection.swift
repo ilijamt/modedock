@@ -68,7 +68,7 @@ struct UtilitiesSection: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+            TileGrid {
                 ForEach(UtilityToggle.visible(utilities, hidden: hidden)) { toggle in
                     ActionTile(title: toggle.title, systemImage: toggle.systemImage, isOn: toggle.isOn) {
                         toggle.set(!toggle.isOn)

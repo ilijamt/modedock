@@ -131,8 +131,10 @@ private struct MenuSettingsView: View {
     @AppStorage(SettingsKey.hiddenSections) private var hiddenSections = ""
     @AppStorage(SettingsKey.collapsedSections) private var collapsedSections = ""
     @State private var dragging: MenuSection?
+    @State private var expanded: Set<MenuSection> = []
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
     @AppStorage(PanelStyle.key) private var panelStyle = PanelStyle.cards.rawValue
+    @AppStorage(PanelLayout.key) private var panelLayout = PanelLayout.tabs.rawValue
 
     private var layout: MenuLayout {
         MenuLayout(order: sectionOrder, hidden: hiddenSections, collapsed: collapsedSections)
@@ -151,42 +153,29 @@ private struct MenuSettingsView: View {
             }
 
             Section {
+                Picker("Layout", selection: $panelLayout) {
+                    ForEach(PanelLayout.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .disabled(panelStyle == PanelStyle.menu.rawValue)
+            } footer: {
+                Text((PanelLayout(rawValue: panelLayout) ?? .tabs).summary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
                 // A grouped Form doesn't support onMove on macOS, so rows are dragged and dropped instead.
                 ForEach(layout.order) { section in
-                    HStack {
-                        HStack {
-                            Image(systemName: "line.3.horizontal")
-                                .foregroundStyle(.tertiary)
-                            Image(systemName: section.systemImage).frame(width: 22)
-                            Text(section.title)
-                            Spacer()
+                    VStack(alignment: .leading, spacing: 10) {
+                        sectionHeader(section)
+                        if expanded.contains(section) {
+                            sectionDetails(section)
+                                .padding(.leading, 52)
+                                .disabled(layout.hidden.contains(section))
                         }
-                        .contentShape(Rectangle())
-                        .onHover { inside in
-                            // The open hand says "you can grab this", as in other reorderable lists.
-                            if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
-                        }
-                        .help("Drag to change the order")
-                        Picker("Starts", selection: expansion(of: section)) {
-                            Text("Open").tag(true)
-                            Text("Collapsed").tag(false)
-                        }
-                        .labelsHidden()
-                        .fixedSize()
-                        .disabled(layout.hidden.contains(section))
-                        .help("Whether the section is open or collapsed in the panel")
-                        Toggle("Show \(section.title)", isOn: visibility(of: section))
-                            .toggleStyle(.switch)
-                            .labelsHidden()
                     }
                     .contentShape(Rectangle())
                     .opacity(dragging == section ? 0.4 : 1)
-                    .onDrag {
-                        dragging = section
-                        return NSItemProvider(object: section.rawValue as NSString)
-                    } preview: {
-                        Label(section.title, systemImage: section.systemImage).padding(6)
-                    }
                     .onDrop(
                         of: [.text],
                         delegate: SectionDropDelegate(target: section, dragging: $dragging) { move($0, to: $1) }
@@ -202,26 +191,80 @@ private struct MenuSettingsView: View {
                 Text("Sections")
             } footer: {
                 Text(
-                    "Show or hide sections and choose whether they start open or collapsed. Drag them, or right-click one, to change their order. Clicking a section title in the panel also opens or collapses it."
+                    "Turn sections on or off, and open one to choose what it shows. Drag sections, or right-click one, to change their order."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            }
-
-            ForEach(layout.order) { section in
-                Section {
-                    ForEach(PanelItem.allCases.filter { $0.section == section }) { item in
-                        Toggle(item.title, isOn: itemVisibility(item))
-                    }
-                } header: {
-                    Text("Show in \(section.title)")
-                }
-                .disabled(layout.hidden.contains(section))
             }
         }
         .formStyle(.grouped)
         // A drop anywhere else in the window ends the drag, so the dragged row doesn't stay faded.
         .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
+    }
+
+    private func sectionHeader(_ section: MenuSection) -> some View {
+        let items = PanelItem.allCases.filter { $0.section == section }
+        let shown = items.filter { !PanelItem.hidden(in: hiddenItems).contains($0) }.count
+        let isOpen = expanded.contains(section)
+        return HStack {
+            HStack {
+                Image(systemName: "line.3.horizontal")
+                    .foregroundStyle(.tertiary)
+                Image(systemName: section.systemImage).frame(width: 22)
+                Text(section.title)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+            .onHover { inside in
+                // The open hand says "you can grab this", as in other reorderable lists.
+                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+            }
+            .help("Drag to change the order")
+            .onDrag {
+                dragging = section
+                return NSItemProvider(object: section.rawValue as NSString)
+            } preview: {
+                Label(section.title, systemImage: section.systemImage).padding(6)
+            }
+
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { expanded.set(section, contains: !isOpen) }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(verbatim: "\(shown) of \(items.count) shown")
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .rotationEffect(.degrees(isOpen ? 90 : 0))
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(isOpen ? "Hide the options" : "Choose what this section shows")
+
+            Toggle("Show \(section.title)", isOn: visibility(of: section))
+                .toggleStyle(.switch)
+                .labelsHidden()
+        }
+    }
+
+    private func sectionDetails(_ section: MenuSection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            FlowLayout(spacing: 6) {
+                ForEach(PanelItem.allCases.filter { $0.section == section }) { item in
+                    ItemChip(title: item.title, isOn: itemVisibility(item))
+                }
+            }
+            if panelLayout == PanelLayout.list.rawValue {
+                Picker("Starts", selection: expansion(of: section)) {
+                    Text("Open").tag(true)
+                    Text("Collapsed").tag(false)
+                }
+                .fixedSize()
+                .help("Whether the section starts open or collapsed in the panel")
+            }
+        }
     }
 
     /// Puts `section` where `target` is, shifting the others.
@@ -624,6 +667,77 @@ private struct AboutView: View {
 
 /// Covers the gaps between rows and the rest of the window: keeps the move cursor there and ends
 /// the drag on drop, so the dragged row doesn't stay faded.
+/// An on/off chip for one item of a section, tinted when the item is shown.
+private struct ItemChip: View {
+    let title: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            Label(title, systemImage: isOn ? "checkmark" : "plus")
+                .font(.callout)
+                .foregroundStyle(isOn ? .white : .primary)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 4)
+                .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.08)), in: Capsule())
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(isOn ? "Shown. Click to hide it." : "Hidden. Click to show it.")
+    }
+}
+
+/// Lays out views left to right, wrapping onto new lines when the width runs out.
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(subviews, width: proposal.width ?? .infinity)
+        return CGSize(
+            width: rows.map(\.width).max() ?? 0,
+            height: rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(0, rows.count - 1)))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func arrange(_ subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = [Row()]
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed =
+                rows[rows.count - 1].indices.isEmpty ? size.width : rows[rows.count - 1].width + spacing + size.width
+            if needed > width, !rows[rows.count - 1].indices.isEmpty {
+                rows.append(Row())
+            }
+            var row = rows[rows.count - 1]
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+            rows[rows.count - 1] = row
+        }
+        return rows
+    }
+}
+
 private struct EndDragDelegate: DropDelegate {
     @Binding var dragging: MenuSection?
 
