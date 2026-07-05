@@ -37,6 +37,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var inputs = MonitorInputController(ddc: ddc)
     private lazy var profiles = ProfileController(screens: screens, modes: modes, brightness: brightness)
     private let screenshots = ScreenshotCoordinator(controller: ScreenshotController())
+    private lazy var shortcutActions = ShortcutActions(
+        screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, profiles: profiles)
+    private let brightnessKeys = BrightnessKeys()
     private lazy var dynamicShortcuts = DynamicShortcuts(profiles: profiles, screens: screens)
     private lazy var confirmation = ModeConfirmationWindow(modes: modes)
     private lazy var settingsWindow = SettingsWindowController(
@@ -58,7 +61,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NotificationCenter.default.addObserver(
             forName: UserDefaults.didChangeNotification, object: nil, queue: .main
         ) { [weak self] _ in
-            MainActor.assumeIsolated { self?.applyDDCWriteInterval() }
+            MainActor.assumeIsolated {
+                self?.applyDDCWriteInterval()
+                self?.brightnessKeys.update()
+            }
         }
         // Changes made in the panel are confirmed inline; the panel only needs to move back under
         // the menu bar once the screen has its new size. Anything else gets the prompt window.
@@ -116,6 +122,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let self else { return }
             Task { await self.screens.restoreAll() }
         }
+        shortcutActions.start()
+        brightnessKeys.onPress = { [weak self] direction in
+            self?.shortcutActions.changeBrightness(by: Double(direction) * ShortcutActions.brightnessStep)
+        }
+        brightnessKeys.update()
     }
 
     private func applyDDCWriteInterval() {

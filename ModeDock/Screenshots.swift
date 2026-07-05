@@ -9,6 +9,7 @@ extension KeyboardShortcuts.Name {
     static let captureArea = Self("captureArea")
     static let captureWindow = Self("captureWindow")
     static let captureScreen = Self("captureScreen")
+    static let captureAllScreens = Self("captureAllScreens")
 }
 
 extension ScreenshotMode {
@@ -53,7 +54,7 @@ extension ScreenshotMode {
         case .area: .captureArea
         case .window: .captureWindow
         case .screen: .captureScreen
-        case .allScreens: nil
+        case .allScreens: .captureAllScreens
         }
     }
 

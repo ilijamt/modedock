@@ -150,6 +150,10 @@ enum SettingsKey {
     static let screenshotNotice = "screenshotNotice"
     /// Seconds before a screen capture.
     static let screenshotDelay = "screenshotDelay"
+    /// "connected" or "all": which profiles the Next Profile shortcut cycles through.
+    static let profileCycleScope = "profileCycleScope"
+    /// The keyboard's brightness keys change every screen.
+    static let brightnessKeysAllScreens = "brightnessKeysAllScreens"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 
     /// Every preference shown in Settings, for "Reset Settings".
@@ -157,7 +161,7 @@ enum SettingsKey {
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
         screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
-        screenshotNotice, screenshotDelay,
+        screenshotNotice, screenshotDelay, profileCycleScope, brightnessKeysAllScreens,
         PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
     ]
 }

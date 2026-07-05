@@ -101,6 +101,11 @@ public final class ProfileController {
 
     public var activeProfile: DisplayProfile? { profiles.first(where: isActive) }
 
+    /// Whether `profile` was saved for exactly the screens connected now, on or off.
+    public func fitsConnectedScreens(_ profile: DisplayProfile) -> Bool {
+        profile.identities == connectedIdentities()
+    }
+
     // MARK: - Applying
 
     /// Turns on the screens the profile wants on, sets their resolutions, turns off the others,

@@ -3,6 +3,7 @@ import Foundation
 import KeyboardShortcuts
 import ModeDockCore
 import Observation
+import SwiftUI
 
 extension KeyboardShortcuts.Name {
     /// Applies the profile.
@@ -30,6 +31,65 @@ extension DisplayProfile {
     }
 
     @MainActor var shortcutText: String? { KeyboardShortcuts.Name.profile(id).shortcutText }
+}
+
+extension ProfileScreen {
+    /// "1920 × 1080 · 60 Hz" from the saved mode key ("1920x1080@2x@60"); nil when there's none.
+    var resolution: String? {
+        let parts = modeKey?.split(separator: "@") ?? []
+        let size = parts.first?.split(separator: "x") ?? []
+        guard size.count == 2 else { return nil }
+        var text = "\(size[0]) × \(size[1])"
+        if parts.count > 1, let rate = parts.last, Int(rate) != nil { text += " · \(rate) Hz" }
+        return text
+    }
+
+    /// "1920×1080 · 60Hz".
+    var compactResolution: String? {
+        resolution?.replacingOccurrences(of: " × ", with: "×").replacingOccurrences(of: " Hz", with: "Hz")
+    }
+
+    /// "1920 × 1080 · 60 Hz · 70%", or "1920 × 1080 · 60 Hz · 70% brightness" for tooltips.
+    var details: String {
+        guard isEnabled else { return "Off" }
+        var parts = [resolution].compactMap { $0 }
+        if let brightness { parts.append("\(Int((brightness * 100).rounded()))% brightness") }
+        return parts.isEmpty ? "On" : parts.joined(separator: " · ")
+    }
+}
+
+/// One compact line per screen in a profile: its name, then resolution, refresh rate and brightness.
+struct ProfileScreenLines: View {
+    let profile: DisplayProfile
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            ForEach(Array(profile.screens.enumerated()), id: \.offset) { _, screen in
+                HStack(spacing: 6) {
+                    Text(verbatim: screen.name)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: 4)
+                    detail(screen)
+                        .fixedSize()
+                        .opacity(0.8)
+                }
+                .help("\(screen.name): \(screen.details)")
+            }
+        }
+        .font(.caption)
+        .monospacedDigit()
+    }
+
+    private func detail(_ screen: ProfileScreen) -> Text {
+        guard screen.isEnabled else { return Text("Off") }
+        // Tighter than `resolution`: the panel is narrow and the names need the room.
+        var text = Text(verbatim: screen.compactResolution ?? "On")
+        if let brightness = screen.brightness {
+            text = Text("\(text) · \(Image(systemName: "sun.max"))\(Int((brightness * 100).rounded()))%")
+        }
+        return text
+    }
 }
 
 @MainActor

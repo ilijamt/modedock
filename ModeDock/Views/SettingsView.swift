@@ -415,18 +415,68 @@ private struct DisplaySettingsView: View {
 
 private struct ShortcutSettingsView: View {
     let screens: ScreenController
+    @AppStorage(SettingsKey.profileCycleScope) private var profileCycleScope = ProfileCycleScope.connected.rawValue
 
     var body: some View {
         Form {
             Section {
-                KeyboardShortcuts.Recorder("Open ModeDock:", name: .togglePanel)
-                KeyboardShortcuts.Recorder("Turn all screens on:", name: .turnAllScreensOn)
+                ShortcutRecorder("Open ModeDock", name: .togglePanel)
+            } footer: {
+                Text("Leave a shortcut empty to turn it off. Click ✕ to clear one.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {
-                KeyboardShortcuts.Recorder("Capture area:", name: .captureArea)
-                KeyboardShortcuts.Recorder("Capture window:", name: .captureWindow)
-                KeyboardShortcuts.Recorder("Capture screen:", name: .captureScreen)
+                BrightnessKeysToggle()
+                ShortcutRecorder("Brightness up", name: .brightnessUp)
+                ShortcutRecorder("Brightness down", name: .brightnessDown)
+                ShortcutRecorder("Sleep screens", name: .sleepScreens)
+                ShortcutRecorder("Mirror on or off", name: .toggleMirror)
+                ShortcutRecorder("Turn all screens on", name: .turnAllScreensOn)
+                ForEach(screens.screens.filter { !$0.display.identity.isPlaceholder }) { screen in
+                    ShortcutRecorder(
+                        "Turn \(screen.display.name) on or off", name: .toggleScreen(screen.display.identity))
+                }
+            } header: {
+                Text("Screens")
+            } footer: {
+                Text(
+                    "Brightness changes every screen that's on, including monitors the brightness keys can't reach. At least one screen always stays on."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section {
+                ShortcutRecorder("Next profile", name: .nextProfile)
+                Picker("Cycle through", selection: $profileCycleScope) {
+                    ForEach(ProfileCycleScope.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+            } header: {
+                Text("Profiles")
+            } footer: {
+                Text(
+                    "Shows the profiles and moves to the next one each time you press it; the highlighted one is applied when you stop. \"Connected screens\" only includes profiles saved with exactly the screens plugged in now. Each profile's own shortcut is set in Profiles."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Section("Power and Utilities") {
+                ShortcutRecorder("Keep Awake on or off", name: .toggleKeepAwake)
+                ShortcutRecorder("Dark Mode on or off", name: .toggleDarkMode)
+                ShortcutRecorder("Night Shift on or off", name: .toggleNightShift)
+                ShortcutRecorder("True Tone on or off", name: .toggleTrueTone)
+                ShortcutRecorder("Desktop icons on or off", name: .toggleDesktopIcons)
+                ShortcutRecorder("Eject all disks", name: .ejectAllDisks)
+            }
+
+            Section {
+                ShortcutRecorder("Capture area", name: .captureArea)
+                ShortcutRecorder("Capture window", name: .captureWindow)
+                ShortcutRecorder("Capture screen", name: .captureScreen)
+                ShortcutRecorder("Capture all screens", name: .captureAllScreens)
             } header: {
                 Text("Screenshots")
             } footer: {
@@ -434,21 +484,76 @@ private struct ShortcutSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
-            Section {
-                ForEach(screens.screens.filter { !$0.display.identity.isPlaceholder }) { screen in
-                    KeyboardShortcuts.Recorder(
-                        "Turn \(screen.display.name) on or off:", name: .toggleScreen(screen.display.identity))
-                }
-            } header: {
-                Text("Screens")
-            } footer: {
-                Text("At least one screen always stays on. Profile shortcuts are set in Profiles.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// "Brightness keys change every screen", with the Accessibility permission it needs.
+private struct BrightnessKeysToggle: View {
+    @AppStorage(SettingsKey.brightnessKeysAllScreens) private var enabled = false
+    @State private var trusted = BrightnessKeys.isTrusted
+
+    var body: some View {
+        Toggle(isOn: $enabled) {
+            Text("Brightness keys change every screen")
+            Text("The keyboard's brightness keys also dim monitors that macOS can't.")
+        }
+        .onChange(of: enabled) { _, on in
+            if on, !BrightnessKeys.isTrusted { BrightnessKeys.requestAccess() }
+        }
+        .task {
+            // Notice when access is granted in System Settings.
+            while !Task.isCancelled {
+                trusted = BrightnessKeys.isTrusted
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+        if enabled, !trusted {
+            HStack {
+                Label(
+                    "ModeDock needs Accessibility access to use the brightness keys.",
+                    systemImage: "exclamationmark.triangle.fill"
+                )
+                .foregroundStyle(.orange)
+                Spacer()
+                Button("Open Settings") { BrightnessKeys.openPrivacySettings() }
+            }
+            .font(.callout)
+        }
+    }
+}
+
+/// A shortcut recorder with a button that clears it. An empty recorder means no shortcut.
+struct ShortcutRecorder: View {
+    let title: String
+    let name: KeyboardShortcuts.Name
+    @State private var isSet = false
+
+    init(_ title: String, name: KeyboardShortcuts.Name) {
+        self.title = title
+        self.name = name
+    }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack(spacing: 6) {
+                KeyboardShortcuts.Recorder(for: name) { isSet = $0 != nil }
+                Button {
+                    // setShortcut(nil) rather than reset, which would bring a default back.
+                    KeyboardShortcuts.setShortcut(nil, for: name)
+                    isSet = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
+                .disabled(!isSet)
+                .opacity(isSet ? 1 : 0.3)
+                .help("Clear this shortcut")
+            }
+        }
+        .onAppear { isSet = KeyboardShortcuts.getShortcut(for: name) != nil }
     }
 }
 
