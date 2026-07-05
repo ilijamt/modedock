@@ -178,7 +178,7 @@ private struct MenuSettingsView: View {
                     .opacity(dragging == section ? 0.4 : 1)
                     .onDrop(
                         of: [.text],
-                        delegate: SectionDropDelegate(target: section, dragging: $dragging) { move($0, to: $1) }
+                        delegate: ReorderDropDelegate(target: section, dragging: $dragging) { move($0, to: $1) }
                     )
                     .contextMenu {
                         Button("Move Up") { move(section, by: -1) }
@@ -664,6 +664,8 @@ private struct ProfileSettingsView: View {
     let profiles: ProfileController
     let screens: ScreenController
     @State private var deleting: DisplayProfile?
+    @State private var expanded: Set<DisplayProfile.ID> = []
+    @State private var dragging: DisplayProfile.ID?
 
     var body: some View {
         Form {
@@ -674,35 +676,15 @@ private struct ProfileSettingsView: View {
                 }
             }
 
+            // A grouped Form doesn't support onMove on macOS, so profiles are dragged by their title row.
             ForEach(profiles.profiles) { profile in
                 Section {
-                    TextField("Name", text: name(of: profile))
-                    LabeledContent("Screens") {
-                        Text(verbatim: profile.screenList)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    Toggle("Apply automatically", isOn: autoApply(of: profile))
-                        .help("Apply this profile whenever exactly these screens are connected.")
-                    KeyboardShortcuts.Recorder("Shortcut:", name: .profile(profile.id))
-                    HStack {
-                        Button("Apply") { Task { await profiles.apply(profile) } }
-                            .disabled(profiles.applying != nil)
-                        Button("Update from Current") { profiles.update(profile.id) }
-                            .help(
-                                "Replace this profile's screens, resolutions, arrangement and brightness with the current ones."
-                            )
-                        Spacer()
-                        Button("Delete…", role: .destructive) { deleting = profile }
-                    }
-                } header: {
-                    HStack {
-                        Text(verbatim: profile.name)
-                        if profiles.isActive(profile) {
-                            Text("Current").foregroundStyle(.secondary)
-                        }
+                    titleRow(profile)
+                    if expanded.contains(profile.id) {
+                        details(profile)
                     }
                 }
+                .opacity(dragging == profile.id ? 0.4 : 1)
             }
 
             Section {
@@ -713,13 +695,15 @@ private struct ProfileSettingsView: View {
             } footer: {
                 Text(
                     "A profile remembers which screens are on, their resolutions, arrangement, mirroring and "
-                        + "brightness. Screens that aren't connected are skipped when it's applied."
+                        + "brightness. Screens that aren't connected are skipped when it's applied. Drag profiles to "
+                        + "change their order, which is the panel's and the Next Profile shortcut's."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+        .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
         .confirmationDialog(
             "Delete \(deleting?.name ?? "the profile")?",
             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
@@ -728,6 +712,93 @@ private struct ProfileSettingsView: View {
             Button("Delete", role: .destructive) { profiles.deleteWithShortcut(profile.id) }
         } message: { _ in
             Text("Its shortcut is removed too. This can't be undone.")
+        }
+    }
+
+    /// Drag handle, name and what's set, and the chevron that shows the rest.
+    private func titleRow(_ profile: DisplayProfile) -> some View {
+        let isOpen = expanded.contains(profile.id)
+        return HStack(spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
+                Text(verbatim: profile.name).fontWeight(.medium).lineLimit(1)
+                if profiles.currentProfile?.id == profile.id { tag("Current") }
+                if profile.autoApply { tag("Automatic") }
+                Spacer()
+                if let shortcut = profile.shortcutText {
+                    Text(verbatim: shortcut).foregroundStyle(.secondary)
+                }
+            }
+            .contentShape(Rectangle())
+            .onHover { inside in
+                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+            }
+            .help("Drag to change the order")
+            .onDrag {
+                dragging = profile.id
+                return NSItemProvider(object: profile.id.uuidString as NSString)
+            } preview: {
+                Label(profile.name, systemImage: "rectangle.3.group").padding(6)
+            }
+
+            Button {
+                withAnimation(.snappy(duration: 0.2)) { expanded.set(profile.id, contains: !isOpen) }
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .rotationEffect(.degrees(isOpen ? 90 : 0))
+                    .frame(width: 20, height: 20)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(isOpen ? "Hide the details" : "Show the details")
+        }
+        .onDrop(
+            of: [.text],
+            delegate: ReorderDropDelegate(target: profile.id, dragging: $dragging) { profiles.move($0, to: $1) }
+        )
+        .contextMenu {
+            Button("Move Up") { profiles.move(profile.id, by: -1) }
+                .disabled(profiles.profiles.first?.id == profile.id)
+            Button("Move Down") { profiles.move(profile.id, by: 1) }
+                .disabled(profiles.profiles.last?.id == profile.id)
+        }
+    }
+
+    private func tag(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.primary.opacity(0.08), in: Capsule())
+    }
+
+    @ViewBuilder
+    private func details(_ profile: DisplayProfile) -> some View {
+        TextField("Name", text: name(of: profile))
+        LabeledContent("Screens") {
+            ProfileScreenLines(profile: profile)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: 280)
+        }
+        Toggle(isOn: autoApply(of: profile)) {
+            Text("Apply automatically")
+            if !profile.autoApply, let other = profiles.automaticProfile(sharingScreensWith: profile.id) {
+                Text(verbatim: "Replaces \u{201C}\(other.name)\u{201D}, which applies for these screens now.")
+            } else {
+                Text("When these screens are plugged in or out. One profile per set of screens.")
+            }
+        }
+        ShortcutRecorder("Shortcut", name: .profile(profile.id))
+        HStack {
+            Button("Apply") { Task { await profiles.apply(profile) } }
+                .disabled(profiles.applying != nil)
+            Button("Update from Current") { profiles.update(profile.id) }
+                .help("Replace this profile's screens, resolutions, arrangement and brightness with the current ones.")
+            Spacer()
+            Button("Delete…", role: .destructive) { deleting = profile }
         }
     }
 
@@ -843,8 +914,9 @@ private struct FlowLayout: Layout {
     }
 }
 
-private struct EndDragDelegate: DropDelegate {
-    @Binding var dragging: MenuSection?
+/// Ends a drag that's dropped outside the rows, so the dragged row doesn't stay faded.
+private struct EndDragDelegate<Item: Equatable>: DropDelegate {
+    @Binding var dragging: Item?
 
     func dropUpdated(info: DropInfo) -> DropProposal? {
         NSCursor.closedHand.set()
@@ -857,12 +929,12 @@ private struct EndDragDelegate: DropDelegate {
     }
 }
 
-/// Reorders the section rows while dragging, as the pointer passes over them, and shows the move
-/// cursor rather than the copy one.
-private struct SectionDropDelegate: DropDelegate {
-    let target: MenuSection
-    @Binding var dragging: MenuSection?
-    let move: (MenuSection, MenuSection) -> Void
+/// Reorders rows while dragging, as the pointer passes over them, and shows the move cursor
+/// rather than the copy one.
+private struct ReorderDropDelegate<Item: Equatable>: DropDelegate {
+    let target: Item
+    @Binding var dragging: Item?
+    let move: (Item, Item) -> Void
 
     func dropEntered(info: DropInfo) {
         if let dragging, dragging != target { move(dragging, target) }

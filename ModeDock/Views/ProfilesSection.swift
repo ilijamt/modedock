@@ -8,7 +8,7 @@ struct ProfilesSection: View {
     let screens: ScreenController
     let modes: DisplayModeController
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
-    @State private var naming = false
+    @State private var edit: ProfileEdit?
 
     private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
 
@@ -18,15 +18,18 @@ struct ProfilesSection: View {
 
             ForEach(profiles.profiles) { profile in
                 Card {
+                    // Over the corner rather than beside the content, so the screen lines keep the width.
                     ProfileButton(profile: profile, profiles: profiles)
+                        .overlay(alignment: .topTrailing) { ProfileMoreButton(id: profile.id, edit: $edit) }
                 }
+                .contextMenu { ProfileMenu(profile: profile, profiles: profiles, edit: $edit) }
+                // Under the card: text fields inside interactive glass crash SwiftUI on macOS 26.
+                ProfileEditors(profiles: profiles, screens: screens, edit: $edit, scope: .profile(profile.id))
             }
 
-            // Below the cards: text fields inside interactive glass crash SwiftUI on macOS 26.
-            if naming {
-                SaveProfileEditor(profiles: profiles, screens: screens) { naming = false }
-            } else if !hidden.contains(.saveProfile) {
-                ActionTile(title: "Save Current Setup", systemImage: "plus") { naming = true }
+            ProfileEditors(profiles: profiles, screens: screens, edit: $edit, scope: .saving)
+            if edit == nil, !hidden.contains(.saveProfile) {
+                ActionTile(title: "Save Current Setup", systemImage: "plus") { edit = .saving }
                     .help("Save the screens that are on, their resolutions, arrangement and brightness.")
             }
 
@@ -42,7 +45,7 @@ private struct ProfileButton: View {
     let profiles: ProfileController
 
     var body: some View {
-        let isActive = profiles.isActive(profile)
+        let isActive = profiles.currentProfile?.id == profile.id
         Button {
             Task { await profiles.apply(profile) }
         } label: {
@@ -55,8 +58,13 @@ private struct ProfileButton: View {
                     Text(verbatim: profile.name)
                         .font(.system(size: 13, weight: .medium))
                         .lineLimit(1)
-                    Text(verbatim: profile.summary)
-                        .font(.caption)
+                        .padding(.trailing, 22)
+                    if profile.mirroring || profile.autoApply {
+                        Text(verbatim: profile.summary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    ProfileScreenLines(profile: profile)
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 4)
@@ -80,7 +88,7 @@ struct RowsProfilesSection: View {
     let screens: ScreenController
     let modes: DisplayModeController
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
-    @State private var naming = false
+    @State private var edit: ProfileEdit?
 
     private var hidden: Set<PanelItem> { PanelItem.hidden(in: hiddenItems) }
 
@@ -100,14 +108,13 @@ struct RowsProfilesSection: View {
             if !hidden.contains(.saveProfile) {
                 RowGroup {
                     Row {
-                        Button("Save Current Setup…") { naming = true }.buttonStyle(.plain)
+                        Button("Save Current Setup…") { edit = .saving }
+                            .buttonStyle(.plain)
                         Spacer()
                     }
                 }
             }
-            if naming {
-                SaveProfileEditor(profiles: profiles, screens: screens) { naming = false }
-            }
+            ProfileEditors(profiles: profiles, screens: screens, edit: $edit, scope: .all)
 
             ErrorLabel(profiles.lastError)
         }
@@ -116,7 +123,7 @@ struct RowsProfilesSection: View {
     }
 
     private func row(_ profile: DisplayProfile) -> some View {
-        let isActive = profiles.isActive(profile)
+        let isActive = profiles.currentProfile?.id == profile.id
         return Row {
             Button {
                 Task { await profiles.apply(profile) }
@@ -137,8 +144,10 @@ struct RowsProfilesSection: View {
             }
             .buttonStyle(.plain)
             .disabled(profiles.applying != nil)
+            ProfileMoreButton(id: profile.id, edit: $edit)
         }
         .help(isActive ? "This is the current setup." : "Switch to this setup: \(profile.summary).")
+        .contextMenu { ProfileMenu(profile: profile, profiles: profiles, edit: $edit) }
     }
 }
 
@@ -151,10 +160,13 @@ private struct ProfilesEmptyText: View {
     }
 }
 
-/// Names a new profile inside the panel; a dialog would need ModeDock to become the active app.
-struct SaveProfileEditor: View {
-    let profiles: ProfileController
-    let screens: ScreenController
+/// Names a new profile, or renames one, inside the panel; a dialog would need ModeDock to
+/// become the active app.
+struct ProfileNameEditor: View {
+    let initialName: String
+    let actionTitle: String
+    var caption: String?
+    let onSave: (String) -> Void
     /// Called after saving, and on Esc.
     let onDone: () -> Void
 
@@ -171,19 +183,21 @@ struct SaveProfileEditor: View {
                     .focused($fieldFocused)
                     .onSubmit(save)
                 Button("Cancel", action: onDone)
-                Button("Save", action: save)
+                Button(actionTitle, action: save)
                     .keyboardShortcut(.defaultAction)
                     .disabled(trimmed.isEmpty)
             }
-            Text("Saves the screens that are on, their resolutions, arrangement and brightness.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if let caption {
+                Text(caption)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .controlSize(.small)
         .padding(10)
         .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onAppear {
-            name = profiles.suggestedName(screens: screens)
+            name = initialName
             fieldFocused = true
         }
         .onExitCommand(perform: onDone)
@@ -191,8 +205,210 @@ struct SaveProfileEditor: View {
 
     private func save() {
         guard !trimmed.isEmpty else { return }
-        profiles.capture(name: trimmed)
+        onSave(trimmed)
         onDone()
+    }
+}
+
+/// What's open below a section's profiles.
+enum ProfileEdit: Equatable {
+    case saving
+    /// The Update, Rename and Delete buttons.
+    case actions(DisplayProfile.ID)
+    case renaming(DisplayProfile.ID)
+    case deleting(DisplayProfile.ID)
+}
+
+/// A profile's right-click menu in the panel.
+private struct ProfileMenu: View {
+    let profile: DisplayProfile
+    let profiles: ProfileController
+    @Binding var edit: ProfileEdit?
+
+    var body: some View {
+        Button("Update from Current Setup") {
+            edit = nil
+            profiles.update(profile.id)
+        }
+        Button("Rename…") { edit = .renaming(profile.id) }
+        Button("Move Up") { profiles.move(profile.id, by: -1) }
+            .disabled(profiles.profiles.first?.id == profile.id)
+        Button("Move Down") { profiles.move(profile.id, by: 1) }
+            .disabled(profiles.profiles.last?.id == profile.id)
+        Divider()
+        Button("Delete…", role: .destructive) { edit = .deleting(profile.id) }
+    }
+}
+
+/// The ⋯ button on a profile that shows its Update, Rename and Delete buttons.
+private struct ProfileMoreButton: View {
+    let id: DisplayProfile.ID
+    @Binding var edit: ProfileEdit?
+
+    var body: some View {
+        let isOpen = edit == .actions(id)
+        Button {
+            edit = isOpen ? nil : .actions(id)
+        } label: {
+            Image(systemName: isOpen ? "ellipsis.circle.fill" : "ellipsis.circle")
+                .font(.system(size: 15))
+                .foregroundStyle(isOpen ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help("Update, rename or delete this profile")
+    }
+}
+
+/// Update, Rename and Delete for one profile.
+private struct ProfileActionStrip: View {
+    let profile: DisplayProfile
+    let profiles: ProfileController
+    @Binding var edit: ProfileEdit?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button {
+                profiles.update(profile.id)
+                edit = nil
+            } label: {
+                Label("Update", systemImage: "arrow.triangle.2.circlepath")
+            }
+            .help("Replace this profile with the current screens, resolutions, arrangement and brightness.")
+            Button {
+                edit = .renaming(profile.id)
+            } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            Spacer(minLength: 0)
+            ProfileOrderButtons(profile: profile, profiles: profiles)
+            Button(role: .destructive) {
+                edit = .deleting(profile.id)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .controlSize(.small)
+        .padding(8)
+        .background(.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onExitCommand { edit = nil }
+    }
+}
+
+/// Below a section's profiles: naming the current setup, renaming a profile, or confirming a
+/// delete. Inside the panel, since a dialog would need ModeDock to become the active app.
+private struct ProfileEditors: View {
+    let profiles: ProfileController
+    let screens: ScreenController
+    @Binding var edit: ProfileEdit?
+    let scope: Scope
+
+    enum Scope {
+        /// Only the save editor, at the end of the section.
+        case saving
+        /// Only the editors for this profile, right under it.
+        case profile(DisplayProfile.ID)
+        /// Everything, in one place.
+        case all
+    }
+
+    var body: some View {
+        switch edit {
+        case .saving:
+            if case .profile = scope {
+                EmptyView()
+            } else {
+                saveEditor
+            }
+        case .actions(let id):
+            if shows(id), let profile = profile(id) {
+                ProfileActionStrip(profile: profile, profiles: profiles, edit: $edit)
+            }
+        case .renaming(let id):
+            if shows(id), let profile = profile(id) {
+                ProfileNameEditor(initialName: profile.name, actionTitle: "Rename") {
+                    profiles.rename(id, to: $0)
+                } onDone: {
+                    edit = nil
+                }
+            }
+        case .deleting(let id):
+            if shows(id), let profile = profile(id) {
+                deleteConfirmation(profile)
+            }
+        case nil:
+            EmptyView()
+        }
+    }
+
+    private func shows(_ id: DisplayProfile.ID) -> Bool {
+        switch scope {
+        case .saving: false
+        case .profile(let shown): shown == id
+        case .all: true
+        }
+    }
+
+    private func profile(_ id: DisplayProfile.ID) -> DisplayProfile? {
+        profiles.profiles.first { $0.id == id }
+    }
+
+    private var saveEditor: some View {
+        ProfileNameEditor(
+            initialName: profiles.suggestedName(screens: screens), actionTitle: "Save",
+            caption: "Saves the screens that are on, their resolutions, arrangement and brightness."
+        ) {
+            profiles.capture(name: $0)
+        } onDone: {
+            edit = nil
+        }
+    }
+
+    private func deleteConfirmation(_ profile: DisplayProfile) -> some View {
+        HStack {
+            Text(verbatim: "Delete \u{201C}\(profile.name)\u{201D}?")
+                .font(.callout)
+                .lineLimit(2)
+            Spacer()
+            Button("Cancel") { edit = nil }
+            Button("Delete", role: .destructive) {
+                profiles.deleteWithShortcut(profile.id)
+                edit = nil
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .controlSize(.small)
+        .padding(10)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .onExitCommand { edit = nil }
+    }
+}
+
+/// Up and down arrows that change a profile's place in the list.
+struct ProfileOrderButtons: View {
+    let profile: DisplayProfile
+    let profiles: ProfileController
+
+    var body: some View {
+        let index = profiles.profiles.firstIndex { $0.id == profile.id } ?? 0
+        HStack(spacing: 2) {
+            Button {
+                profiles.move(profile.id, by: -1)
+            } label: {
+                Image(systemName: "chevron.up")
+            }
+            .disabled(index == 0)
+            .help("Move up. The order is the panel's and the Next Profile shortcut's.")
+            Button {
+                profiles.move(profile.id, by: 1)
+            } label: {
+                Image(systemName: "chevron.down")
+            }
+            .disabled(index == profiles.profiles.count - 1)
+            .help("Move down. The order is the panel's and the Next Profile shortcut's.")
+        }
+        .buttonStyle(.borderless)
+        .font(.caption.weight(.semibold))
     }
 }
 

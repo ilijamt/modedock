@@ -101,8 +101,8 @@ final class NativeMenu {
         }
         for profile in profiles.profiles {
             let item = ActionItem(profile.name) { [profiles] in Task { await profiles.apply(profile) } }
-            item.state = profiles.isActive(profile) ? .on : .off
-            item.toolTip = profile.screenList
+            item.state = profiles.currentProfile?.id == profile.id ? .on : .off
+            item.toolTip = profile.screens.map { "\($0.name): \($0.details)" }.joined(separator: "\n")
             if #available(macOS 15.0, *) { item.subtitle = profile.summary }
             // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
             item.setShortcut(KeyboardShortcuts.getShortcut(for: .profile(profile.id)))

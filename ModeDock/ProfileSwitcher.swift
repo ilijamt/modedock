@@ -78,7 +78,7 @@ final class ProfileSwitcher {
                 systemImage: "rectangle.3.group")
             return false
         }
-        let current = candidates.firstIndex(where: profiles.isActive)
+        let current = candidates.firstIndex { $0.id == profiles.currentProfile?.id }
         model.candidates = candidates
         model.current = current.map { candidates[$0].id }
         model.selected = current.map { ($0 + 1) % candidates.count } ?? 0

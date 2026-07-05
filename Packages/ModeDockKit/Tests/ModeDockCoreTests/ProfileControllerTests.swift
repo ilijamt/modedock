@@ -296,6 +296,92 @@ struct ProfileControllerTests {
         #expect(setup.configurator.current[5] == large)
     }
 
+    @Test func onlyOneProfileAppliesAutomaticallyForTheSameScreens() async {
+        let setup = await Setup()
+        let first = setup.profiles.capture(name: "Bright")
+        let second = setup.profiles.capture(name: "Dim")
+        setup.profiles.setAutoApply(true, for: first.id)
+        #expect(setup.profiles.automaticProfile(sharingScreensWith: second.id)?.id == first.id)
+
+        setup.profiles.setAutoApply(true, for: second.id)
+
+        #expect(setup.profiles.profiles.map(\.autoApply) == [false, true])
+        #expect(setup.profiles.automaticProfile(sharingScreensWith: second.id) == nil)
+    }
+
+    @Test func autoApplyRestoresBrightnessWhenScreensReconnect() async {
+        let setup = await Setup([builtin, external, tv])
+        let profile = setup.profiles.capture(name: "Docked")
+        setup.profiles.setAutoApply(true, for: profile.id)
+        await setup.profiles.autoApplyIfNeeded()
+
+        // Same resolutions, so the profile still counts as current, but the brightness changed.
+        setup.system.displays.removeAll { $0.id == 7 }
+        await setup.screens.displaysChanged()
+        await setup.profiles.autoApplyIfNeeded()
+        setup.brightnessSystem.levels[5] = 0.2
+        await setup.reload()
+
+        setup.system.displays.append(tv)
+        await setup.screens.displaysChanged()
+        await setup.reload()
+        await setup.profiles.autoApplyIfNeeded()
+
+        #expect(setup.brightnessSystem.levels[5] == 0.6)
+    }
+
+    @Test func currentProfileFollowsBrightness() async {
+        let setup = await Setup()
+        let bright = setup.profiles.capture(name: "Bright")
+        setup.brightnessSystem.levels[5] = 0.2
+        await setup.reload()
+        let dim = setup.profiles.capture(name: "Dim")
+        #expect(setup.profiles.currentProfile?.id == dim.id)
+
+        await setup.profiles.apply(bright)
+        #expect(setup.profiles.currentProfile?.id == bright.id)
+
+        // Drifted away from both.
+        setup.brightnessSystem.levels[5] = 0.4
+        await setup.reload()
+        #expect(setup.profiles.currentProfile == nil)
+    }
+
+    @Test func lastUsedWinsWhenSeveralMatch() async {
+        let setup = await Setup()
+        let first = setup.profiles.capture(name: "A")
+        let second = setup.profiles.capture(name: "B")
+        #expect(setup.profiles.currentProfile?.id == second.id)
+
+        await setup.profiles.apply(first)
+        #expect(setup.profiles.currentProfile?.id == first.id)
+    }
+
+    @Test func moveReordersProfiles() async {
+        let setup = await Setup()
+        let first = setup.profiles.capture(name: "A")
+        setup.profiles.capture(name: "B")
+
+        setup.profiles.move(first.id, by: 1)
+        #expect(setup.profiles.profiles.map(\.name) == ["B", "A"])
+
+        setup.profiles.move(first.id, by: 1)
+        #expect(setup.profiles.profiles.map(\.name) == ["B", "A"])
+    }
+
+    @Test func moveToPutsAProfileWhereTheTargetIs() async {
+        let setup = await Setup()
+        let a = setup.profiles.capture(name: "A")
+        setup.profiles.capture(name: "B")
+        let c = setup.profiles.capture(name: "C")
+
+        setup.profiles.move(c.id, to: a.id)
+        #expect(setup.profiles.profiles.map(\.name) == ["C", "A", "B"])
+
+        setup.profiles.move(c.id, to: setup.profiles.profiles[2].id)
+        #expect(setup.profiles.profiles.map(\.name) == ["A", "B", "C"])
+    }
+
     @Test func autoApplyIgnoresProfilesForOtherScreens() async {
         let setup = await Setup()
         let profile = setup.profiles.capture(name: "Desk")
