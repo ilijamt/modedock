@@ -482,7 +482,7 @@ private struct ShortcutSettingsView: View {
                 Text("Screenshots")
             } footer: {
                 Text(
-                    "macOS uses ⇧⌘3, ⇧⌘4 and ⇧⌘5 for its own screenshots. Taking over ⇧⌘3 and ⇧⌘4 turns those macOS shortcuts off (and their ⌃ clipboard versions); turning it off gives them back. ⇧⌘5 stays with macOS."
+                    "macOS uses ⇧⌘3 and ⇧⌘4 for its own screenshots. Using them for ModeDock turns those macOS shortcuts off, and their ⌃ clipboard versions; turning it off again gives them back."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -533,14 +533,18 @@ private struct SystemScreenshotKeysToggle: View {
 
     var body: some View {
         Toggle(
-            "Use ⇧⌘3 and ⇧⌘4 for ModeDock",
             isOn: Binding(
                 get: { takenOver },
                 set: { on in
                     SystemScreenshotKeys.takeOver(on)
                     takenOver = SystemScreenshotKeys.areTakenOver
                 })
-        )
+        ) {
+            Text("Use ⇧⌘3 and ⇧⌘4 for ModeDock")
+            if takenOver {
+                Text("⇧⌘3 captures the screen and ⇧⌘4 an area with ModeDock. The macOS shortcuts for them are off.")
+            }
+        }
         .help("⇧⌘3 captures the screen and ⇧⌘4 an area, with ModeDock's settings.")
         .onAppear { takenOver = SystemScreenshotKeys.areTakenOver }
     }

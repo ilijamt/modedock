@@ -10,10 +10,11 @@ private struct Surface<S: Shape>: ViewModifier {
     @Environment(\.useGlass) private var useGlass
     let shape: S
     var tint: Color?
+    var interactive = true
 
     func body(content: Content) -> some View {
         if useGlass, #available(macOS 26.0, *) {
-            content.glassEffect(.regular.tint(tint).interactive(), in: shape)
+            content.glassEffect(.regular.tint(tint).interactive(interactive), in: shape)
         } else if let tint {
             content.background(tint, in: shape)
         } else {
@@ -25,20 +26,23 @@ private struct Surface<S: Shape>: ViewModifier {
 }
 
 extension View {
-    func surface(_ shape: some Shape, tint: Color? = nil) -> some View {
-        modifier(Surface(shape: shape, tint: tint))
+    func surface(_ shape: some Shape, tint: Color? = nil, interactive: Bool = true) -> some View {
+        modifier(Surface(shape: shape, tint: tint, interactive: interactive))
     }
 }
 
 /// A rounded, translucent tile like the ones in Control Center.
 struct Card<Content: View>: View {
+    /// The glass reacts to presses. Off for cards that are one big button: pressing those while
+    /// the panel resized crashed SwiftUI's glass on macOS 26.
+    var interactive = true
     @ViewBuilder var content: Content
 
     var body: some View {
         content
             .padding(10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .surface(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .surface(RoundedRectangle(cornerRadius: 12, style: .continuous), interactive: interactive)
     }
 }
 

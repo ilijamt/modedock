@@ -17,7 +17,7 @@ struct ProfilesSection: View {
             if profiles.profiles.isEmpty { ProfilesEmptyText() }
 
             ForEach(profiles.profiles) { profile in
-                Card {
+                Card(interactive: false) {
                     // Over the corner rather than beside the content, so the screen lines keep the width.
                     ProfileButton(profile: profile, profiles: profiles)
                         .overlay(alignment: .topTrailing) { ProfileMoreButton(id: profile.id, edit: $edit) }
@@ -69,7 +69,8 @@ private struct ProfileButton: View {
                 }
                 Spacer(minLength: 4)
                 if profiles.applying == profile.id {
-                    ProgressView().controlSize(.small)
+                    // Not a ProgressView: controls inside glass cards have crashed SwiftUI on macOS 26.
+                    Image(systemName: "hourglass").foregroundStyle(.secondary)
                 } else if let shortcut = profile.shortcutText {
                     Text(verbatim: shortcut).font(.caption).foregroundStyle(.secondary)
                 }
