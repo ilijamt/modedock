@@ -116,6 +116,11 @@ private struct ScreenRecordingPrompt: View {
 struct ScreenshotOptionsStrip: View {
     @AppStorage(SettingsKey.screenshotDestination) private var destination = ScreenshotSettings.folder
     @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
+    @AppStorage(SettingsKey.screenshotNotice) private var showNotice = true
+    @AppStorage(SettingsKey.screenshotNoticePicture) private var showPicture = true
+    @AppStorage(SettingsKey.screenshotSound) private var playSound = true
+    @AppStorage(SettingsKey.screenshotHidesPanel) private var hidesPanel = true
+    @AppStorage(SettingsKey.screenshotPointer) private var includePointer = false
 
     private var savesToFolder: Bool { ScreenshotSettings.savesToFolder(destination) }
     private var copiesToClipboard: Bool { ScreenshotSettings.copiesToClipboard(destination) }
@@ -147,6 +152,28 @@ struct ScreenshotOptionsStrip: View {
                     Chip(title: seconds == 0 ? "Off" : "\(seconds)s", isOn: delay == seconds) { delay = seconds }
                         .help(seconds == 0 ? "Capture straight away" : "Wait \(seconds) seconds before capturing")
                 }
+            }
+            HStack(spacing: 4) {
+                Text("Include").font(.callout)
+                Spacer(minLength: 4)
+                Chip(title: "Pointer", isOn: includePointer) { includePointer.toggle() }
+                    .help(
+                        "Show the mouse pointer in Screen and All Screens captures. macOS leaves it out of Area and Window."
+                    )
+                Chip(title: "ModeDock", isOn: !hidesPanel) { hidesPanel.toggle() }
+                    .help("Leave this panel open, so it's in the screenshot too")
+            }
+            HStack(spacing: 4) {
+                Text("After").font(.callout)
+                Spacer(minLength: 4)
+                Chip(title: "Preview", isOn: showNotice) { showNotice.toggle() }
+                    .help("Show a card with the screenshot after capturing")
+                Chip(title: "Picture", isOn: showNotice && showPicture) { showPicture.toggle() }
+                    .disabled(!showNotice)
+                    .opacity(showNotice ? 1 : 0.5)
+                    .help("Show the screenshot in the card, not just an icon")
+                Chip(title: "Sound", isOn: playSound) { playSound.toggle() }
+                    .help("Play the camera sound")
             }
         }
         .padding(10)

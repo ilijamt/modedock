@@ -78,14 +78,14 @@ struct ActionTile: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 6) {
+            HStack(spacing: 5) {
                 Image(systemName: systemImage)
                     .font(.system(size: 12, weight: .semibold))
                     .frame(width: 16)
                 Text(title)
                     .font(.caption)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.85)
+                    .minimumScaleFactor(0.8)
                 if let detail {
                     Spacer(minLength: 4)
                     Text(verbatim: detail)
@@ -97,7 +97,7 @@ struct ActionTile: View {
             }
             .foregroundStyle(isOn ? .white : .primary)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, 10)
             .padding(.vertical, 9)
             .surface(RoundedRectangle(cornerRadius: 10, style: .continuous), tint: isOn ? .accentColor : nil)
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))

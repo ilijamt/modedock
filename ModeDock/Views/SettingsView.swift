@@ -600,6 +600,8 @@ private struct ScreenshotSettingsView: View {
     @AppStorage(SettingsKey.screenshotSound) private var playSound = true
     @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
     @AppStorage(SettingsKey.screenshotNotice) private var showNotice = true
+    @AppStorage(SettingsKey.screenshotNoticePicture) private var showPicture = true
+    @AppStorage(SettingsKey.screenshotHidesPanel) private var hidesPanel = true
     @AppStorage(SettingsKey.screenshotCombineScreens) private var combineScreens = true
 
     private var folderURL: URL { ScreenshotSettings.folderURL(default: screenshots.defaultFolder) }
@@ -664,7 +666,11 @@ private struct ScreenshotSettingsView: View {
                 }
                 Toggle("Window shadow", isOn: $windowShadow)
                 Toggle("Play sound", isOn: $playSound)
+                Toggle("Hide ModeDock while capturing", isOn: $hidesPanel)
+                    .help("Off to include the ModeDock panel in the screenshot.")
                 Toggle("Show a preview after capturing", isOn: $showNotice)
+                Toggle("Show the picture in the preview", isOn: $showPicture)
+                    .disabled(!showNotice)
             } footer: {
                 Text("The pointer and timer apply to screen captures. The shadow applies to window captures.")
                     .font(.caption)

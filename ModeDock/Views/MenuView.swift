@@ -198,10 +198,11 @@ private struct PanelTabBar: View {
                         Image(systemName: section.systemImage)
                             .font(.system(size: 13, weight: .medium))
                             .frame(height: 18)
-                        Text(section.title)
+                        Text(section.tabTitle)
                             .font(.caption2)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+                            .minimumScaleFactor(0.75)
+                            .padding(.horizontal, 4)
                     }
                     .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .frame(maxWidth: .infinity)
@@ -213,7 +214,7 @@ private struct PanelTabBar: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(section.title)
+                .help(section.tabTitle)
             }
         }
     }

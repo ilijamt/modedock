@@ -16,6 +16,9 @@ enum MenuSection: String, CaseIterable, Identifiable {
         }
     }
 
+    /// For the tab bar, where five titles share the panel's width.
+    var tabTitle: String { self == .screenshots ? "Capture" : title }
+
     var systemImage: String {
         switch self {
         case .screens: "display.2"
@@ -150,6 +153,10 @@ enum SettingsKey {
     static let screenshotShadow = "screenshotShadow"
     /// Show a preview card after a capture.
     static let screenshotNotice = "screenshotNotice"
+    /// Close the panel before capturing, so it isn't in the screenshot.
+    static let screenshotHidesPanel = "screenshotHidesPanel"
+    /// The preview card shows the picture, not just an icon.
+    static let screenshotNoticePicture = "screenshotNoticePicture"
     /// All Screens saves one image of every screen instead of a file each.
     static let screenshotCombineScreens = "screenshotCombineScreens"
     /// Seconds before a screen capture.
@@ -165,7 +172,9 @@ enum SettingsKey {
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
         screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
-        screenshotNotice, screenshotDelay, screenshotCombineScreens, profileCycleScope, brightnessKeysAllScreens,
+        screenshotNotice, screenshotNoticePicture, screenshotHidesPanel, screenshotDelay, screenshotCombineScreens,
+        profileCycleScope,
+        brightnessKeysAllScreens,
         PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
     ]
 }

@@ -116,6 +116,14 @@ enum ScreenshotSettings {
         )
     }
 
+    static var hidesPanel: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.screenshotHidesPanel) as? Bool ?? true
+    }
+
+    static var showsNoticePicture: Bool {
+        UserDefaults.standard.object(forKey: SettingsKey.screenshotNoticePicture) as? Bool ?? true
+    }
+
     static var showsNotice: Bool {
         UserDefaults.standard.object(forKey: SettingsKey.screenshotNotice) as? Bool ?? true
     }
@@ -142,7 +150,8 @@ final class ScreenshotCoordinator {
     }
 
     func take(_ mode: ScreenshotMode) {
-        closePanel()
+        let hidesPanel = ScreenshotSettings.hidesPanel
+        if hidesPanel { closePanel() }
         notice.close()
         controller.refreshPermission()
         guard controller.hasPermission else {
@@ -153,7 +162,7 @@ final class ScreenshotCoordinator {
         let options = ScreenshotSettings.options(defaultFolder: controller.defaultFolder)
         Task {
             // Give the panel or menu time to leave the screen.
-            try? await Task.sleep(for: .milliseconds(300))
+            if hidesPanel { try? await Task.sleep(for: .milliseconds(300)) }
             let result = await controller.capture(mode, display: display, options: options)
             switch result {
             case .saved(let files) where ScreenshotSettings.showsNotice:
@@ -181,7 +190,7 @@ enum ScreenshotNotice: Equatable {
     var duration: Duration {
         switch self {
         case .saved: .seconds(4)
-        case .copied: .seconds(1.5)
+        case .copied: .seconds(3)
         case .failed: .seconds(6)
         case .permission: .seconds(12)
         }
@@ -277,12 +286,24 @@ private struct NoticeView: View {
             Button {
                 if let file = files.first { NSWorkspace.shared.open(file) }
             } label: {
-                Thumbnail(url: files.first)
+                if ScreenshotSettings.showsNoticePicture {
+                    Thumbnail(url: files.first)
+                } else {
+                    Image(systemName: "photo").font(.system(size: 24)).frame(width: 40)
+                }
             }
             .buttonStyle(.plain)
             .help("Open the screenshot")
         case .copied:
-            Image(systemName: "doc.on.clipboard").font(.system(size: 24)).frame(width: 40)
+            if ScreenshotSettings.showsNoticePicture {
+                // Only copied, so there's no file: the picture comes from the clipboard.
+                Thumbnail(
+                    source: NSPasteboard.general.data(forType: .png).flatMap {
+                        CGImageSourceCreateWithData($0 as CFData, nil)
+                    })
+            } else {
+                Image(systemName: "doc.on.clipboard").font(.system(size: 24)).frame(width: 40)
+            }
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 24)).foregroundStyle(.orange)
                 .frame(width: 40)
@@ -311,14 +332,28 @@ private struct NoticeView: View {
         }
     }
 
+    /// Turns off Settings → Screenshots → "Show a preview after capturing". Errors still show.
+    private var dontShowAgain: some View {
+        Button("Don't Show Again") {
+            UserDefaults.standard.set(false, forKey: SettingsKey.screenshotNotice)
+            onClose()
+        }
+        .help("Turn the preview back on in Settings → Screenshots.")
+    }
+
     @ViewBuilder private var buttons: some View {
         switch notice {
         case .saved(let files, _):
-            Button("Show in Finder") {
-                NSWorkspace.shared.activateFileViewerSelecting(files)
-                onClose()
+            HStack {
+                Button("Show in Finder") {
+                    NSWorkspace.shared.activateFileViewerSelecting(files)
+                    onClose()
+                }
+                dontShowAgain
             }
             .controlSize(.small)
+        case .copied:
+            dontShowAgain.controlSize(.small)
         case .permission:
             ScreenRecordingButtons(controller: controller)
         default:
@@ -342,7 +377,18 @@ struct ScreenRecordingButtons: View {
 
 /// A small preview of the saved image, or the file's icon when it can't be read (PDF).
 private struct Thumbnail: View {
-    let url: URL?
+    let source: CGImageSource?
+    /// Shown when there's no picture, such as a PDF.
+    var url: URL?
+
+    init(url: URL?) {
+        self.source = url.flatMap { CGImageSourceCreateWithURL($0 as CFURL, nil) }
+        self.url = url
+    }
+
+    init(source: CGImageSource?) {
+        self.source = source
+    }
 
     var body: some View {
         Group {
@@ -357,15 +403,14 @@ private struct Thumbnail: View {
     }
 
     private var image: NSImage? {
-        guard let url else { return nil }
         let options =
             [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceThumbnailMaxPixelSize: 288,
             ] as CFDictionary
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-            let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options)
-        else { return NSWorkspace.shared.icon(forFile: url.path) }
+        guard let source, let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options) else {
+            return url.map { NSWorkspace.shared.icon(forFile: $0.path) }
+        }
         return NSImage(cgImage: thumbnail, size: .zero)
     }
 }
