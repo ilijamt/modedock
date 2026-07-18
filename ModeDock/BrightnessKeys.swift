@@ -1,6 +1,6 @@
 import AppKit
 import ApplicationServices
-import os
+import DisplayKit
 
 /// Takes over the keyboard's brightness keys so they change every screen, including monitors
 /// macOS can't dim. Needs the Accessibility permission to see and swallow the keys.
@@ -16,7 +16,7 @@ final class BrightnessKeys {
     /// Some keyboards send the brightness keys as ordinary key presses with these codes.
     private static let upKeyCode: Int64 = 144
     private static let downKeyCode: Int64 = 145
-    private static let log = Logger(subsystem: "com.matoski.modedock", category: "BrightnessKeys")
+    private static let log = AppLog("BrightnessKeys")
 
     /// Called on each press and key repeat, with +1 for up and -1 for down.
     var onPress: (Int) -> Void = { _ in }

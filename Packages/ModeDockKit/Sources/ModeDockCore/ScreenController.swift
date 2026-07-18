@@ -4,7 +4,7 @@ import Foundation
 import Observation
 import os
 
-private let log = Logger.screens
+private let log = AppLog.screens
 
 @MainActor
 @Observable
@@ -62,7 +62,7 @@ public final class ScreenController {
         // placeholder macOS adds when nothing is connected doesn't count as a screen.
         let online = system.onlineDisplays()
         log.info(
-            "displays changed: online=\(online.map { "\($0.id):\($0.isEnabled):vendor=\($0.identity.vendor)" }, privacy: .public) disabled=\(self.disabled.sorted(), privacy: .public)"
+            "displays changed: online=\(online.map { "\($0.id):\($0.isEnabled):vendor=\($0.identity.vendor)" }) disabled=\(self.disabled.sorted())"
         )
         let usable = online.contains { !$0.identity.isPlaceholder && ($0.isEnabled || !disabled.contains($0.id)) }
         if !disabled.isEmpty && !usable {
@@ -123,9 +123,9 @@ public final class ScreenController {
             do {
                 try system.setEnabled(true, display: id)
                 disabled.remove(id)
-                log.info("re-enabled display \(id, privacy: .public)")
+                log.info("re-enabled display \(id)")
             } catch {
-                log.error("re-enabling display \(id, privacy: .public) failed: \(error, privacy: .public)")
+                log.error("re-enabling display \(id) failed: \(error)")
                 lastError = error.localizedDescription
             }
         }

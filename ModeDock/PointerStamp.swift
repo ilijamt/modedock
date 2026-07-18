@@ -1,7 +1,7 @@
 import AppKit
+import DisplayKit
 import ImageIO
 import ModeDockCore
-import os
 
 /// Experimental: draws the pointer into Area and Window captures, which screencapture leaves it
 /// out of. It notes where the pointer was when the capture started, works out what was
@@ -13,7 +13,7 @@ final class PointerStamp {
     private var down: NSPoint?
     private var up: NSPoint?
     private var watcher: Task<Void, Never>?
-    private static let log = Logger(subsystem: "com.matoski.modedock", category: "PointerStamp")
+    private static let log = AppLog("PointerStamp")
 
     static var isEnabled: Bool {
         let defaults = UserDefaults.standard
@@ -54,7 +54,7 @@ final class PointerStamp {
         defer { start = nil }
         let captured = capturedRect(mode)
         Self.log.debug(
-            "\(mode.rawValue, privacy: .public): start \(String(describing: self.start), privacy: .public) down \(String(describing: self.down), privacy: .public) up \(String(describing: self.up), privacy: .public) captured \(String(describing: captured), privacy: .public)"
+            "\(mode.rawValue): start \(String(describing: self.start)) down \(String(describing: self.down)) up \(String(describing: self.up)) captured \(String(describing: captured))"
         )
         guard mode.isInteractive, files.count == 1, let start, let cursor, let captured, captured.contains(start)
         else { return }

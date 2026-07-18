@@ -19,6 +19,10 @@ extension KeyboardShortcuts.Name {
     static let ejectAllDisks = Self("ejectAllDisks")
 }
 
+extension AppLog {
+    static let shortcuts = AppLog("shortcuts")
+}
+
 /// What the app-wide shortcuts do, with a bubble on screen when the result isn't visible.
 @MainActor
 final class ShortcutActions {
@@ -145,6 +149,7 @@ final class ShortcutActions {
     }
 
     private func showResult(_ error: String?, success: String, systemImage: String) {
+        AppLog.shortcuts.info(error.map { "\(success): failed: \($0)" } ?? success)
         if let error {
             hud.show(error, systemImage: "exclamationmark.triangle.fill")
         } else {

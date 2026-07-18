@@ -1,3 +1,4 @@
+import DisplayKit
 import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
@@ -99,6 +100,8 @@ private struct GeneralSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            DebugLogSection()
 
             Section {
                 LabeledContent("ModeDock settings") {
@@ -547,6 +550,46 @@ private struct SystemScreenshotKeysToggle: View {
         }
         .help("⇧⌘3 captures the screen and ⇧⌘4 an area, with ModeDock's settings.")
         .onAppear { takenOver = SystemScreenshotKeys.areTakenOver }
+    }
+}
+
+/// Debug logging for bug reports: the switch, and the file it writes.
+private struct DebugLogSection: View {
+    @AppStorage(LogFile.enabledKey) private var enabled = false
+    @State private var copied = false
+
+    var body: some View {
+        Section {
+            Toggle("Debug logging", isOn: $enabled)
+                .onChange(of: enabled) { _, on in
+                    if on { AppLog.app.notice("Debug logging on. \(AppLog.versionLine)") }
+                }
+            LabeledContent("Log file") {
+                HStack {
+                    Button("Show in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([LogFile.url])
+                    }
+                    .disabled(!FileManager.default.fileExists(atPath: LogFile.url.path))
+                    Button(copied ? "Copied" : "Copy Log") {
+                        NSPasteboard.general.clearContents()
+                        NSPasteboard.general.setString(LogFile.contents(), forType: .string)
+                        copied = true
+                    }
+                    Button("Clear") {
+                        LogFile.clear()
+                        copied = false
+                    }
+                }
+            }
+        } header: {
+            Text("Troubleshooting")
+        } footer: {
+            Text(
+                "Writes what ModeDock does to ~/Library/Logs/ModeDock/ModeDock.log, including details macOS doesn't keep. Turn it on, repeat the problem, then attach the log to your bug report. It never contains serial numbers or file contents, and stays under about 4 MB."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
     }
 }
 

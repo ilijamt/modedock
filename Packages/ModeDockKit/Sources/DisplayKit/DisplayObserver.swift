@@ -30,8 +30,8 @@ public final class DisplayObserver {
     }
 
     private static let callback: CGDisplayReconfigurationCallBack = { display, flags, userInfo in
-        Logger.screens.info(
-            "reconfiguration display=\(display, privacy: .public) flags=\(flags.rawValue, privacy: .public)")
+        AppLog.screens.info(
+            "reconfiguration display=\(display) flags=\(flags.rawValue)")
         guard !flags.contains(.beginConfigurationFlag), let userInfo else { return }
         let observer = Unmanaged<DisplayObserver>.fromOpaque(userInfo).takeUnretainedValue()
         // CoreGraphics delivers these on the main run loop for callbacks registered there.

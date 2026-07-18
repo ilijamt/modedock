@@ -1,3 +1,4 @@
+import DisplayKit
 import SwiftUI
 
 /// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
@@ -178,7 +179,7 @@ enum SettingsKey {
         screenshotNotice, screenshotNoticePicture, screenshotHidesPanel, screenshotDelay, screenshotCombineScreens,
         profileCycleScope,
         brightnessKeysAllScreens,
-        PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
+        LogFile.enabledKey, PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
     ]
 }
 

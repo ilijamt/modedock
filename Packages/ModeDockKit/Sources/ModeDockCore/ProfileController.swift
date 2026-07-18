@@ -4,7 +4,7 @@ import Foundation
 import Observation
 import os
 
-private let log = Logger.screens
+private let log = AppLog.screens
 
 /// Saves the current screen setup as a profile and puts it back later, by hand or automatically
 /// when the same screens are connected again.
@@ -47,7 +47,7 @@ public final class ProfileController {
             do {
                 profiles = try JSONDecoder().decode([DisplayProfile].self, from: data)
             } catch {
-                log.error("reading display profiles failed: \(error, privacy: .public)")
+                log.error("reading display profiles failed: \(error)")
             }
         }
     }
@@ -184,7 +184,7 @@ public final class ProfileController {
         applying = profile.id
         lastUsed = profile.id
         defer { applying = nil }
-        log.info("applying profile \(profile.name, privacy: .public)")
+        log.info("applying profile \(profile.name)")
         var errors: [String] = []
         func note(_ message: String?) {
             if let message, !errors.contains(message) { errors.append(message) }
@@ -326,7 +326,7 @@ public final class ProfileController {
         do {
             defaults.set(try JSONEncoder().encode(profiles), forKey: Self.storageKey)
         } catch {
-            log.error("saving display profiles failed: \(error, privacy: .public)")
+            log.error("saving display profiles failed: \(error)")
         }
     }
 }

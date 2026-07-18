@@ -1,8 +1,13 @@
 import AppKit
+import DisplayKit
 import ImageIO
 import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
+
+extension AppLog {
+    static let screenshots = AppLog("screenshots")
+}
 
 extension KeyboardShortcuts.Name {
     // No defaults: ⇧⌘3, ⇧⌘4 and ⇧⌘5 already belong to macOS.
@@ -170,6 +175,9 @@ final class ScreenshotCoordinator {
             if hidesPanel { try? await Task.sleep(for: .milliseconds(300)) }
             let result = await controller.capture(mode, display: display, options: options)
             pointerStamp.end()
+            AppLog.screenshots.info(
+                "\(mode.rawValue): \(result) folder=\(options.destination.folder != nil) clipboard=\(options.destination.copiesToClipboard) error=\(controller.lastError ?? "none")"
+            )
             switch result {
             case .saved(let files) where ScreenshotSettings.showsNotice:
                 notice.show(.saved(files, copied: options.destination.copiesToClipboard), controller: controller)

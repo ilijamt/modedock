@@ -15,6 +15,15 @@ struct ModeDockApp: App {
     }
 }
 
+extension AppLog {
+    static let app = AppLog("app")
+
+    /// "ModeDock 0.1 (12), macOS 26.1", for the top of a log.
+    static var versionLine: String {
+        "ModeDock \(Bundle.main.versionString), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
+    }
+}
+
 extension KeyboardShortcuts.Name {
     static let togglePanel = Self("togglePanel", default: .init(.m, modifiers: [.control, .option, .command]))
     static let turnAllScreensOn = Self(
@@ -49,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var displayObserver: DisplayObserver?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        AppLog.app.notice("Started. \(AppLog.versionLine)")
         AppAppearance.apply()
         applyDDCWriteInterval()
         // Keep Awake only stops idle sleep, so a sleep that happens anyway (Sleep Mac, closing the
