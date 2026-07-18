@@ -112,6 +112,9 @@ public final class ScreenshotController {
     /// The files the last capture saved; empty when it was only copied.
     public private(set) var lastSaved: [URL] = []
     public private(set) var isCapturing = false
+    /// Runs on the captured files before they're combined, copied or kept, to change them in
+    /// place; for example to draw the pointer where screencapture leaves it out.
+    public var processCaptures: ((ScreenshotMode, [URL]) -> Void)?
 
     private let system: ScreenshotSystem
 
@@ -175,6 +178,7 @@ public final class ScreenshotController {
         }
 
         defer { if !keepsCaptures { captured.forEach(system.removeFile) } }
+        processCaptures?(mode, captured)
         // All Screens is copied as one image of the whole arrangement, which is what pastes.
         let arrangement = mode == .allScreens && captured.count == displays.count ? displays.map(system.bounds) : nil
 

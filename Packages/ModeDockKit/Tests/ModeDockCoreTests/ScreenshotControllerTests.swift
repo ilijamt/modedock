@@ -180,6 +180,18 @@ struct ScreenshotControllerTests {
         #expect(system.files == [expected.path])
     }
 
+    @Test func processesCapturesBeforeCopying() async {
+        let system = FakeScreenshotSystem()
+        let controller = ScreenshotController(system: system)
+        var processed: [(ScreenshotMode, [URL])] = []
+        controller.processCaptures = { processed.append(($0, $1)) }
+
+        await controller.capture(.area, options: options(.clipboard), date: date)
+
+        #expect(processed.map(\.0) == [.area])
+        #expect(processed.first?.1 == system.copied.first)
+    }
+
     @Test func arrangesScreensLikeTheDisplays() {
         // A laptop to the left of the main screen, lower down.
         let layout = ScreenshotController.arrangement(

@@ -149,6 +149,8 @@ enum SettingsKey {
     static let screenshotFolder = "screenshotFolder"
     static let screenshotFormat = "screenshotFormat"
     static let screenshotPointer = "screenshotPointer"
+    /// Experimental: also draw the pointer into Area and Window captures.
+    static let screenshotPointerEverywhere = "screenshotPointerEverywhere"
     static let screenshotSound = "screenshotSound"
     static let screenshotShadow = "screenshotShadow"
     /// Show a preview card after a capture.
@@ -171,7 +173,8 @@ enum SettingsKey {
     static let all = [
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
-        screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotSound, screenshotShadow,
+        screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotPointerEverywhere,
+        screenshotSound, screenshotShadow,
         screenshotNotice, screenshotNoticePicture, screenshotHidesPanel, screenshotDelay, screenshotCombineScreens,
         profileCycleScope,
         brightnessKeysAllScreens,

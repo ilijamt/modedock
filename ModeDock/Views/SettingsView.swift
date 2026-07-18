@@ -12,7 +12,7 @@ enum SettingsTab: String, CaseIterable {
         case .menu: "Menu"
         case .displays: "Displays"
         case .profiles: "Profiles"
-        case .screenshots: "Screenshots"
+        case .screenshots: "Capture"
         case .shortcuts: "Shortcuts"
         case .about: "About"
         }
@@ -596,6 +596,7 @@ private struct ScreenshotSettingsView: View {
     @AppStorage(SettingsKey.screenshotFolder) private var folder = ""
     @AppStorage(SettingsKey.screenshotFormat) private var format = ScreenshotFormat.png.rawValue
     @AppStorage(SettingsKey.screenshotPointer) private var includePointer = false
+    @AppStorage(SettingsKey.screenshotPointerEverywhere) private var pointerEverywhere = false
     @AppStorage(SettingsKey.screenshotShadow) private var windowShadow = true
     @AppStorage(SettingsKey.screenshotSound) private var playSound = true
     @AppStorage(SettingsKey.screenshotDelay) private var delay = 0
@@ -659,6 +660,13 @@ private struct ScreenshotSettingsView: View {
 
             Section {
                 Toggle("Include the pointer", isOn: $includePointer)
+                Toggle(isOn: $pointerEverywhere) {
+                    Text("Also in Area and Window captures (experimental)")
+                    Text(
+                        "macOS leaves the pointer out of these, so ModeDock draws it where it was when the capture started, if that's inside what you captured. It can be a little off, especially with window shadows."
+                    )
+                }
+                .disabled(!includePointer)
                 Picker("Timer", selection: $delay) {
                     ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
                         if seconds == 0 { Text("Off").tag(0) } else { Text("\(seconds) seconds").tag(seconds) }
@@ -672,9 +680,11 @@ private struct ScreenshotSettingsView: View {
                 Toggle("Show the picture in the preview", isOn: $showPicture)
                     .disabled(!showNotice)
             } footer: {
-                Text("The pointer and timer apply to screen captures. The shadow applies to window captures.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(
+                    "The timer applies to Screen and All Screens captures, and so does the pointer unless the experimental option is on. The shadow applies to window captures."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section {

@@ -158,7 +158,7 @@ struct ScreenshotOptionsStrip: View {
                 Spacer(minLength: 4)
                 Chip(title: "Pointer", isOn: includePointer) { includePointer.toggle() }
                     .tip(
-                        "Show the mouse pointer in Screen and All Screens captures. macOS leaves it out of Area and Window."
+                        "Show the mouse pointer in Screen and All Screens captures. For Area and Window, see the experimental option in Settings → Capture."
                     )
                 Chip(title: "ModeDock", isOn: !hidesPanel) { hidesPanel.toggle() }
                     .tip("Leave this panel open, so it's in the screenshot too")

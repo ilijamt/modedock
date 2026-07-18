@@ -71,7 +71,7 @@ extension ScreenshotMode {
     }
 }
 
-/// The Settings → Screenshots preferences, as the options a capture takes.
+/// The Settings → Capture preferences, as the options a capture takes.
 enum ScreenshotSettings {
     // The values of SettingsKey.screenshotDestination.
     static let folder = "folder"
@@ -145,11 +145,16 @@ final class ScreenshotCoordinator {
     var closePanel: () -> Void = {}
     private let notice = ScreenshotNoticeWindow()
 
+    private let pointerStamp = PointerStamp()
+
     init(controller: ScreenshotController) {
         self.controller = controller
+        controller.processCaptures = { [pointerStamp] mode, files in pointerStamp.apply(mode, files) }
     }
 
     func take(_ mode: ScreenshotMode) {
+        // Before the panel closes, so it's where the pointer was when the capture was asked for.
+        if mode.isInteractive, PointerStamp.isEnabled { pointerStamp.begin() }
         let hidesPanel = ScreenshotSettings.hidesPanel
         if hidesPanel { closePanel() }
         notice.close()
@@ -164,6 +169,7 @@ final class ScreenshotCoordinator {
             // Give the panel or menu time to leave the screen.
             if hidesPanel { try? await Task.sleep(for: .milliseconds(300)) }
             let result = await controller.capture(mode, display: display, options: options)
+            pointerStamp.end()
             switch result {
             case .saved(let files) where ScreenshotSettings.showsNotice:
                 notice.show(.saved(files, copied: options.destination.copiesToClipboard), controller: controller)
@@ -332,13 +338,13 @@ private struct NoticeView: View {
         }
     }
 
-    /// Turns off Settings → Screenshots → "Show a preview after capturing". Errors still show.
+    /// Turns off Settings → Capture → "Show a preview after capturing". Errors still show.
     private var dontShowAgain: some View {
         Button("Don't Show Again") {
             UserDefaults.standard.set(false, forKey: SettingsKey.screenshotNotice)
             onClose()
         }
-        .help("Turn the preview back on in Settings → Screenshots.")
+        .help("Turn the preview back on in Settings → Capture.")
     }
 
     @ViewBuilder private var buttons: some View {
