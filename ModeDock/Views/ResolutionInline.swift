@@ -108,7 +108,7 @@ struct ResolutionList: View {
                         .layoutPriority(2)
                     if option.isNative { tag("Native") }
                     if screenModes.isLowResolution(option) {
-                        tag("1x").help("Low resolution: the 1x version of a HiDPI size")
+                        tag("1x").tip("Low resolution: the 1x version of a HiDPI size")
                     }
                     Spacer(minLength: 4)
                 }
@@ -134,7 +134,7 @@ struct ResolutionList: View {
                     .buttonStyle(.plain)
                     .fixedSize()
                     .layoutPriority(3)
-                    .help(mode.refreshRateText)
+                    .tip(mode.refreshRateText)
                 }
             }
         }

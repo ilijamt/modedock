@@ -43,7 +43,7 @@ struct InputChips: View {
                                 selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.08)), in: Capsule())
                     }
                     .buttonStyle(.plain)
-                    .help(String(format: "Input source 0x%02X", input))
+                    .tip(String(format: "Input source 0x%02X", input))
                 }
             }
             if let input = confirming {

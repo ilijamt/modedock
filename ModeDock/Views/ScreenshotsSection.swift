@@ -31,7 +31,7 @@ struct ScreenshotsSection: View {
                         detailIsPlaceholder: shortcut == nil
                     ) { screenshots.take(mode) }
                     .disabled(!screenshots.canCapture)
-                    .help(mode.help)
+                    .tip(mode.help)
                 }
             }
             if !PanelItem.hidden(in: hiddenItems).contains(.screenshotOptions) {
@@ -75,7 +75,7 @@ struct RowsScreenshotsSection: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(!screenshots.canCapture)
-                        .help(mode.help)
+                        .tip(mode.help)
                     }
                 }
             }
@@ -139,41 +139,41 @@ struct ScreenshotOptionsStrip: View {
                 Chip(title: "Folder", isOn: savesToFolder) {
                     set(savesToFolder: !savesToFolder, copiesToClipboard: copiesToClipboard)
                 }
-                .help("Save a file in the screenshot folder")
+                .tip("Save a file in the screenshot folder")
                 Chip(title: "Clipboard", isOn: copiesToClipboard) {
                     set(savesToFolder: savesToFolder, copiesToClipboard: !copiesToClipboard)
                 }
-                .help("Copy the image, ready to paste. Both can be on.")
+                .tip("Copy the image, ready to paste. Both can be on.")
             }
             HStack(spacing: 4) {
                 Text("Timer").font(.callout)
                 Spacer(minLength: 4)
                 ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
                     Chip(title: seconds == 0 ? "Off" : "\(seconds)s", isOn: delay == seconds) { delay = seconds }
-                        .help(seconds == 0 ? "Capture straight away" : "Wait \(seconds) seconds before capturing")
+                        .tip(seconds == 0 ? "Capture straight away" : "Wait \(seconds) seconds before capturing")
                 }
             }
             HStack(spacing: 4) {
                 Text("Include").font(.callout)
                 Spacer(minLength: 4)
                 Chip(title: "Pointer", isOn: includePointer) { includePointer.toggle() }
-                    .help(
+                    .tip(
                         "Show the mouse pointer in Screen and All Screens captures. macOS leaves it out of Area and Window."
                     )
                 Chip(title: "ModeDock", isOn: !hidesPanel) { hidesPanel.toggle() }
-                    .help("Leave this panel open, so it's in the screenshot too")
+                    .tip("Leave this panel open, so it's in the screenshot too")
             }
             HStack(spacing: 4) {
                 Text("After").font(.callout)
                 Spacer(minLength: 4)
                 Chip(title: "Preview", isOn: showNotice) { showNotice.toggle() }
-                    .help("Show a card with the screenshot after capturing")
+                    .tip("Show a card with the screenshot after capturing")
                 Chip(title: "Picture", isOn: showNotice && showPicture) { showPicture.toggle() }
                     .disabled(!showNotice)
                     .opacity(showNotice ? 1 : 0.5)
-                    .help("Show the screenshot in the card, not just an icon")
+                    .tip("Show the screenshot in the card, not just an icon")
                 Chip(title: "Sound", isOn: playSound) { playSound.toggle() }
-                    .help("Play the camera sound")
+                    .tip("Play the camera sound")
             }
         }
         .padding(10)

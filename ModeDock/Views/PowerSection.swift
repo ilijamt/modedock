@@ -117,11 +117,11 @@ struct PowerSection: View {
                 HStack(spacing: 6) {
                     if !hidden.contains(.sleepMac) {
                         ActionTile(title: "Sleep Mac", systemImage: "powersleep") { power.sleep() }
-                            .help("Put the Mac to sleep now.")
+                            .tip("Put the Mac to sleep now.")
                     }
                     if !hidden.contains(.lock) {
                         ActionTile(title: "Lock", systemImage: "lock.fill") { power.lockScreen() }
-                            .help("Lock the screen (⌃⌘Q).")
+                            .tip("Lock the screen (⌃⌘Q).")
                     }
                 }
             }
@@ -161,14 +161,14 @@ struct PowerSection: View {
             CircleToggle(systemImage: "display", isOn: keepScreensOn, size: 24) {
                 KeepAwakeSettings.setKeepScreensOn(!keepScreensOn, power: power)
             }
-            .help(
+            .tip(
                 keepScreensOn
                     ? "Screens stay on during Keep Awake. Click to let them sleep."
                     : "Screens can sleep during Keep Awake. Click to keep them on.")
             CircleToggle(systemImage: "power", isOn: power.isKeepingAwake) {
                 KeepAwakeSettings.toggle(power)
             }
-            .help(power.isKeepingAwake ? "Let the Mac sleep again." : "Stop the Mac from going to sleep.")
+            .tip(power.isKeepingAwake ? "Let the Mac sleep again." : "Stop the Mac from going to sleep.")
         }
     }
 
@@ -217,7 +217,7 @@ private struct KeepAwakeMenu: View {
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Choose how long to keep the Mac awake")
+        .tip("Choose how long to keep the Mac awake")
     }
 
     private var customTitle: String {

@@ -21,7 +21,7 @@ struct BrightnessSlider: View {
                 AutoChip(isOn: auto) { brightness.setAutoBrightness(!auto, for: display.id) }
             }
         }
-        .help(help)
+        .tip(help)
     }
 
     private var help: String {
@@ -49,7 +49,7 @@ private struct AutoChip: View {
                 .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.1)), in: Capsule())
         }
         .buttonStyle(.plain)
-        .help(
+        .tip(
             isOn
                 ? "Automatic brightness is on. Click to turn it off."
                 : "Adjust brightness automatically to the light around you.")

@@ -73,18 +73,18 @@ struct UtilitiesSection: View {
                     ActionTile(title: toggle.title, systemImage: toggle.systemImage, isOn: toggle.isOn) {
                         toggle.set(!toggle.isOn)
                     }
-                    .help(toggle.help)
+                    .tip(toggle.help)
                 }
                 if !hidden.contains(.emptyTrash) {
                     ActionTile(title: "Empty Trash", systemImage: "trash") { confirmingTrash = true }
-                        .help("Empty the Trash. You'll be asked first.")
+                        .tip("Empty the Trash. You'll be asked first.")
                 }
                 if !hidden.contains(.ejectDisks) {
                     ActionTile(title: utilities.ejectTitle, systemImage: "eject.fill") {
                         Task { await utilities.ejectAll() }
                     }
                     .disabled(utilities.state.ejectableVolumes == 0 || utilities.isEjecting)
-                    .help("Eject every external disk and disk image.")
+                    .tip("Eject every external disk and disk image.")
                 }
             }
 
@@ -141,7 +141,7 @@ struct RowsUtilitiesSection: View {
                                 .toggleStyle(.switch)
                                 .labelsHidden()
                         }
-                        .help(toggle.help)
+                        .tip(toggle.help)
                     }
                 }
             }

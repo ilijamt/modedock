@@ -133,7 +133,7 @@ struct MenuView: View {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(.borderless)
-            .help("Settings (⌘,)")
+            .tip("Settings (⌘,)")
 
             Menu {
                 Button("Settings…", action: onOpenSettings)
@@ -214,7 +214,7 @@ private struct PanelTabBar: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(section.tabTitle)
+                .tip(section.tabTitle)
             }
         }
     }
@@ -238,21 +238,21 @@ private struct ScreensSection: View {
                     ActionTile(title: "Sleep", systemImage: "moon.fill") {
                         controller.sleepAllDisplays()
                     }
-                    .help("Sleep all screens. Move the mouse or press a key to wake them.")
+                    .tip("Sleep all screens. Move the mouse or press a key to wake them.")
                 }
 
                 if !hidden.contains(.mirror) && (modes.canMirror || modes.isMirroring) {
                     ActionTile(title: "Mirror", systemImage: "rectangle.on.rectangle", isOn: modes.isMirroring) {
                         modes.setMirroring(!modes.isMirroring)
                     }
-                    .help("Show the main screen's content on every screen that's on.")
+                    .tip("Show the main screen's content on every screen that's on.")
                 }
 
                 if !hidden.contains(.allOn) {
                     ActionTile(title: "All On", systemImage: "power") {
                         Task { await controller.restoreAll() }
                     }
-                    .help(
+                    .tip(
                         KeyboardShortcuts.Name.turnAllScreensOn.shortcutText.map {
                             "Turn every screen back on (\($0))."
                         } ?? "Turn every screen back on.")
@@ -364,7 +364,7 @@ private struct ScreenCard: View {
                 CircleToggle(systemImage: "moon.zzz", isOn: screen.isInStandby, size: 24) {
                     Task { await controller.setStandby(!screen.isInStandby, screen: screen.id) }
                 }
-                .help(
+                .tip(
                     screen.isInStandby
                         ? "Wake the monitor over DDC."
                         : "Put the monitor in standby over DDC. Some monitors only wake with their power button.")
@@ -375,7 +375,7 @@ private struct ScreenCard: View {
             }
             .disabled(display.isEnabled && !screen.canDisable)
             .opacity(display.isEnabled && !screen.canDisable ? 0.5 : 1)
-            .help(powerHelp)
+            .tip(powerHelp)
         }
     }
 
@@ -399,7 +399,7 @@ private struct ScreenCard: View {
             }
             .buttonStyle(.plain)
             .disabled(modes.pending != nil)
-            .help("Change resolution and refresh rate")
+            .tip("Change resolution and refresh rate")
         }
     }
 

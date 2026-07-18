@@ -30,7 +30,7 @@ struct ProfilesSection: View {
             ProfileEditors(profiles: profiles, screens: screens, edit: $edit, scope: .saving)
             if edit == nil, !hidden.contains(.saveProfile) {
                 ActionTile(title: "Save Current Setup", systemImage: "plus") { edit = .saving }
-                    .help("Save the screens that are on, their resolutions, arrangement and brightness.")
+                    .tip("Save the screens that are on, their resolutions, arrangement and brightness.")
             }
 
             ErrorLabel(profiles.lastError)
@@ -79,7 +79,7 @@ private struct ProfileButton: View {
         }
         .buttonStyle(.plain)
         .disabled(profiles.applying != nil)
-        .help(isActive ? "This is the current setup. Click to apply it again." : "Switch to this setup.")
+        .tip(isActive ? "This is the current setup. Click to apply it again." : "Switch to this setup.")
     }
 }
 
@@ -147,7 +147,7 @@ struct RowsProfilesSection: View {
             .disabled(profiles.applying != nil)
             ProfileMoreButton(id: profile.id, edit: $edit)
         }
-        .help(isActive ? "This is the current setup." : "Switch to this setup: \(profile.summary).")
+        .tip(isActive ? "This is the current setup." : "Switch to this setup: \(profile.summary).")
         .contextMenu { ProfileMenu(profile: profile, profiles: profiles, edit: $edit) }
     }
 }
@@ -257,7 +257,7 @@ private struct ProfileMoreButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help("Update, rename or delete this profile")
+        .tip("Update, rename or delete this profile")
     }
 }
 
@@ -275,7 +275,7 @@ private struct ProfileActionStrip: View {
             } label: {
                 Label("Update", systemImage: "arrow.triangle.2.circlepath")
             }
-            .help("Replace this profile with the current screens, resolutions, arrangement and brightness.")
+            .tip("Replace this profile with the current screens, resolutions, arrangement and brightness.")
             Button {
                 edit = .renaming(profile.id)
             } label: {
@@ -399,14 +399,14 @@ struct ProfileOrderButtons: View {
                 Image(systemName: "chevron.up")
             }
             .disabled(index == 0)
-            .help("Move up. The order is the panel's and the Next Profile shortcut's.")
+            .tip("Move up. The order is the panel's and the Next Profile shortcut's.")
             Button {
                 profiles.move(profile.id, by: 1)
             } label: {
                 Image(systemName: "chevron.down")
             }
             .disabled(index == profiles.profiles.count - 1)
-            .help("Move down. The order is the panel's and the Next Profile shortcut's.")
+            .tip("Move down. The order is the panel's and the Next Profile shortcut's.")
         }
         .buttonStyle(.borderless)
         .font(.caption.weight(.semibold))

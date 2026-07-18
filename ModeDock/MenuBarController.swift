@@ -100,6 +100,7 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         let wasVisible = panel.isVisible
         defer { if wasVisible { onClose?() } }
         panel.orderOut(nil)
+        HoverTip.shared.hide()
         topLeft = nil
         statusItem.button?.highlight(false)
     }
