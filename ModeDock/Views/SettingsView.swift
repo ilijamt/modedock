@@ -50,7 +50,7 @@ enum SettingsTab: String, CaseIterable {
         power: PowerController, profiles: ProfileController, screenshots: ScreenshotController
     ) -> some View {
         switch self {
-        case .general: GeneralSettingsView(modes: modes, power: power)
+        case .general: GeneralSettingsView(modes: modes, power: power, profiles: profiles)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
         case .profiles: ProfileSettingsView(profiles: profiles, screens: screens)
@@ -64,6 +64,7 @@ enum SettingsTab: String, CaseIterable {
 private struct GeneralSettingsView: View {
     let modes: DisplayModeController
     let power: PowerController
+    let profiles: ProfileController
     @Environment(LaunchAtLogin.self) private var launchAtLogin
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.system.rawValue
     @AppStorage(SettingsKey.keepScreensOn) private var keepScreensOn = true
@@ -100,6 +101,8 @@ private struct GeneralSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            ConfigurationSection(profiles: profiles)
 
             DebugLogSection()
 
@@ -550,6 +553,145 @@ private struct SystemScreenshotKeysToggle: View {
         }
         .help("⇧⌘3 captures the screen and ⇧⌘4 an area, with ModeDock's settings.")
         .onAppear { takenOver = SystemScreenshotKeys.areTakenOver }
+    }
+}
+
+/// Export and import of the whole configuration, or parts of it.
+private struct ConfigurationSection: View {
+    let profiles: ProfileController
+    @State private var sheet: TransferSheet?
+    @State private var status: String?
+
+    enum TransferSheet: Identifiable {
+        case export
+        case `import`(ConfigFile)
+
+        var id: String {
+            switch self {
+            case .export: "export"
+            case .import: "import"
+            }
+        }
+    }
+
+    var body: some View {
+        Section {
+            LabeledContent("Configuration") {
+                HStack {
+                    Button("Export…") { sheet = .export }
+                    Button("Import…", action: chooseFile)
+                }
+            }
+            if let status {
+                Text(status).font(.caption).foregroundStyle(.secondary)
+            }
+        } footer: {
+            Text(
+                "Save your settings, shortcuts and profiles to a file, and load them again here or on another Mac. You choose which parts. Profiles include your screens' serial numbers, so they find the same screens again."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .export:
+                ConfigGroupPicker(
+                    title: "Export Configuration", action: "Export…", available: ConfigGroup.allCases,
+                    note: nil
+                ) { groups in
+                    self.sheet = nil
+                    save(groups)
+                } onCancel: {
+                    self.sheet = nil
+                }
+            case .import(let file):
+                ConfigGroupPicker(
+                    title: "Import Configuration", action: "Import",
+                    available: ConfigGroup.allCases.filter { file.groups[$0] != nil },
+                    note:
+                        "The parts you choose replace what you have now. Exported from ModeDock \(file.appVersion) on \(file.exportedAt.formatted(date: .abbreviated, time: .shortened))."
+                ) { groups in
+                    self.sheet = nil
+                    Configuration.apply(file, groups: groups, profiles: profiles)
+                    status = "Imported \(Self.list(groups))."
+                } onCancel: {
+                    self.sheet = nil
+                }
+            }
+        }
+    }
+
+    private func save(_ groups: Set<ConfigGroup>) {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "ModeDock Configuration.json"
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try Configuration.export(groups, profiles: profiles).write(to: url)
+            status = "Exported \(Self.list(groups))."
+        } catch {
+            status = "Couldn't export: \(error.localizedDescription)"
+        }
+    }
+
+    private func chooseFile() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            sheet = .import(try Configuration.read(Data(contentsOf: url)))
+            status = nil
+        } catch {
+            status = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private static func list(_ groups: Set<ConfigGroup>) -> String {
+        ConfigGroup.allCases.filter(groups.contains).map(\.title).joined(separator: ", ")
+    }
+}
+
+/// Checkboxes for the parts of the configuration to export or import.
+private struct ConfigGroupPicker: View {
+    let title: String
+    let action: String
+    let available: [ConfigGroup]
+    let note: String?
+    let onConfirm: (Set<ConfigGroup>) -> Void
+    let onCancel: () -> Void
+    @State private var chosen: Set<ConfigGroup> = []
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title).font(.headline)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(available) { group in
+                    Toggle(isOn: Binding(get: { chosen.contains(group) }, set: { chosen.set(group, contains: $0) })) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(group.title)
+                            Text(group.summary).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .toggleStyle(.checkbox)
+                }
+            }
+            if let note {
+                Text(note).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            HStack {
+                Button(chosen.count == available.count ? "Select None" : "Select All") {
+                    chosen = chosen.count == available.count ? [] : Set(available)
+                }
+                Spacer()
+                Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction)
+                Button(action) { onConfirm(chosen) }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(chosen.isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 420)
+        .onAppear { chosen = Set(available) }
     }
 }
 

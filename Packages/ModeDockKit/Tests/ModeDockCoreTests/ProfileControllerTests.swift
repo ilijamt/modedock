@@ -357,6 +357,20 @@ struct ProfileControllerTests {
         #expect(setup.profiles.currentProfile?.id == first.id)
     }
 
+    @Test func replaceAllSwapsTheProfilesAndSavesThem() async {
+        let defaults = makeDefaults()
+        let setup = await Setup(defaults: defaults)
+        setup.profiles.capture(name: "Old")
+        let imported = DisplayProfile(name: "Imported", mirroring: false, screens: [])
+
+        setup.profiles.replaceAll(with: [imported])
+
+        let reloaded = ProfileController(
+            screens: setup.screens, modes: setup.modes, brightness: setup.brightness,
+            configurator: setup.configurator, defaults: defaults)
+        #expect(reloaded.profiles.map(\.name) == ["Imported"])
+    }
+
     @Test func moveReordersProfiles() async {
         let setup = await Setup()
         let first = setup.profiles.capture(name: "A")

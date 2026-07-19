@@ -118,6 +118,12 @@ public final class ProfileController {
         profiles = updated
     }
 
+    /// Replaces every profile, as when importing a configuration.
+    public func replaceAll(with profiles: [DisplayProfile]) {
+        self.profiles = profiles
+        lastUsed = nil
+    }
+
     public func delete(_ id: DisplayProfile.ID) {
         profiles.removeAll { $0.id == id }
     }

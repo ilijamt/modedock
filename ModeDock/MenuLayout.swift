@@ -172,18 +172,8 @@ enum SettingsKey {
     static let brightnessKeysAllScreens = "brightnessKeysAllScreens"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 
-    /// Every preference shown in Settings, for "Reset Settings".
-    static let all = [
-        showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
-        keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
-        screenshotDestination, screenshotFolder, screenshotFormat, screenshotHDR, screenshotPointer,
-        screenshotPointerEverywhere,
-        screenshotSound, screenshotShadow,
-        screenshotNotice, screenshotNoticePicture, screenshotHidesPanel, screenshotDelay, screenshotCombineScreens,
-        profileCycleScope,
-        brightnessKeysAllScreens,
-        LogFile.enabledKey, PanelStyle.key, PanelLayout.key, PanelLayout.selectedTabKey, AppAppearance.key,
-    ]
+    /// Every preference shown in Settings, for "Reset Settings": the same lists as export and import.
+    static var all: [String] { ConfigGroup.allCases.flatMap(\.settingKeys) }
 }
 
 /// How the menu-bar panel looks. Chosen in Settings → Menu.
