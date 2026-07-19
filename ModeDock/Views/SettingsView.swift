@@ -647,6 +647,7 @@ private struct ScreenshotSettingsView: View {
     @AppStorage(SettingsKey.screenshotNoticePicture) private var showPicture = true
     @AppStorage(SettingsKey.screenshotHidesPanel) private var hidesPanel = true
     @AppStorage(SettingsKey.screenshotCombineScreens) private var combineScreens = true
+    @AppStorage(SettingsKey.screenshotHDR) private var hdr = false
 
     private var folderURL: URL { ScreenshotSettings.folderURL(default: screenshots.defaultFolder) }
 
@@ -688,6 +689,13 @@ private struct ScreenshotSettingsView: View {
                 Picker("Format", selection: $format) {
                     ForEach(ScreenshotFormat.allCases) { Text($0.title).tag($0.rawValue) }
                 }
+                Picker("Dynamic range", selection: $hdr) {
+                    Text("Standard (SDR)").tag(false)
+                    Text("HDR").tag(true)
+                }
+                .help(
+                    "HDR keeps the extra precision and wide colour of HDR screens, and saves as HEIC. Copies also carry the HDR image for apps that can paste it."
+                )
                 Picker("All Screens saves", selection: $combineScreens) {
                     Text("One image").tag(true)
                     Text("A file per screen").tag(false)

@@ -19,6 +19,15 @@ public enum ScreenshotFormat: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
+    var type: UTType {
+        switch self {
+        case .png: .png
+        case .jpg: .jpeg
+        case .heic: .heic
+        case .pdf: .pdf
+        }
+    }
+
     public var title: String {
         switch self {
         case .png: "PNG"
@@ -55,11 +64,16 @@ public struct ScreenshotOptions: Equatable, Sendable {
     public var delay: Int
     /// All Screens saves one image laid out like the displays instead of a file per screen.
     public var combinesScreens: Bool
+    /// Keeps HDR content's extended range; only files saved as captured keep it.
+    public var hdr: Bool
+
+    /// screencapture writes HDR captures as HEIC whatever format is asked for.
+    public var fileFormat: ScreenshotFormat { hdr ? .heic : format }
 
     public init(
         destination: ScreenshotDestination, format: ScreenshotFormat = .png, includePointer: Bool = false,
         playSound: Bool = true, windowShadow: Bool = true, delay: Int = 0,
-        combinesScreens: Bool = false
+        combinesScreens: Bool = false, hdr: Bool = false
     ) {
         self.destination = destination
         self.format = format
@@ -68,6 +82,7 @@ public struct ScreenshotOptions: Equatable, Sendable {
         self.windowShadow = windowShadow
         self.delay = delay
         self.combinesScreens = combinesScreens
+        self.hdr = hdr
     }
 }
 
@@ -93,9 +108,11 @@ public protocol ScreenshotSystem {
     func temporaryFolder() -> URL
     /// Puts the image on the clipboard; false when that failed. With `bounds`, one per file, the
     /// images are combined into one, laid out like the displays.
-    func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?) -> Bool
+    func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?, hdr: Bool) -> Bool
     /// Writes one image of `files` laid out by `bounds` to `file`; false when that failed.
-    func combineImages(_ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat) -> Bool
+    func combineImages(
+        _ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat, hdr: Bool
+    ) -> Bool
     /// The display's position and size in the global display space.
     func bounds(of display: CGDirectDisplayID) -> CGRect
     /// screencapture numbers screens from 1 in the order of the active display list.
@@ -186,7 +203,8 @@ public final class ScreenshotController {
         if let folder = options.destination.folder, combines {
             let file = fileURLs(in: folder, count: 1, options: options, date: date)[0]
             guard let arrangement,
-                system.combineImages(captured, arrangedIn: arrangement, into: file, format: options.format)
+                system.combineImages(
+                    captured, arrangedIn: arrangement, into: file, format: options.fileFormat, hdr: options.hdr)
             else {
                 lastError = "The screens couldn't be combined into one image."
                 return .failed
@@ -194,7 +212,9 @@ public final class ScreenshotController {
             saved = [file]
         }
 
-        if options.destination.copiesToClipboard, !system.copyImages(captured, arrangedIn: arrangement) {
+        if options.destination.copiesToClipboard,
+            !system.copyImages(captured, arrangedIn: arrangement, hdr: options.hdr)
+        {
             lastError = "The screenshot couldn't be copied to the clipboard."
             return .failed
         }
@@ -233,7 +253,8 @@ public final class ScreenshotController {
             if options.includePointer { arguments.append("-C") }
             if options.delay > 0 { arguments += ["-T", String(options.delay)] }
         }
-        arguments += ["-t", options.format.rawValue]
+        if options.hdr { arguments.append("-H") }
+        arguments += ["-t", options.fileFormat.rawValue]
         arguments += files.map(\.path)
         return arguments
     }
@@ -247,7 +268,7 @@ public final class ScreenshotController {
         while true {
             let extra = attempt > 1 ? " \(attempt)" : ""
             let urls = suffixes.map {
-                folder.appendingPathComponent("\(base)\(extra)\($0).\(options.format.rawValue)")
+                folder.appendingPathComponent("\(base)\(extra)\($0).\(options.fileFormat.rawValue)")
             }
             if !urls.contains(where: system.fileExists) { return urls }
             attempt += 1
@@ -296,31 +317,43 @@ public struct MacScreenshotSystem: ScreenshotSystem {
         return folder
     }
 
-    public func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?) -> Bool {
+    public func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?, hdr: Bool) -> Bool {
         let images = Self.loadImages(files)
         guard !images.isEmpty, images.count == files.count else { return false }
         let image: CGImage
+        var heic: Data?
         if let bounds, bounds.count == images.count, images.count > 1 {
-            guard let combined = Self.combine(images, bounds: bounds) else { return false }
+            guard let combined = Self.combine(images, bounds: bounds, hdr: hdr) else { return false }
             image = combined
+            if hdr { heic = Self.encode(combined, as: .heic) }
         } else {
             image = images[0]
+            if hdr { heic = try? Data(contentsOf: files[0]) }
         }
+        // From an HDR capture these are 16-bit and keep its colour profile.
         let rep = NSBitmapImageRep(cgImage: image)
         guard let png = rep.representation(using: .png, properties: [:]) else { return false }
         NSPasteboard.general.clearContents()
-        // PNG for apps that take it, TIFF for the ones that only take that.
-        return NSPasteboard.general.setData(png, forType: .png)
+        // PNG for apps that take it, TIFF for the ones that only take that, and the HDR HEIC for
+        // the few that paste HDR.
+        var copied =
+            NSPasteboard.general.setData(png, forType: .png)
             && NSPasteboard.general.setData(rep.tiffRepresentation, forType: .tiff)
+        if let heic {
+            copied = NSPasteboard.general.setData(heic, forType: NSPasteboard.PasteboardType("public.heic")) && copied
+        }
+        return copied
     }
 
     public func bounds(of display: CGDirectDisplayID) -> CGRect { CGDisplayBounds(display) }
 
     public func combineImages(
-        _ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat
+        _ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat, hdr: Bool
     ) -> Bool {
         let images = Self.loadImages(files)
-        guard images.count == files.count, let image = Self.combine(images, bounds: bounds) else { return false }
+        guard images.count == files.count, let image = Self.combine(images, bounds: bounds, hdr: hdr) else {
+            return false
+        }
         if format == .pdf {
             var box = CGRect(x: 0, y: 0, width: image.width, height: image.height)
             guard let context = CGContext(file as CFURL, mediaBox: &box, nil) else { return false }
@@ -330,16 +363,19 @@ public struct MacScreenshotSystem: ScreenshotSystem {
             context.closePDF()
             return true
         }
-        let type: UTType =
-            switch format {
-            case .jpg: .jpeg
-            case .heic: .heic
-            default: .png
-            }
-        guard let destination = CGImageDestinationCreateWithURL(file as CFURL, type.identifier as CFString, 1, nil)
+        guard
+            let destination = CGImageDestinationCreateWithURL(file as CFURL, format.type.identifier as CFString, 1, nil)
         else { return false }
         CGImageDestinationAddImage(destination, image, nil)
         return CGImageDestinationFinalize(destination)
+    }
+
+    private static func encode(_ image: CGImage, as format: ScreenshotFormat) -> Data? {
+        let data = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(data, format.type.identifier as CFString, 1, nil)
+        else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        return CGImageDestinationFinalize(destination) ? data as Data : nil
     }
 
     private static func loadImages(_ files: [URL]) -> [CGImage] {
@@ -350,16 +386,21 @@ public struct MacScreenshotSystem: ScreenshotSystem {
     }
 
     /// Draws each screen's image where its display is, at the sharpest screen's scale so Retina
-    /// detail is kept. Gaps between displays stay transparent.
-    private static func combine(_ images: [CGImage], bounds: [CGRect]) -> CGImage? {
+    /// detail is kept. Gaps between displays stay transparent. HDR captures are drawn at 16 bits
+    /// in their own colour space, which keeps their precision and wide colour.
+    private static func combine(_ images: [CGImage], bounds: [CGRect], hdr: Bool) -> CGImage? {
         let scale = zip(images, bounds).map { CGFloat($0.width) / max($1.width, 1) }.max() ?? 1
         let layout = ScreenshotController.arrangement(of: bounds, scale: scale)
-        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
-        guard
+        let space =
+            hdr
+            ? images.first?.colorSpace ?? CGColorSpace(name: CGColorSpace.displayP3)
+            : CGColorSpace(name: CGColorSpace.sRGB)
+        guard let space,
             let context = CGContext(
                 data: nil, width: Int(layout.size.width.rounded()), height: Int(layout.size.height.rounded()),
-                bitsPerComponent: 8, bytesPerRow: 0, space: space,
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+                bitsPerComponent: hdr ? 16 : 8, bytesPerRow: 0, space: space,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                    | (hdr ? CGBitmapInfo.byteOrder16Little.rawValue : 0))
         else { return nil }
         context.interpolationQuality = .high
         for (image, frame) in zip(images, layout.frames) {

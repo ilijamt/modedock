@@ -117,7 +117,8 @@ enum ScreenshotSettings {
             playSound: defaults.object(forKey: SettingsKey.screenshotSound) as? Bool ?? true,
             windowShadow: defaults.object(forKey: SettingsKey.screenshotShadow) as? Bool ?? true,
             delay: defaults.integer(forKey: SettingsKey.screenshotDelay),
-            combinesScreens: defaults.object(forKey: SettingsKey.screenshotCombineScreens) as? Bool ?? true
+            combinesScreens: defaults.object(forKey: SettingsKey.screenshotCombineScreens) as? Bool ?? true,
+            hdr: defaults.bool(forKey: SettingsKey.screenshotHDR)
         )
     }
 

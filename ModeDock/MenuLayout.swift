@@ -149,6 +149,8 @@ enum SettingsKey {
     /// A folder path; empty for the folder macOS saves screenshots to.
     static let screenshotFolder = "screenshotFolder"
     static let screenshotFormat = "screenshotFormat"
+    /// Capture HDR content with its extended range.
+    static let screenshotHDR = "screenshotHDR"
     static let screenshotPointer = "screenshotPointer"
     /// Experimental: also draw the pointer into Area and Window captures.
     static let screenshotPointerEverywhere = "screenshotPointerEverywhere"
@@ -174,7 +176,8 @@ enum SettingsKey {
     static let all = [
         showDDCStandby, showAllModes, sectionOrder, hiddenSections, collapsedSections, hiddenItems, ddcWriteInterval,
         keepAwakeDuration, keepAwakeCustomMinutes, keepScreensOn,
-        screenshotDestination, screenshotFolder, screenshotFormat, screenshotPointer, screenshotPointerEverywhere,
+        screenshotDestination, screenshotFolder, screenshotFormat, screenshotHDR, screenshotPointer,
+        screenshotPointerEverywhere,
         screenshotSound, screenshotShadow,
         screenshotNotice, screenshotNoticePicture, screenshotHidesPanel, screenshotDelay, screenshotCombineScreens,
         profileCycleScope,

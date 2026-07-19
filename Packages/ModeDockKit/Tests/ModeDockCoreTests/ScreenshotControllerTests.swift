@@ -34,7 +34,7 @@ private final class FakeScreenshotSystem: ScreenshotSystem {
     func removeFile(_ url: URL) { files.remove(url.path) }
     func temporaryFolder() -> URL { URL(fileURLWithPath: "/tmp/modedock") }
 
-    func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?) -> Bool {
+    func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?, hdr: Bool) -> Bool {
         copied.append(files)
         arrangements.append(bounds)
         return copySucceeds
@@ -42,7 +42,9 @@ private final class FakeScreenshotSystem: ScreenshotSystem {
 
     var combined: [URL] = []
 
-    func combineImages(_ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat) -> Bool {
+    func combineImages(
+        _ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat, hdr: Bool
+    ) -> Bool {
         combined.append(file)
         self.files.insert(file.path)
         return true
@@ -98,6 +100,14 @@ struct ScreenshotControllerTests {
         #expect(
             ScreenshotController.arguments(mode: .area, options: options, displayIndex: nil, files: [])
                 == ["-x", "-i", "-s", "-t", "jpg"])
+    }
+
+    @Test func capturesHDRWhenAsked() {
+        var options = options()
+        options.hdr = true
+        #expect(
+            ScreenshotController.arguments(mode: .area, options: options, displayIndex: nil, files: [])
+                == ["-i", "-s", "-H", "-t", "heic"])
     }
 
     @Test func savesToATimestampedFile() async {
