@@ -4,7 +4,12 @@ import SwiftUI
 extension View {
     /// A tooltip by the pointer after a short hover. The panel belongs to an app that's rarely
     /// active, where macOS shows its own tooltips late or not at all.
-    func tip(_ text: String) -> some View {
+    func tip(_ text: LocalizedStringResource) -> some View {
+        modifier(HoverTipModifier(text: String(localized: text)))
+    }
+
+    /// For text that's already localized, or isn't text to translate.
+    func tip(verbatim text: String) -> some View {
         modifier(HoverTipModifier(text: text))
     }
 }

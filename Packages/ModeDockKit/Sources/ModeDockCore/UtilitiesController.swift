@@ -34,7 +34,7 @@ public enum UtilityError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .unsupported: "This isn't supported on this Mac."
+        case .unsupported: String(localized: "This isn't supported on this Mac.", bundle: .module)
         case .failed(let message): message
         }
     }
@@ -97,7 +97,10 @@ public final class UtilitiesController {
                 failed.append(volume.lastPathComponent)
             }
         }
-        lastError = failed.isEmpty ? nil : "Couldn't eject \(failed.joined(separator: ", ")). It may be in use."
+        lastError =
+            failed.isEmpty
+            ? nil
+            : String(localized: "Couldn't eject \(failed.joined(separator: ", ")). It may be in use.", bundle: .module)
     }
 
     private func apply(_ change: () throws -> Void) {
@@ -145,11 +148,15 @@ public struct MacUtilitySystem: UtilitySystem {
     }
 
     public func setNightShift(_ on: Bool) throws {
-        guard CoreBrightness.setNightShift(on) else { throw UtilityError.failed("Night Shift couldn't be changed.") }
+        guard CoreBrightness.setNightShift(on) else {
+            throw UtilityError.failed(String(localized: "Night Shift couldn't be changed.", bundle: .module))
+        }
     }
 
     public func setTrueTone(_ on: Bool) throws {
-        guard CoreBrightness.setTrueTone(on) else { throw UtilityError.failed("True Tone couldn't be changed.") }
+        guard CoreBrightness.setTrueTone(on) else {
+            throw UtilityError.failed(String(localized: "True Tone couldn't be changed.", bundle: .module))
+        }
     }
 
     /// macOS has no API for this; asking Finder empties the Trash on every volume, and asks the
@@ -160,10 +167,15 @@ public struct MacUtilitySystem: UtilitySystem {
         guard let error else { return }
         if error[NSAppleScript.errorNumber] as? Int == -1743 {
             throw UtilityError.failed(
-                "ModeDock isn't allowed to control Finder. Allow it in System Settings → Privacy & Security → Automation."
+                String(
+                    localized:
+                        "ModeDock isn't allowed to control Finder. Allow it in System Settings → Privacy & Security → Automation.",
+                    bundle: .module)
             )
         }
-        throw UtilityError.failed(error[NSAppleScript.errorMessage] as? String ?? "The Trash couldn't be emptied.")
+        throw UtilityError.failed(
+            error[NSAppleScript.errorMessage] as? String
+                ?? String(localized: "The Trash couldn't be emptied.", bundle: .module))
     }
 
     public func ejectableVolumes() -> [URL] {
@@ -195,7 +207,7 @@ public struct MacUtilitySystem: UtilitySystem {
     private static func setFinderFlag(_ key: String, _ value: Bool) throws {
         CFPreferencesSetAppValue(key as CFString, value as CFBoolean, finder)
         guard CFPreferencesAppSynchronize(finder) else {
-            throw UtilityError.failed("Finder's settings couldn't be saved.")
+            throw UtilityError.failed(String(localized: "Finder's settings couldn't be saved.", bundle: .module))
         }
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/killall")

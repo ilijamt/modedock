@@ -29,7 +29,7 @@ struct ProfilesSection: View {
 
             ProfileEditors(profiles: profiles, screens: screens, edit: $edit, scope: .saving)
             if edit == nil, !hidden.contains(.saveProfile) {
-                ActionTile(title: "Save Current Setup", systemImage: "plus") { edit = .saving }
+                ActionTile(title: String(localized: "Save Current Setup"), systemImage: "plus") { edit = .saving }
                     .tip("Save the screens that are on, their resolutions, arrangement and brightness.")
             }
 
@@ -154,7 +154,7 @@ struct RowsProfilesSection: View {
 
 private struct ProfilesEmptyText: View {
     var body: some View {
-        Text("Save the screens that are on, their resolutions and arrangement, and switch back to them in one click.")
+        Text("Save your screen setup and switch back to it in one click.")
             .font(.caption)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -275,7 +275,7 @@ private struct ProfileActionStrip: View {
             } label: {
                 Label("Update", systemImage: "arrow.triangle.2.circlepath")
             }
-            .tip("Replace this profile with the current screens, resolutions, arrangement and brightness.")
+            .tip("Replace this profile with the current setup.")
             Button {
                 edit = .renaming(profile.id)
             } label: {
@@ -356,8 +356,8 @@ private struct ProfileEditors: View {
 
     private var saveEditor: some View {
         ProfileNameEditor(
-            initialName: profiles.suggestedName(screens: screens), actionTitle: "Save",
-            caption: "Saves the screens that are on, their resolutions, arrangement and brightness."
+            initialName: profiles.suggestedName(screens: screens), actionTitle: String(localized: "Save"),
+            caption: String(localized: "Saves the screens that are on, their resolutions, arrangement and brightness.")
         ) {
             profiles.capture(name: $0)
         } onDone: {
@@ -399,14 +399,14 @@ struct ProfileOrderButtons: View {
                 Image(systemName: "chevron.up")
             }
             .disabled(index == 0)
-            .tip("Move up. The order is the panel's and the Next Profile shortcut's.")
+            .tip("Move up")
             Button {
                 profiles.move(profile.id, by: 1)
             } label: {
                 Image(systemName: "chevron.down")
             }
             .disabled(index == profiles.profiles.count - 1)
-            .tip("Move down. The order is the panel's and the Next Profile shortcut's.")
+            .tip("Move down")
         }
         .buttonStyle(.borderless)
         .font(.caption.weight(.semibold))

@@ -84,7 +84,7 @@ public enum DDCPacket {
         case 0x0F, 0x10: "DisplayPort \(input - 0x0E)"
         case 0x11, 0x12: "HDMI \(input - 0x10)"
         case 0x1B: "USB-C"
-        default: "Input \(String(format: "%02X", input))"
+        default: String(localized: "Input \(String(format: "%02X", input))", bundle: .module)
         }
     }
 

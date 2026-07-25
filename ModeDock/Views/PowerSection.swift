@@ -44,7 +44,7 @@ enum KeepAwakeSettings {
     /// "until turned off", like nil.
     static func customLabel(_ minutes: Int?) -> String? {
         guard let minutes, minutes > 0, !isPreset(minutes) else { return nil }
-        return "Custom (\(PowerController.title(minutes: minutes)))"
+        return String(localized: "Custom (\(PowerController.title(minutes: minutes)))")
     }
 
     private static func positiveInt(forKey key: String) -> Int? {
@@ -57,10 +57,11 @@ extension BatteryStatus {
     var summary: String {
         var parts = ["\(percent)%"]
         switch state {
-        case .onBattery: if let time { parts.append("\(time) left") }
-        case .charging: parts.append(time.map { "\($0) until full" } ?? "Charging")
-        case .charged: parts.append("Charged")
-        case .notCharging: parts.append("Not charging")
+        case .onBattery: if let time { parts.append(String(localized: "\(time) left")) }
+        case .charging:
+            parts.append(time.map { String(localized: "\($0) until full") } ?? String(localized: "Charging"))
+        case .charged: parts.append(String(localized: "Charged"))
+        case .notCharging: parts.append(String(localized: "Not charging"))
         }
         return parts.joined(separator: " · ")
     }
@@ -116,11 +117,11 @@ struct PowerSection: View {
             if !hidden.contains(.sleepMac) || !hidden.contains(.lock) {
                 HStack(spacing: 6) {
                     if !hidden.contains(.sleepMac) {
-                        ActionTile(title: "Sleep Mac", systemImage: "powersleep") { power.sleep() }
+                        ActionTile(title: String(localized: "Sleep Mac"), systemImage: "powersleep") { power.sleep() }
                             .tip("Put the Mac to sleep now.")
                     }
                     if !hidden.contains(.lock) {
-                        ActionTile(title: "Lock", systemImage: "lock.fill") { power.lockScreen() }
+                        ActionTile(title: String(localized: "Lock"), systemImage: "lock.fill") { power.lockScreen() }
                             .tip("Lock the screen (⌃⌘Q).")
                     }
                 }

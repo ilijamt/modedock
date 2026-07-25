@@ -20,19 +20,19 @@ extension KeyboardShortcuts.Name {
 extension ScreenshotMode {
     var title: String {
         switch self {
-        case .area: "Area"
-        case .window: "Window"
-        case .screen: "Screen"
-        case .allScreens: "All Screens"
+        case .area: String(localized: "Area")
+        case .window: String(localized: "Window")
+        case .screen: String(localized: "Screen")
+        case .allScreens: String(localized: "All Screens")
         }
     }
 
     var menuTitle: String {
         switch self {
-        case .area: "Capture Area"
-        case .window: "Capture Window"
-        case .screen: "Capture Screen"
-        case .allScreens: "Capture All Screens"
+        case .area: String(localized: "Capture Area")
+        case .window: String(localized: "Capture Window")
+        case .screen: String(localized: "Capture Screen")
+        case .allScreens: String(localized: "Capture All Screens")
         }
     }
 
@@ -66,10 +66,10 @@ extension ScreenshotMode {
     @MainActor var help: String {
         let text =
             switch self {
-            case .area: "Drag to select part of the screen. Press Esc to cancel."
-            case .window: "Click a window to capture it. Press Esc to cancel."
-            case .screen: "Capture the screen under the pointer."
-            case .allScreens: "Capture every screen."
+            case .area: String(localized: "Drag to select an area. Esc cancels.")
+            case .window: String(localized: "Click a window. Esc cancels.")
+            case .screen: String(localized: "Capture the screen under the pointer.")
+            case .allScreens: String(localized: "Capture every screen.")
             }
         guard let shortcut = shortcut?.shortcutText else { return text }
         return "\(text) (\(shortcut))"
@@ -186,7 +186,8 @@ final class ScreenshotCoordinator {
                 notice.show(.copied, controller: controller)
             case .failed:
                 notice.show(
-                    .failed(controller.lastError ?? "The screenshot couldn't be taken."), controller: controller)
+                    .failed(controller.lastError ?? String(localized: "The screenshot couldn't be taken.")),
+                    controller: controller)
             case .needsPermission:
                 notice.show(.permission, controller: controller)
             default:
@@ -330,10 +331,12 @@ private struct NoticeView: View {
     private var title: String {
         switch notice {
         case .saved(let files, let copied):
-            (files.count == 1 ? "Screenshot Saved" : "\(files.count) Screenshots Saved") + (copied ? " and Copied" : "")
-        case .copied: "Screenshot Copied"
-        case .failed: "Screenshot Failed"
-        case .permission: "Screen Recording Needed"
+            copied
+                ? String(localized: "\(files.count) Screenshots Saved and Copied")
+                : String(localized: "\(files.count) Screenshots Saved")
+        case .copied: String(localized: "Screenshot Copied")
+        case .failed: String(localized: "Screenshot Failed")
+        case .permission: String(localized: "Screen Recording Needed")
         }
     }
 
@@ -341,9 +344,9 @@ private struct NoticeView: View {
         switch notice {
         case .saved(let files, _):
             files.first.map { files.count == 1 ? $0.lastPathComponent : $0.deletingLastPathComponent().path }
-        case .copied: "Paste it into any app."
+        case .copied: String(localized: "Paste it into any app.")
         case .failed(let message): message
-        case .permission: "Allow ModeDock to record the screen in System Settings to take screenshots."
+        case .permission: String(localized: "Allow Screen Recording for ModeDock in System Settings.")
         }
     }
 

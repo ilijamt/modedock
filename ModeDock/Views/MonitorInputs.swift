@@ -7,13 +7,13 @@ extension MonitorInputController.Inputs {
     /// DDC only works over the input the monitor shows, so the current one is always this Mac's.
     /// Others get their MCCS name, which some monitors (Samsung) don't follow.
     func name(of input: UInt8) -> String {
-        input == current ? "This Mac" : DDCPacket.inputName(input)
+        input == current ? String(localized: "This Mac") : DDCPacket.inputName(input)
     }
 }
 
 extension MonitorInputController {
     static let switchWarning =
-        "The monitor will show the other input. Switch back with the monitor's buttons or from the other device."
+        String(localized: "ModeDock can't switch back. Use the monitor's buttons or the other device.")
 }
 
 /// The monitor's inputs under its resolution list, in the Cards style.
@@ -43,7 +43,7 @@ struct InputChips: View {
                                 selected ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.08)), in: Capsule())
                     }
                     .buttonStyle(.plain)
-                    .tip(String(format: "Input source 0x%02X", input))
+                    .tip(verbatim: String(format: "Input source 0x%02X", input))
                 }
             }
             if let input = confirming {

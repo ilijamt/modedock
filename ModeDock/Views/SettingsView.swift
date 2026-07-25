@@ -9,13 +9,13 @@ enum SettingsTab: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .menu: "Menu"
-        case .displays: "Displays"
-        case .profiles: "Profiles"
-        case .screenshots: "Capture"
-        case .shortcuts: "Shortcuts"
-        case .about: "About"
+        case .general: String(localized: "General")
+        case .menu: String(localized: "Menu")
+        case .displays: String(localized: "Displays")
+        case .profiles: String(localized: "Profiles")
+        case .screenshots: String(localized: "Capture")
+        case .shortcuts: String(localized: "Shortcuts")
+        case .about: String(localized: "About")
         }
     }
 
@@ -77,6 +77,8 @@ private struct GeneralSettingsView: View {
             }
             .onChange(of: appearance) { AppAppearance.apply() }
 
+            LanguagePicker()
+
             Toggle(
                 "Launch at login",
                 isOn: Binding(
@@ -97,7 +99,7 @@ private struct GeneralSettingsView: View {
                         get: { keepScreensOn }, set: { KeepAwakeSettings.setKeepScreensOn($0, power: power) })
                 )
             } footer: {
-                Text("When off, the screens can still go dark, but the Mac stays awake. Also in the Keep Awake menu.")
+                Text("When off, screens can sleep while the Mac stays awake.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -112,8 +114,7 @@ private struct GeneralSettingsView: View {
                 }
             } footer: {
                 Text(
-                    "Puts every ModeDock setting and keyboard shortcut back to its default. Screens are "
-                        + "reset in Displays. Launch at login stays as it is."
+                    "Resets every setting and shortcut. Screens are reset in Displays."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -125,8 +126,7 @@ private struct GeneralSettingsView: View {
             Button("Reset Settings", role: .destructive) { ScreenDefaults.resetSettings(modes: modes) }
         } message: {
             Text(
-                "Appearance, panel style, menu sections, display options and shortcuts go back to their "
-                    + "defaults. ModeDock will ask again before keeping a new resolution."
+                "Every setting and shortcut goes back to its default. Profiles are kept."
             )
         }
     }
@@ -197,7 +197,7 @@ private struct MenuSettingsView: View {
                 Text("Sections")
             } footer: {
                 Text(
-                    "Turn sections on or off, and open one to choose what it shows. Drag sections, or right-click one, to change their order."
+                    "Turn sections on or off and choose what each shows. Drag to reorder."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -268,7 +268,7 @@ private struct MenuSettingsView: View {
                     Text("Collapsed").tag(false)
                 }
                 .fixedSize()
-                .help("Whether the section starts open or collapsed in the panel")
+                .help("Open or collapsed when the panel opens")
             }
         }
     }
@@ -338,8 +338,7 @@ private struct DisplaySettingsView: View {
                 Toggle("Show all resolutions", isOn: $showAllModes)
             } footer: {
                 Text(
-                    "Includes other aspect ratios, low-resolution versions of HiDPI sizes, and modes "
-                        + "macOS doesn't offer for the desktop. Some may not display correctly."
+                    "Adds other aspect ratios, low-resolution sizes and modes macOS hides. Some may not display correctly."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -356,8 +355,7 @@ private struct DisplaySettingsView: View {
                 }
             } footer: {
                 Text(
-                    "How often ModeDock sends a new brightness to an external monitor while you drag. "
-                        + "Monitors react differently: try a few values and keep the one that looks smoothest."
+                    "How often brightness is sent to external monitors while dragging. Pick whatever looks smoothest."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -381,8 +379,7 @@ private struct DisplaySettingsView: View {
                 Text("Reset")
             } footer: {
                 Text(
-                    "Goes back to the resolution and refresh rate macOS picks for the screen, removes "
-                        + "software dimming, and turns automatic brightness back on."
+                    "Restores the default resolution and refresh rate, removes dimming and turns automatic brightness back on."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -392,8 +389,7 @@ private struct DisplaySettingsView: View {
                 Toggle("Show Standby for external monitors", isOn: $showDDCStandby)
             } footer: {
                 Text(
-                    "Standby powers a monitor down over DDC. Some monitors then only wake when you press "
-                        + "their power button. Turning a screen off is the safer choice."
+                    "Puts a monitor into standby over DDC. Some only wake with their power button."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -426,36 +422,37 @@ private struct ShortcutSettingsView: View {
     var body: some View {
         Form {
             Section {
-                ShortcutRecorder("Open ModeDock", name: .togglePanel)
+                ShortcutRecorder(String(localized: "Open ModeDock"), name: .togglePanel)
             } footer: {
-                Text("Leave a shortcut empty to turn it off. Click ✕ to clear one.")
+                Text("Click ✕ to clear a shortcut.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
                 BrightnessKeysToggle()
-                ShortcutRecorder("Brightness up", name: .brightnessUp)
-                ShortcutRecorder("Brightness down", name: .brightnessDown)
+                ShortcutRecorder(String(localized: "Brightness up"), name: .brightnessUp)
+                ShortcutRecorder(String(localized: "Brightness down"), name: .brightnessDown)
                 ShortcutRecorder("Sleep screens", name: .sleepScreens)
-                ShortcutRecorder("Mirror on or off", name: .toggleMirror)
-                ShortcutRecorder("Turn all screens on", name: .turnAllScreensOn)
+                ShortcutRecorder(String(localized: "Mirror on or off"), name: .toggleMirror)
+                ShortcutRecorder(String(localized: "Turn all screens on"), name: .turnAllScreensOn)
                 ForEach(screens.screens.filter { !$0.display.identity.isPlaceholder }) { screen in
                     ShortcutRecorder(
-                        "Turn \(screen.display.name) on or off", name: .toggleScreen(screen.display.identity))
+                        String(localized: "Turn \(screen.display.name) on or off"),
+                        name: .toggleScreen(screen.display.identity))
                 }
             } header: {
                 Text("Screens")
             } footer: {
                 Text(
-                    "Brightness changes every screen that's on, including monitors the brightness keys can't reach. At least one screen always stays on."
+                    "Brightness shortcuts change every screen. At least one screen always stays on."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
 
             Section {
-                ShortcutRecorder("Next profile", name: .nextProfile)
+                ShortcutRecorder(String(localized: "Next profile"), name: .nextProfile)
                 Picker("Cycle through", selection: $profileCycleScope) {
                     ForEach(ProfileCycleScope.allCases) { Text($0.title).tag($0.rawValue) }
                 }
@@ -463,18 +460,21 @@ private struct ShortcutSettingsView: View {
                 Text("Profiles")
             } footer: {
                 Text(
-                    "Shows the profiles and moves to the next one each time you press it; the highlighted one is applied when you stop. \"Connected screens\" only includes profiles saved with exactly the screens plugged in now. Each profile's own shortcut is set in Profiles."
+                    String(
+                        localized:
+                            "Each press moves to the next profile, and the highlighted one is applied when you stop. \"Connected screens\" lists only profiles for the screens plugged in now."
+                    )
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
             }
 
             Section("Power and Utilities") {
-                ShortcutRecorder("Keep Awake on or off", name: .toggleKeepAwake)
-                ShortcutRecorder("Dark Mode on or off", name: .toggleDarkMode)
-                ShortcutRecorder("Night Shift on or off", name: .toggleNightShift)
-                ShortcutRecorder("True Tone on or off", name: .toggleTrueTone)
-                ShortcutRecorder("Desktop icons on or off", name: .toggleDesktopIcons)
+                ShortcutRecorder(String(localized: "Keep Awake on or off"), name: .toggleKeepAwake)
+                ShortcutRecorder(String(localized: "Dark Mode on or off"), name: .toggleDarkMode)
+                ShortcutRecorder(String(localized: "Night Shift on or off"), name: .toggleNightShift)
+                ShortcutRecorder(String(localized: "True Tone on or off"), name: .toggleTrueTone)
+                ShortcutRecorder(String(localized: "Desktop icons on or off"), name: .toggleDesktopIcons)
                 ShortcutRecorder("Eject all disks", name: .ejectAllDisks)
             }
 
@@ -488,7 +488,7 @@ private struct ShortcutSettingsView: View {
                 Text("Screenshots")
             } footer: {
                 Text(
-                    "macOS uses ⇧⌘3 and ⇧⌘4 for its own screenshots. Using them for ModeDock turns those macOS shortcuts off, and their ⌃ clipboard versions; turning it off again gives them back."
+                    "Using ⇧⌘3 and ⇧⌘4 here turns off the matching macOS shortcuts until you switch this off."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -506,7 +506,7 @@ private struct BrightnessKeysToggle: View {
     var body: some View {
         Toggle(isOn: $enabled) {
             Text("Brightness keys change every screen")
-            Text("The keyboard's brightness keys also dim monitors that macOS can't.")
+            Text("Also dims monitors macOS can't.")
         }
         .onChange(of: enabled) { _, on in
             if on, !BrightnessKeys.isTrusted { BrightnessKeys.requestAccess() }
@@ -548,11 +548,32 @@ private struct SystemScreenshotKeysToggle: View {
         ) {
             Text("Use ⇧⌘3 and ⇧⌘4 for ModeDock")
             if takenOver {
-                Text("⇧⌘3 captures the screen and ⇧⌘4 an area with ModeDock. The macOS shortcuts for them are off.")
+                Text("The macOS shortcuts for these keys are off.")
             }
         }
         .help("⇧⌘3 captures the screen and ⇧⌘4 an area, with ModeDock's settings.")
         .onAppear { takenOver = SystemScreenshotKeys.areTakenOver }
+    }
+}
+
+/// ModeDock's language, with a restart button once it differs from the one running.
+private struct LanguagePicker: View {
+    @AppStorage(AppLanguage.key) private var language = AppLanguage.system
+
+    var body: some View {
+        Picker("Language", selection: $language) {
+            ForEach(AppLanguage.choices, id: \.self) { Text(verbatim: AppLanguage.name(of: $0)).tag($0) }
+        }
+        .onChange(of: language) { AppLanguage.apply() }
+        if AppLanguage.needsRestart {
+            LabeledContent {
+                Button("Restart ModeDock") { AppLanguage.restart() }
+            } label: {
+                Text("ModeDock shows the new language after a restart.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
@@ -587,7 +608,7 @@ private struct ConfigurationSection: View {
             }
         } footer: {
             Text(
-                "Save your settings, shortcuts and profiles to a file, and load them again here or on another Mac. You choose which parts. Profiles include your screens' serial numbers, so they find the same screens again."
+                "Save settings, shortcuts and profiles to a file and load them here or on another Mac. Profiles include screen serial numbers."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -596,7 +617,8 @@ private struct ConfigurationSection: View {
             switch sheet {
             case .export:
                 ConfigGroupPicker(
-                    title: "Export Configuration", action: "Export…", available: ConfigGroup.allCases,
+                    title: String(localized: "Export Configuration"), action: "Export…",
+                    available: ConfigGroup.allCases,
                     note: nil
                 ) { groups in
                     self.sheet = nil
@@ -606,14 +628,17 @@ private struct ConfigurationSection: View {
                 }
             case .import(let file):
                 ConfigGroupPicker(
-                    title: "Import Configuration", action: "Import",
+                    title: String(localized: "Import Configuration"), action: String(localized: "Import"),
                     available: ConfigGroup.allCases.filter { file.groups[$0] != nil },
                     note:
-                        "The parts you choose replace what you have now. Exported from ModeDock \(file.appVersion) on \(file.exportedAt.formatted(date: .abbreviated, time: .shortened))."
+                        String(
+                            localized:
+                                "Chosen parts replace your current ones. Exported from ModeDock \(file.appVersion) on \(file.exportedAt.formatted(date: .abbreviated, time: .shortened))."
+                        )
                 ) { groups in
                     self.sheet = nil
                     Configuration.apply(file, groups: groups, profiles: profiles)
-                    status = "Imported \(Self.list(groups))."
+                    status = String(localized: "Imported \(Self.list(groups)).")
                 } onCancel: {
                     self.sheet = nil
                 }
@@ -628,9 +653,9 @@ private struct ConfigurationSection: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try Configuration.export(groups, profiles: profiles).write(to: url)
-            status = "Exported \(Self.list(groups))."
+            status = String(localized: "Exported \(Self.list(groups)).")
         } catch {
-            status = "Couldn't export: \(error.localizedDescription)"
+            status = String(localized: "Couldn't export: \(error.localizedDescription)")
         }
     }
 
@@ -727,7 +752,7 @@ private struct DebugLogSection: View {
             Text("Troubleshooting")
         } footer: {
             Text(
-                "Writes what ModeDock does to ~/Library/Logs/ModeDock/ModeDock.log, including details macOS doesn't keep. Turn it on, repeat the problem, then attach the log to your bug report. It never contains serial numbers or file contents, and stays under about 4 MB."
+                "Writes a detailed log to ~/Library/Logs/ModeDock/ModeDock.log. Turn it on, repeat the problem and attach the log to your bug report. It never includes serial numbers or file contents and stays under about 4 MB."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -836,16 +861,16 @@ private struct ScreenshotSettingsView: View {
                     Text("HDR").tag(true)
                 }
                 .help(
-                    "HDR keeps the extra precision and wide colour of HDR screens, and saves as HEIC. Copies also carry the HDR image for apps that can paste it."
+                    "Keeps HDR detail and wide colour, saved as HEIC. Copies include the HDR image too."
                 )
                 Picker("All Screens saves", selection: $combineScreens) {
                     Text("One image").tag(true)
                     Text("A file per screen").tag(false)
                 }
-                .help("One image lays the screens out the way they're arranged in System Settings → Displays.")
+                .help("One image lays the screens out as arranged in Displays settings.")
             } footer: {
                 Text(
-                    "By default, screenshots go where macOS saves its own. With both on, each one is saved and copied. All Screens always copies one image of every screen, laid out like your displays."
+                    "Screenshots go where macOS saves its own unless you choose a folder. All Screens copies one image of every screen."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -856,7 +881,7 @@ private struct ScreenshotSettingsView: View {
                 Toggle(isOn: $pointerEverywhere) {
                     Text("Also in Area and Window captures (experimental)")
                     Text(
-                        "macOS leaves the pointer out of these, so ModeDock draws it where it was when the capture started, if that's inside what you captured. It can be a little off, especially with window shadows."
+                        "macOS leaves the pointer out, so ModeDock draws it in. It may be slightly off with window shadows."
                     )
                 }
                 .disabled(!includePointer)
@@ -868,13 +893,13 @@ private struct ScreenshotSettingsView: View {
                 Toggle("Window shadow", isOn: $windowShadow)
                 Toggle("Play sound", isOn: $playSound)
                 Toggle("Hide ModeDock while capturing", isOn: $hidesPanel)
-                    .help("Off to include the ModeDock panel in the screenshot.")
+                    .help("Turn off to include the panel in screenshots.")
                 Toggle("Show a preview after capturing", isOn: $showNotice)
                 Toggle("Show the picture in the preview", isOn: $showPicture)
                     .disabled(!showNotice)
             } footer: {
                 Text(
-                    "The timer applies to Screen and All Screens captures, and so does the pointer unless the experimental option is on. The shadow applies to window captures."
+                    "The timer applies to Screen and All Screens. The shadow applies to Window."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -893,8 +918,7 @@ private struct ScreenshotSettingsView: View {
                 Text("Permission")
             } footer: {
                 Text(
-                    "macOS asks before any app can capture the screen. After allowing ModeDock in System Settings, "
-                        + "you may need to quit and reopen it."
+                    "After allowing ModeDock in System Settings, you may need to reopen it."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -916,8 +940,8 @@ private struct ScreenshotSettingsView: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.directoryURL = folderURL
-        panel.prompt = "Choose"
-        panel.message = "Choose where to save screenshots"
+        panel.prompt = String(localized: "Choose")
+        panel.message = String(localized: "Choose where to save screenshots")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         folder = url.path
     }
@@ -934,7 +958,7 @@ private struct ProfileSettingsView: View {
         Form {
             if profiles.profiles.isEmpty {
                 Section {
-                    Text("No profiles yet. Save the current setup to switch back to it later in one click.")
+                    Text("No profiles yet. Save your setup to switch back to it in one click.")
                         .foregroundStyle(.secondary)
                 }
             }
@@ -957,9 +981,7 @@ private struct ProfileSettingsView: View {
                 }
             } footer: {
                 Text(
-                    "A profile remembers which screens are on, their resolutions, arrangement, mirroring and "
-                        + "brightness. Screens that aren't connected are skipped when it's applied. Drag profiles to "
-                        + "change their order, which is the panel's and the Next Profile shortcut's."
+                    "A profile saves which screens are on, their resolutions, arrangement, mirroring and brightness. Missing screens are skipped. Drag to reorder."
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -968,7 +990,7 @@ private struct ProfileSettingsView: View {
         .formStyle(.grouped)
         .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
         .confirmationDialog(
-            "Delete \(deleting?.name ?? "the profile")?",
+            "Delete \(deleting?.name ?? String(localized: "the profile"))?",
             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
             presenting: deleting
         ) { profile in
@@ -986,7 +1008,7 @@ private struct ProfileSettingsView: View {
                 Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
                 Text(verbatim: profile.name).fontWeight(.medium).lineLimit(1)
                 if profiles.currentProfile?.id == profile.id { tag("Current") }
-                if profile.autoApply { tag("Automatic") }
+                if profile.autoApply { tag(String(localized: "Automatic")) }
                 Spacer()
                 if let shortcut = profile.shortcutText {
                     Text(verbatim: shortcut).foregroundStyle(.secondary)
@@ -1049,17 +1071,17 @@ private struct ProfileSettingsView: View {
         Toggle(isOn: autoApply(of: profile)) {
             Text("Apply automatically")
             if !profile.autoApply, let other = profiles.automaticProfile(sharingScreensWith: profile.id) {
-                Text(verbatim: "Replaces \u{201C}\(other.name)\u{201D}, which applies for these screens now.")
+                Text(verbatim: "Replaces \u{201C}\(other.name)\u{201D} for these screens.")
             } else {
-                Text("When these screens are plugged in or out. One profile per set of screens.")
+                Text("When these exact screens are connected. Only one profile per set of screens can do this.")
             }
         }
-        ShortcutRecorder("Shortcut", name: .profile(profile.id))
+        ShortcutRecorder(String(localized: "Shortcut"), name: .profile(profile.id))
         HStack {
             Button("Apply") { Task { await profiles.apply(profile) } }
                 .disabled(profiles.applying != nil)
             Button("Update from Current") { profiles.update(profile.id) }
-                .help("Replace this profile's screens, resolutions, arrangement and brightness with the current ones.")
+                .help("Replace this profile with the current setup.")
             Spacer()
             Button("Delete…", role: .destructive) { deleting = profile }
         }
@@ -1098,7 +1120,7 @@ private struct AboutView: View {
                 copied = true
             }
             .padding(.top, 8)
-            .help("Copy details about your screens and macOS, to paste into a bug report.")
+            .help("Copy screen and macOS details for a bug report.")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

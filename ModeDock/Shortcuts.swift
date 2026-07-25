@@ -70,7 +70,9 @@ final class ShortcutActions {
             self?.toggle("True Tone", "sun.max.fill", { $0.trueTone }) { $0.setTrueTone($1) }
         }
         KeyboardShortcuts.onKeyUp(for: .toggleDesktopIcons) { [weak self] in
-            self?.toggle("Desktop Icons", "square.grid.2x2", { $0.desktopIcons }) { $0.setDesktopIcons($1) }
+            self?.toggle(String(localized: "Desktop Icons"), "square.grid.2x2", { $0.desktopIcons }) {
+                $0.setDesktopIcons($1)
+            }
         }
         KeyboardShortcuts.onKeyUp(for: .ejectAllDisks) { [weak self] in self?.ejectAll() }
     }
@@ -93,29 +95,31 @@ final class ShortcutActions {
             }
             let id = NSScreen.underMouse?.displayID
             guard let level = id.flatMap({ brightness.screens[$0] }) ?? brightness.screens.values.first else {
-                hud.show("No screen supports brightness", systemImage: "sun.max")
+                hud.show(String(localized: "No screen supports brightness"), systemImage: "sun.max")
                 return
             }
-            hud.show("Brightness", systemImage: "sun.max.fill", level: level.value)
+            hud.show(String(localized: "Brightness"), systemImage: "sun.max.fill", level: level.value)
         }
     }
 
     private func toggleMirror() {
         refreshModes()
         guard modes.canMirror || modes.isMirroring else {
-            hud.show("Mirroring needs two screens", systemImage: "rectangle.on.rectangle")
+            hud.show(String(localized: "Mirroring needs two screens"), systemImage: "rectangle.on.rectangle")
             return
         }
         modes.setMirroring(!modes.isMirroring)
         showResult(
-            modes.lastError, success: modes.isMirroring ? "Mirroring On" : "Mirroring Off",
+            modes.lastError,
+            success: modes.isMirroring ? String(localized: "Mirroring On") : String(localized: "Mirroring Off"),
             systemImage: "rectangle.on.rectangle")
     }
 
     private func toggleKeepAwake() {
         KeepAwakeSettings.toggle(power)
         showResult(
-            power.lastError, success: power.isKeepingAwake ? "Keep Awake On" : "Keep Awake Off",
+            power.lastError,
+            success: power.isKeepingAwake ? String(localized: "Keep Awake On") : String(localized: "Keep Awake Off"),
             systemImage: "cup.and.saucer.fill")
     }
 
@@ -125,25 +129,27 @@ final class ShortcutActions {
     ) {
         utilities.refresh()
         guard let isOn = state(utilities.state) else {
-            hud.show("\(title) isn't available on this Mac", systemImage: systemImage)
+            hud.show(String(localized: "\(title) isn't available on this Mac"), systemImage: systemImage)
             return
         }
         set(utilities, !isOn)
         let nowOn = state(utilities.state) ?? !isOn
-        showResult(utilities.lastError, success: "\(title) \(nowOn ? "On" : "Off")", systemImage: systemImage)
+        showResult(
+            utilities.lastError, success: nowOn ? String(localized: "\(title) On") : String(localized: "\(title) Off"),
+            systemImage: systemImage)
     }
 
     private func ejectAll() {
         utilities.refresh()
         let count = utilities.state.ejectableVolumes
         guard count > 0 else {
-            hud.show("No disks to eject", systemImage: "eject.fill")
+            hud.show(String(localized: "No disks to eject"), systemImage: "eject.fill")
             return
         }
         Task {
             await utilities.ejectAll()
             showResult(
-                utilities.lastError, success: count == 1 ? "Disk ejected" : "\(count) disks ejected",
+                utilities.lastError, success: String(localized: "\(count) disks ejected"),
                 systemImage: "eject.fill")
         }
     }

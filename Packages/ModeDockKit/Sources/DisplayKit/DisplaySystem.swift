@@ -12,11 +12,13 @@ public enum DisplayError: Error, Equatable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .unsupported: "This version of macOS can't turn screens off."
-        case .wouldDisableLastDisplay: "At least one screen has to stay on."
-        case .modeUnavailable: "That resolution isn't available on this screen anymore."
-        case .coreGraphics(let code): "macOS couldn't change the screen (error \(code))."
-        case .commandFailed(let command): "\(command) failed."
+        case .unsupported: String(localized: "This version of macOS can't turn screens off.", bundle: .module)
+        case .wouldDisableLastDisplay: String(localized: "At least one screen has to stay on.", bundle: .module)
+        case .modeUnavailable:
+            String(localized: "That resolution isn't available on this screen anymore.", bundle: .module)
+        case .coreGraphics(let code):
+            String(localized: "macOS couldn't change the screen (error \(code)).", bundle: .module)
+        case .commandFailed(let command): String(localized: "\(command) failed.", bundle: .module)
         }
     }
 }
@@ -46,7 +48,10 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
                     model: CGDisplayModelNumber(id),
                     serial: CGDisplaySerialNumber(id)
                 ),
-                name: names[id] ?? (CGDisplayIsBuiltin(id) != 0 ? "Built-in Display" : "Display \(id)"),
+                name: names[id]
+                    ?? (CGDisplayIsBuiltin(id) != 0
+                        ? String(localized: "Built-in Display", bundle: .module)
+                        : String(localized: "Display \(id)", bundle: .module)),
                 isBuiltin: CGDisplayIsBuiltin(id) != 0,
                 isEnabled: CGDisplayIsActive(id) != 0 || CGDisplayMirrorsDisplay(id) != kCGNullDirectDisplay
             )

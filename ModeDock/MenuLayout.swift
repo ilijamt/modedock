@@ -9,16 +9,23 @@ enum MenuSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .screens: "Screens"
-        case .profiles: "Profiles"
-        case .power: "Power"
-        case .utilities: "Utilities"
-        case .screenshots: "Screenshots"
+        case .screens: String(localized: "Screens")
+        case .profiles: String(localized: "Profiles")
+        case .power: String(localized: "Power")
+        case .utilities: String(localized: "Utilities")
+        case .screenshots: String(localized: "Screenshots")
         }
     }
 
     /// For the tab bar, where five titles share the panel's width.
-    var tabTitle: String { self == .screenshots ? "Capture" : title }
+    var tabTitle: String {
+        switch self {
+        case .screenshots: String(localized: "Capture")
+        // Its own key, so languages with a long word for Utilities can use a shorter one here.
+        case .utilities: String(localized: "tab.utilities", defaultValue: "Utilities")
+        default: title
+        }
+    }
 
     var systemImage: String {
         switch self {
@@ -55,28 +62,28 @@ enum PanelItem: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .brightness: "Brightness sliders"
-        case .sleepScreens: "Sleep screens"
-        case .mirror: "Mirror screens"
-        case .allOn: "Turn all on"
-        case .saveProfile: "Save current setup"
-        case .keepAwake: "Keep Awake"
-        case .battery: "Battery"
-        case .sleepMac: "Sleep Mac"
-        case .lock: "Lock screen"
-        case .darkMode: "Dark Mode"
-        case .nightShift: "Night Shift"
-        case .trueTone: "True Tone"
-        case .dockAutoHide: "Hide Dock"
-        case .desktopIcons: "Desktop icons"
-        case .hiddenFiles: "Hidden files"
-        case .emptyTrash: "Empty Trash"
-        case .ejectDisks: "Eject all disks"
-        case .screenshotArea: "Capture area"
-        case .screenshotWindow: "Capture window"
-        case .screenshotScreen: "Capture screen"
-        case .screenshotAllScreens: "Capture all screens"
-        case .screenshotOptions: "Save to and timer"
+        case .brightness: String(localized: "Brightness sliders")
+        case .sleepScreens: String(localized: "Sleep screens")
+        case .mirror: String(localized: "Mirror screens")
+        case .allOn: String(localized: "Turn all on")
+        case .saveProfile: String(localized: "Save current setup")
+        case .keepAwake: String(localized: "Keep Awake")
+        case .battery: String(localized: "Battery")
+        case .sleepMac: String(localized: "Sleep Mac")
+        case .lock: String(localized: "Lock screen")
+        case .darkMode: String(localized: "Dark Mode")
+        case .nightShift: String(localized: "Night Shift")
+        case .trueTone: String(localized: "True Tone")
+        case .dockAutoHide: String(localized: "Hide Dock")
+        case .desktopIcons: String(localized: "Desktop icons")
+        case .hiddenFiles: String(localized: "Hidden files")
+        case .emptyTrash: String(localized: "Empty Trash")
+        case .ejectDisks: String(localized: "Eject all disks")
+        case .screenshotArea: String(localized: "Capture area")
+        case .screenshotWindow: String(localized: "Capture window")
+        case .screenshotScreen: String(localized: "Capture screen")
+        case .screenshotAllScreens: String(localized: "Capture all screens")
+        case .screenshotOptions: String(localized: "Save to and timer")
         }
     }
 
@@ -184,17 +191,17 @@ enum PanelStyle: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .cards: "Cards"
-        case .rows: "Rows"
-        case .menu: "Menu"
+        case .cards: String(localized: "Cards")
+        case .rows: String(localized: "Rows")
+        case .menu: String(localized: "Menu")
         }
     }
 
     var summary: String {
         switch self {
-        case .cards: "Control Center-style cards and tiles, in the system glass material on macOS 26 and later."
-        case .rows: "Grouped rows with switches and pop-up menus, like Settings."
-        case .menu: "A standard macOS menu, like the Wi-Fi and Sound menus."
+        case .cards: String(localized: "Cards and tiles, like Control Center.")
+        case .rows: String(localized: "Grouped rows with switches, like Settings.")
+        case .menu: String(localized: "A standard menu, like Wi-Fi and Sound.")
         }
     }
 
@@ -213,15 +220,15 @@ enum PanelLayout: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .list: "List"
-        case .tabs: "Tabs"
+        case .list: String(localized: "List")
+        case .tabs: String(localized: "Tabs")
         }
     }
 
     var summary: String {
         switch self {
-        case .list: "Every section in one list that scrolls when it's taller than the screen."
-        case .tabs: "One section at a time, picked from a bar of icons at the top."
+        case .list: String(localized: "All sections in one scrolling list.")
+        case .tabs: String(localized: "One section at a time, picked from tabs.")
         }
     }
 
@@ -237,9 +244,9 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
+        case .system: String(localized: "System")
+        case .light: String(localized: "Light")
+        case .dark: String(localized: "Dark")
         }
     }
 

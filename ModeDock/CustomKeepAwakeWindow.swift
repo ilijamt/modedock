@@ -108,11 +108,14 @@ struct CustomKeepAwakeEditor: View {
 
     private var preview: String {
         guard let minutes else {
-            return text.isEmpty ? "Type a duration, like 45m or 1h30." : "That isn't a duration ModeDock understands."
+            return text.isEmpty
+                ? String(localized: "Type a duration, like 45m or 1h30.") : String(localized: "That isn't a duration.")
         }
         let end = Date().addingTimeInterval(TimeInterval(minutes * 60))
         let day: Date.FormatStyle.DateStyle = Calendar.current.isDateInToday(end) ? .omitted : .abbreviated
-        return "\(PowerController.title(minutes: minutes)) · ends at \(end.formatted(date: day, time: .shortened))"
+        return String(
+            localized:
+                "\(PowerController.title(minutes: minutes)) · ends at \(end.formatted(date: day, time: .shortened))")
     }
 
     private func start() {

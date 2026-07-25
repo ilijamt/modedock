@@ -106,7 +106,7 @@ struct ResolutionList: View {
                     Text(verbatim: "\(option.width) × \(option.height)")
                         .lineLimit(1)
                         .layoutPriority(2)
-                    if option.isNative { tag("Native") }
+                    if option.isNative { tag(String(localized: "Native")) }
                     if screenModes.isLowResolution(option) {
                         tag("1x").tip("Low resolution: the 1x version of a HiDPI size")
                     }
@@ -134,7 +134,7 @@ struct ResolutionList: View {
                     .buttonStyle(.plain)
                     .fixedSize()
                     .layoutPriority(3)
-                    .tip(mode.refreshRateText)
+                    .tip(verbatim: mode.refreshRateText)
                 }
             }
         }

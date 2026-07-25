@@ -9,9 +9,9 @@ public enum DDCError: Error, Equatable, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .unavailable: "This monitor can't be controlled over DDC."
-        case .io(let code): "The monitor didn't respond to DDC (error \(code))."
-        case .badReply: "The monitor sent an invalid DDC reply."
+        case .unavailable: String(localized: "This monitor can't be controlled over DDC.", bundle: .module)
+        case .io(let code): String(localized: "The monitor didn't respond to DDC (error \(code)).", bundle: .module)
+        case .badReply: String(localized: "The monitor sent an invalid DDC reply.", bundle: .module)
         }
     }
 }

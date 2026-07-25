@@ -10,8 +10,8 @@ enum ProfileCycleScope: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .connected: "Profiles for the connected screens"
-        case .all: "All profiles"
+        case .connected: String(localized: "Profiles for the connected screens")
+        case .all: String(localized: "All profiles")
         }
     }
 
@@ -74,7 +74,8 @@ final class ProfileSwitcher {
         let candidates = profiles.profiles.filter { scope == .all || profiles.fitsConnectedScreens($0) }
         guard !candidates.isEmpty else {
             hud.show(
-                profiles.profiles.isEmpty ? "No profiles saved" : "No profiles for these screens",
+                profiles.profiles.isEmpty
+                    ? String(localized: "No profiles saved") : String(localized: "No profiles for these screens"),
                 systemImage: "rectangle.3.group")
             return false
         }

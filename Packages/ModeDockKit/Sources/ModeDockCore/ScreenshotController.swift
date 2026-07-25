@@ -182,7 +182,8 @@ public final class ScreenshotController {
         do {
             _ = try await system.capture(arguments: arguments)
         } catch {
-            lastError = "The screenshot couldn't be taken: \(error.localizedDescription)"
+            lastError = String(
+                localized: "The screenshot couldn't be taken: \(error.localizedDescription)", bundle: .module)
             return .failed
         }
 
@@ -190,7 +191,7 @@ public final class ScreenshotController {
         guard !captured.isEmpty else {
             // Esc in an interactive capture leaves no file behind; that's the user changing their mind.
             if mode.isInteractive { return .cancelled }
-            lastError = "The screenshot couldn't be taken."
+            lastError = String(localized: "The screenshot couldn't be taken.", bundle: .module)
             return .failed
         }
 
@@ -206,7 +207,7 @@ public final class ScreenshotController {
                 system.combineImages(
                     captured, arrangedIn: arrangement, into: file, format: options.fileFormat, hdr: options.hdr)
             else {
-                lastError = "The screens couldn't be combined into one image."
+                lastError = String(localized: "The screens couldn't be combined into one image.", bundle: .module)
                 return .failed
             }
             saved = [file]
@@ -215,7 +216,7 @@ public final class ScreenshotController {
         if options.destination.copiesToClipboard,
             !system.copyImages(captured, arrangedIn: arrangement, hdr: options.hdr)
         {
-            lastError = "The screenshot couldn't be copied to the clipboard."
+            lastError = String(localized: "The screenshot couldn't be copied to the clipboard.", bundle: .module)
             return .failed
         }
         lastSaved = saved

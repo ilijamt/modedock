@@ -110,9 +110,9 @@ public enum PowerError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .unsupported: "This isn't supported on this version of macOS."
-        case .commandFailed: "macOS didn't carry out the request."
-        case .assertionRefused: "macOS refused to keep the Mac awake."
+        case .unsupported: String(localized: "This isn't supported on this version of macOS.", bundle: .module)
+        case .commandFailed: String(localized: "macOS didn't carry out the request.", bundle: .module)
+        case .assertionRefused: String(localized: "macOS refused to keep the Mac awake.", bundle: .module)
         }
     }
 }
@@ -123,15 +123,14 @@ public final class PowerController {
     /// The durations offered in menus, in minutes; nil is "until turned off".
     public static let presets: [Int?] = [nil, 15, 30, 60, 120, 240, 480]
 
-    /// "Until turned off", "15 minutes", "2 hours", "1 h 30 min".
+    /// String(localized: "Until turned off", bundle: .module), "15 minutes", "2 hours", "1 h 30 min".
     public static func title(minutes: Int?) -> String {
-        guard let minutes else { return "Until turned off" }
+        guard let minutes else { return String(localized: "Until turned off", bundle: .module) }
         let (hours, rest) = minutes.quotientAndRemainder(dividingBy: 60)
         switch (hours, rest) {
-        case (0, _): return "\(rest) minutes"
-        case (1, 0): return "1 hour"
-        case (_, 0): return "\(hours) hours"
-        default: return "\(hours) h \(rest) min"
+        case (0, _): return String(localized: "\(rest) minutes", bundle: .module)
+        case (_, 0): return String(localized: "\(hours) hours", bundle: .module)
+        default: return String(localized: "\(hours) h \(rest) min", bundle: .module)
         }
     }
 

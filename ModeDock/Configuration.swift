@@ -12,23 +12,23 @@ enum ConfigGroup: String, CaseIterable, Identifiable, Codable, CodingKeyRepresen
 
     var title: String {
         switch self {
-        case .general: "General"
-        case .menu: "Menu"
-        case .displays: "Displays"
-        case .capture: "Capture"
-        case .shortcuts: "Shortcuts"
-        case .profiles: "Profiles"
+        case .general: String(localized: "General")
+        case .menu: String(localized: "Menu")
+        case .displays: String(localized: "Displays")
+        case .capture: String(localized: "Capture")
+        case .shortcuts: String(localized: "Shortcuts")
+        case .profiles: String(localized: "Profiles")
         }
     }
 
     var summary: String {
         switch self {
-        case .general: "Appearance, Keep Awake and debug logging"
-        case .menu: "Panel style, layout, and which sections and items show"
-        case .displays: "Resolution list, monitor brightness and the brightness keys"
-        case .capture: "Where screenshots go and how they're taken"
-        case .shortcuts: "Every keyboard shortcut except the profiles' own"
-        case .profiles: "Every profile and its shortcut"
+        case .general: String(localized: "Appearance, language, Keep Awake and debug logging")
+        case .menu: String(localized: "Panel style, layout, sections and items")
+        case .displays: String(localized: "Resolutions, monitor brightness and brightness keys")
+        case .capture: String(localized: "Where screenshots go and how they're taken")
+        case .shortcuts: String(localized: "All shortcuts except profile shortcuts")
+        case .profiles: String(localized: "Profiles and their shortcuts")
         }
     }
 
@@ -37,7 +37,7 @@ enum ConfigGroup: String, CaseIterable, Identifiable, Codable, CodingKeyRepresen
         switch self {
         case .general:
             [
-                AppAppearance.key, SettingsKey.keepAwakeDuration, SettingsKey.keepAwakeCustomMinutes,
+                AppAppearance.key, AppLanguage.key, SettingsKey.keepAwakeDuration, SettingsKey.keepAwakeCustomMinutes,
                 SettingsKey.keepScreensOn, LogFile.enabledKey,
             ]
         case .menu:
@@ -148,7 +148,7 @@ struct ConfigFile: Codable {
     enum ImportError: LocalizedError {
         case notAConfiguration
 
-        var errorDescription: String? { "This file isn't a ModeDock configuration." }
+        var errorDescription: String? { String(localized: "This file isn't a ModeDock configuration.") }
     }
 }
 
@@ -221,6 +221,7 @@ enum Configuration {
             if group.hasShortcuts { applyShortcuts(data.shortcuts ?? [:], for: group) }
         }
         AppAppearance.apply()
+        AppLanguage.apply()
     }
 
     private static func applyShortcuts(_ shortcuts: [String: KeyboardShortcuts.Shortcut?], for group: ConfigGroup) {

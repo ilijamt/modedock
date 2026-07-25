@@ -41,12 +41,12 @@ struct UtilityToggle: Identifiable {
 
     var help: String {
         switch item {
-        case .darkMode: "Switch the whole Mac between dark and light appearance."
-        case .nightShift: "Warmer colours on every screen."
-        case .trueTone: "Adapt the screen's colours to the light around you."
-        case .dockAutoHide: "Hide the Dock until the pointer reaches the screen edge."
-        case .desktopIcons: "Show files on the desktop. Finder restarts to apply it."
-        case .hiddenFiles: "Show hidden files in Finder. Finder restarts to apply it."
+        case .darkMode: String(localized: "Switch between dark and light appearance.")
+        case .nightShift: String(localized: "Warmer colours on every screen.")
+        case .trueTone: String(localized: "Match colours to the light around you.")
+        case .dockAutoHide: String(localized: "Hide the Dock until the pointer reaches it.")
+        case .desktopIcons: String(localized: "Show desktop files. Finder restarts to apply this.")
+        case .hiddenFiles: String(localized: "Show hidden files. Finder restarts to apply this.")
         default: ""
         }
     }
@@ -54,7 +54,10 @@ struct UtilityToggle: Identifiable {
 
 extension UtilitiesController {
     var ejectTitle: String {
-        isEjecting ? "Ejecting…" : state.ejectableVolumes > 0 ? "Eject All (\(state.ejectableVolumes))" : "Eject All"
+        isEjecting
+            ? String(localized: "Ejecting…")
+            : state.ejectableVolumes > 0
+                ? String(localized: "Eject All (\(state.ejectableVolumes))") : String(localized: "Eject All")
     }
 }
 
@@ -73,11 +76,11 @@ struct UtilitiesSection: View {
                     ActionTile(title: toggle.title, systemImage: toggle.systemImage, isOn: toggle.isOn) {
                         toggle.set(!toggle.isOn)
                     }
-                    .tip(toggle.help)
+                    .tip(verbatim: toggle.help)
                 }
                 if !hidden.contains(.emptyTrash) {
-                    ActionTile(title: "Empty Trash", systemImage: "trash") { confirmingTrash = true }
-                        .tip("Empty the Trash. You'll be asked first.")
+                    ActionTile(title: String(localized: "Empty Trash"), systemImage: "trash") { confirmingTrash = true }
+                        .tip("Empty the Trash. ModeDock asks first.")
                 }
                 if !hidden.contains(.ejectDisks) {
                     ActionTile(title: utilities.ejectTitle, systemImage: "eject.fill") {
@@ -141,7 +144,7 @@ struct RowsUtilitiesSection: View {
                                 .toggleStyle(.switch)
                                 .labelsHidden()
                         }
-                        .tip(toggle.help)
+                        .tip(verbatim: toggle.help)
                     }
                 }
             }

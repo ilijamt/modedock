@@ -1,0 +1,248 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ failed.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@に失敗しました。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ не успеа."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mislukt."
+          }
+        }
+      }
+    },
+    "At least one screen has to stay on.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "少なくとも1台のディスプレイはオンのままにする必要があります。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Барем еден екран мора да остане вклучен."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er moet minstens één scherm aan blijven."
+          }
+        }
+      }
+    },
+    "Built-in Display": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内蔵ディスプレイ"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вграден екран"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingebouwd beeldscherm"
+          }
+        }
+      }
+    },
+    "Display %u": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディスプレイ %u"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Екран %u"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beeldscherm %u"
+          }
+        }
+      }
+    },
+    "Input %@": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "入力 %@"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Влез %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingang %@"
+          }
+        }
+      }
+    },
+    "That resolution isn't available on this screen anymore.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この解像度はこのディスプレイでは使用できなくなりました。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Таа резолуција повеќе не е достапна на овој екран."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die resolutie is niet meer beschikbaar op dit scherm."
+          }
+        }
+      }
+    },
+    "The monitor didn't respond to DDC (error %d).": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モニタがDDCに応答しませんでした（エラー %d）。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мониторот не одговори на DDC (грешка %d)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De monitor reageerde niet op DDC (fout %d)."
+          }
+        }
+      }
+    },
+    "The monitor sent an invalid DDC reply.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モニタから無効なDDC応答が返されました。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мониторот испрати неважечки DDC одговор."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De monitor stuurde een ongeldig DDC-antwoord."
+          }
+        }
+      }
+    },
+    "This monitor can't be controlled over DDC.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このモニタはDDCで制御できません。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Овој монитор не може да се контролира преку DDC."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze monitor kan niet via DDC worden bediend."
+          }
+        }
+      }
+    },
+    "This version of macOS can't turn screens off.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このバージョンのmacOSでは画面をオフにできません。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оваа верзија на macOS не може да исклучува екрани."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze versie van macOS kan schermen niet uitzetten."
+          }
+        }
+      }
+    },
+    "macOS couldn't change the screen (error %d).": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOSが画面を変更できませんでした（エラー %d）。"
+          }
+        },
+        "mk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS не можеше да го промени екранот (грешка %d)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS kon het scherm niet wijzigen (fout %d)."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

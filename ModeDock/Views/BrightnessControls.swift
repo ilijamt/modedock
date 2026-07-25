@@ -21,15 +21,15 @@ struct BrightnessSlider: View {
                 AutoChip(isOn: auto) { brightness.setAutoBrightness(!auto, for: display.id) }
             }
         }
-        .tip(help)
+        .tip(verbatim: help)
     }
 
     private var help: String {
         switch level.backend {
-        case .system: "Brightness of \(display.name)."
-        case .ddc: "Brightness of \(display.name), set on the monitor over DDC."
+        case .system: String(localized: "Brightness of \(display.name).")
+        case .ddc: String(localized: "Brightness of \(display.name), set over DDC.")
         case .software:
-            "\(display.name) doesn't support brightness control, so ModeDock dims the picture instead."
+            String(localized: "\(display.name) has no brightness control, so ModeDock dims the picture.")
         }
     }
 }
@@ -52,6 +52,6 @@ private struct AutoChip: View {
         .tip(
             isOn
                 ? "Automatic brightness is on. Click to turn it off."
-                : "Adjust brightness automatically to the light around you.")
+                : "Adjust brightness to the light around you.")
     }
 }

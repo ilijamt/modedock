@@ -19,15 +19,15 @@ extension DisplayProfile {
     /// "2 screens · Mirrored".
     var summary: String {
         let count = enabledScreens.count
-        var parts = [count == 1 ? "1 screen" : "\(count) screens"]
-        if mirroring { parts.append("Mirrored") }
-        if autoApply { parts.append("Automatic") }
+        var parts = [String(localized: "\(count) screens")]
+        if mirroring { parts.append(String(localized: "Mirrored")) }
+        if autoApply { parts.append(String(localized: "Automatic")) }
         return parts.joined(separator: " · ")
     }
 
     /// "Built-in Display, LS28 (off)".
     var screenList: String {
-        screens.map { $0.isEnabled ? $0.name : "\($0.name) (off)" }.joined(separator: ", ")
+        screens.map { $0.isEnabled ? $0.name : String(localized: "\($0.name) (off)") }.joined(separator: ", ")
     }
 
     @MainActor var shortcutText: String? { KeyboardShortcuts.Name.profile(id).shortcutText }
@@ -51,10 +51,12 @@ extension ProfileScreen {
 
     /// "1920 × 1080 · 60 Hz · 70%", or "1920 × 1080 · 60 Hz · 70% brightness" for tooltips.
     var details: String {
-        guard isEnabled else { return "Off" }
+        guard isEnabled else { return String(localized: "Off") }
         var parts = [resolution].compactMap { $0 }
-        if let brightness { parts.append("\(Int((brightness * 100).rounded()))% brightness") }
-        return parts.isEmpty ? "On" : parts.joined(separator: " · ")
+        if let brightness {
+            parts.append(String(localized: "\(Int((brightness * 100).rounded()))% brightness"))
+        }
+        return parts.isEmpty ? String(localized: "On") : parts.joined(separator: " · ")
     }
 }
 
@@ -84,7 +86,7 @@ struct ProfileScreenLines: View {
     private func detail(_ screen: ProfileScreen) -> Text {
         guard screen.isEnabled else { return Text("Off") }
         // Tighter than `resolution`: the panel is narrow and the names need the room.
-        var text = Text(verbatim: screen.compactResolution ?? "On")
+        var text = Text(verbatim: screen.compactResolution ?? String(localized: "On"))
         if let brightness = screen.brightness {
             text = Text("\(text) · \(Image(systemName: "sun.max"))\(Int((brightness * 100).rounded()))%")
         }

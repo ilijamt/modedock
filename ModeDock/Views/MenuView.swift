@@ -53,7 +53,7 @@ struct MenuView: View {
                     }
 
                     if layout.visible.isEmpty {
-                        Text("All sections are hidden. Choose what to show in Settings → Menu.")
+                        Text("All sections are hidden. Show some in Settings → Menu.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -214,7 +214,7 @@ private struct PanelTabBar: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .tip(section.tabTitle)
+                .tip(verbatim: section.tabTitle)
             }
         }
     }
@@ -235,21 +235,24 @@ private struct ScreensSection: View {
 
             HStack(spacing: 6) {
                 if !hidden.contains(.sleepScreens) {
-                    ActionTile(title: "Sleep", systemImage: "moon.fill") {
+                    ActionTile(title: String(localized: "Sleep"), systemImage: "moon.fill") {
                         controller.sleepAllDisplays()
                     }
-                    .tip("Sleep all screens. Move the mouse or press a key to wake them.")
+                    .tip("Sleep all screens. Move the mouse to wake them.")
                 }
 
                 if !hidden.contains(.mirror) && (modes.canMirror || modes.isMirroring) {
-                    ActionTile(title: "Mirror", systemImage: "rectangle.on.rectangle", isOn: modes.isMirroring) {
+                    ActionTile(
+                        title: String(localized: "Mirror"), systemImage: "rectangle.on.rectangle",
+                        isOn: modes.isMirroring
+                    ) {
                         modes.setMirroring(!modes.isMirroring)
                     }
-                    .tip("Show the main screen's content on every screen that's on.")
+                    .tip("Show the main screen on every screen.")
                 }
 
                 if !hidden.contains(.allOn) {
-                    ActionTile(title: "All On", systemImage: "power") {
+                    ActionTile(title: String(localized: "All On"), systemImage: "power") {
                         Task { await controller.restoreAll() }
                     }
                     .tip(
@@ -375,7 +378,7 @@ private struct ScreenCard: View {
             }
             .disabled(display.isEnabled && !screen.canDisable)
             .opacity(display.isEnabled && !screen.canDisable ? 0.5 : 1)
-            .tip(powerHelp)
+            .tip(verbatim: powerHelp)
         }
     }
 
@@ -404,8 +407,8 @@ private struct ScreenCard: View {
     }
 
     private var powerHelp: String {
-        if !display.isEnabled { return "Turn the screen back on." }
-        if !screen.canDisable { return "At least one screen has to stay on." }
-        return "Turn the screen off. Its windows move to your other screens."
+        if !display.isEnabled { return String(localized: "Turn the screen back on.") }
+        if !screen.canDisable { return String(localized: "At least one screen has to stay on.") }
+        return String(localized: "Turn the screen off. Its windows move to the other screens.")
     }
 }

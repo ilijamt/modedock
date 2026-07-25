@@ -62,7 +62,7 @@ final class NativeMenu {
     }
 
     private func addScreenItems(to menu: NSMenu, hidden: Set<PanelItem>) {
-        menu.addItem(.sectionHeader(title: "Screens"))
+        menu.addItem(.sectionHeader(title: String(localized: "Screens")))
         for screen in screens.screens {
             menu.addItem(
                 screenItem(screen, showStandby: UserDefaults.standard.bool(forKey: SettingsKey.showDDCStandby)))
@@ -75,15 +75,18 @@ final class NativeMenu {
 
         if !hidden.isSuperset(of: [.mirror, .sleepScreens, .allOn]) { menu.addItem(.separator()) }
         if !hidden.contains(.mirror) && (modes.canMirror || modes.isMirroring) {
-            let mirror = ActionItem("Mirror Screens") { [modes] in modes.setMirroring(!modes.isMirroring) }
+            let mirror = ActionItem(String(localized: "Mirror Screens")) { [modes] in
+                modes.setMirroring(!modes.isMirroring)
+            }
             mirror.state = modes.isMirroring ? .on : .off
             menu.addItem(mirror)
         }
         if !hidden.contains(.sleepScreens) {
-            menu.addItem(ActionItem("Sleep All Screens") { [screens] in screens.sleepAllDisplays() })
+            menu.addItem(ActionItem(String(localized: "Sleep All Screens")) { [screens] in screens.sleepAllDisplays() })
         }
         if !hidden.contains(.allOn) {
-            let allOn = ActionItem("Turn All On") { [screens] in Task { await screens.restoreAll() } }
+            let allOn = ActionItem(String(localized: "Turn All On")) { [screens] in Task { await screens.restoreAll() }
+            }
             // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
             allOn.setShortcut(KeyboardShortcuts.getShortcut(for: .turnAllScreensOn))
             menu.addItem(allOn)
@@ -93,9 +96,9 @@ final class NativeMenu {
     }
 
     private func addProfileItems(to menu: NSMenu, hidden: Set<PanelItem>) {
-        menu.addItem(.sectionHeader(title: "Profiles"))
+        menu.addItem(.sectionHeader(title: String(localized: "Profiles")))
         if profiles.profiles.isEmpty {
-            let empty = NSMenuItem(title: "No Saved Profiles", action: nil, keyEquivalent: "")
+            let empty = NSMenuItem(title: String(localized: "No Saved Profiles"), action: nil, keyEquivalent: "")
             empty.isEnabled = false
             menu.addItem(empty)
         }
@@ -110,7 +113,7 @@ final class NativeMenu {
         }
         if !hidden.contains(.saveProfile) {
             menu.addItem(
-                ActionItem("Save Current Setup…") { [profiles, screens] in
+                ActionItem(String(localized: "Save Current Setup…")) { [profiles, screens] in
                     Self.saveProfile(profiles, screens: screens)
                 })
         }
@@ -121,13 +124,14 @@ final class NativeMenu {
     private static func saveProfile(_ profiles: ProfileController, screens: ScreenController) {
         let suggested = profiles.suggestedName(screens: screens)
         let alert = NSAlert()
-        alert.messageText = "Save Current Setup"
-        alert.informativeText = "Saves the screens that are on, their resolutions, arrangement and brightness."
+        alert.messageText = String(localized: "Save Current Setup")
+        alert.informativeText = String(
+            localized: "Saves the screens that are on, their resolutions, arrangement and brightness.")
         let field = NSTextField(string: suggested)
         field.frame = NSRect(x: 0, y: 0, width: 260, height: 24)
         alert.accessoryView = field
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Save"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         alert.window.initialFirstResponder = field
@@ -137,7 +141,7 @@ final class NativeMenu {
     }
 
     private func inputItem(_ available: MonitorInputController.Inputs, screen: ScreenController.Screen) -> NSMenuItem {
-        let item = NSMenuItem(title: "Input", action: nil, keyEquivalent: "")
+        let item = NSMenuItem(title: String(localized: "Input"), action: nil, keyEquivalent: "")
         let menu = NSMenu()
         for input in available.available {
             let choice = ActionItem(available.name(of: input)) { [inputs] in
@@ -145,7 +149,7 @@ final class NativeMenu {
                 Task { await inputs.select(input, for: screen.id) }
             }
             choice.state = input == available.current ? .on : .off
-            choice.toolTip = String(format: "Input source 0x%02X", input)
+            choice.toolTip = String(format: String(localized: "Input source 0x%02X"), input)
             menu.addItem(choice)
         }
         item.submenu = menu
@@ -154,10 +158,10 @@ final class NativeMenu {
 
     private static func confirmInputSwitch(_ name: String) -> Bool {
         let alert = NSAlert()
-        alert.messageText = "Switch to \(name)?"
+        alert.messageText = String(localized: "Switch to \(name)?")
         alert.informativeText = MonitorInputController.switchWarning
-        alert.addButton(withTitle: "Switch")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: String(localized: "Switch"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         return alert.runModal() == .alertFirstButtonReturn
@@ -165,7 +169,7 @@ final class NativeMenu {
 
     private func addUtilityItems(to menu: NSMenu, hidden: Set<PanelItem>) {
         utilities.refresh()
-        menu.addItem(.sectionHeader(title: "Utilities"))
+        menu.addItem(.sectionHeader(title: String(localized: "Utilities")))
         for toggle in UtilityToggle.visible(utilities, hidden: hidden) {
             let item = ActionItem(toggle.title) { toggle.set(!toggle.isOn) }
             item.image = NSImage(systemSymbolName: toggle.systemImage, accessibilityDescription: nil)
@@ -174,7 +178,8 @@ final class NativeMenu {
             menu.addItem(item)
         }
         if !hidden.contains(.emptyTrash) {
-            let trash = ActionItem("Empty Trash…") { [utilities] in Self.confirmEmptyTrash(utilities) }
+            let trash = ActionItem(String(localized: "Empty Trash…")) { [utilities] in Self.confirmEmptyTrash(utilities)
+            }
             trash.image = NSImage(systemSymbolName: "trash", accessibilityDescription: nil)
             menu.addItem(trash)
         }
@@ -191,10 +196,10 @@ final class NativeMenu {
     /// in front.
     private static func confirmEmptyTrash(_ utilities: UtilitiesController) {
         let alert = NSAlert()
-        alert.messageText = "Empty the Trash?"
-        alert.informativeText = "The items in the Trash will be deleted. This can't be undone."
-        alert.addButton(withTitle: "Empty Trash")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = String(localized: "Empty the Trash?")
+        alert.informativeText = String(localized: "This can't be undone.")
+        alert.addButton(withTitle: String(localized: "Empty Trash"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         if alert.runModal() == .alertFirstButtonReturn { utilities.emptyTrash() }
@@ -203,11 +208,13 @@ final class NativeMenu {
     private func addScreenshotItems(to menu: NSMenu, hidden: Set<PanelItem>) {
         let controller = screenshots.controller
         controller.refreshPermission()
-        menu.addItem(.sectionHeader(title: "Screenshots"))
+        menu.addItem(.sectionHeader(title: String(localized: "Screenshots")))
         if !controller.hasPermission {
-            let allow = ActionItem("Allow Screen Recording…") { [controller] in Self.askForScreenRecording(controller) }
+            let allow = ActionItem(String(localized: "Allow Screen Recording…")) { [controller] in
+                Self.askForScreenRecording(controller)
+            }
             allow.image = NSImage(systemSymbolName: "lock.shield", accessibilityDescription: nil)
-            allow.toolTip = "ModeDock needs Screen Recording permission to take screenshots."
+            allow.toolTip = String(localized: "ModeDock needs Screen Recording permission to take screenshots.")
             menu.addItem(allow)
         }
         for mode in screenshots.visibleModes(hidden: hidden) {
@@ -225,14 +232,15 @@ final class NativeMenu {
     /// The menu has closed by now, so a regular alert explains the permission first.
     private static func askForScreenRecording(_ controller: ScreenshotController) {
         let alert = NSAlert()
-        alert.messageText = "Allow Screen Recording?"
+        alert.messageText = String(localized: "Allow Screen Recording?")
         alert.informativeText =
-            "ModeDock needs Screen Recording permission to take screenshots. Allow it when macOS asks, or turn "
-            + "on ModeDock in System Settings → Privacy & Security → Screen Recording. You may need to quit and "
-            + "reopen ModeDock afterwards."
-        alert.addButton(withTitle: "Allow…")
-        alert.addButton(withTitle: "Open Settings")
-        alert.addButton(withTitle: "Cancel")
+            String(
+                localized:
+                    "Allow ModeDock in System Settings → Privacy & Security → Screen Recording. You may need to reopen ModeDock afterwards."
+            )
+        alert.addButton(withTitle: String(localized: "Allow…"))
+        alert.addButton(withTitle: String(localized: "Open Settings"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         switch alert.runModal() {
@@ -243,13 +251,14 @@ final class NativeMenu {
     }
 
     private func addPowerItems(to menu: NSMenu, hidden: Set<PanelItem>) {
-        menu.addItem(.sectionHeader(title: "Power"))
+        menu.addItem(.sectionHeader(title: String(localized: "Power")))
         if !hidden.contains(.keepAwake) { menu.addItem(keepAwakeItem()) }
 
         if !hidden.contains(.battery) {
             power.refreshBattery()
             if let battery = power.battery {
-                let item = NSMenuItem(title: "Battery: \(battery.summary)", action: nil, keyEquivalent: "")
+                let item = NSMenuItem(
+                    title: String(localized: "Battery: \(battery.summary)"), action: nil, keyEquivalent: "")
                 item.image = NSImage(systemSymbolName: battery.systemImage, accessibilityDescription: nil)
                 item.isEnabled = false
                 menu.addItem(item)
@@ -257,12 +266,12 @@ final class NativeMenu {
         }
 
         if !hidden.contains(.sleepMac) {
-            let sleep = ActionItem("Sleep Mac") { [power] in power.sleep() }
+            let sleep = ActionItem(String(localized: "Sleep Mac")) { [power] in power.sleep() }
             sleep.image = NSImage(systemSymbolName: "powersleep", accessibilityDescription: nil)
             menu.addItem(sleep)
         }
         if !hidden.contains(.lock) {
-            let lock = ActionItem("Lock Screen") { [power] in power.lockScreen() }
+            let lock = ActionItem(String(localized: "Lock Screen")) { [power] in power.lockScreen() }
             lock.image = NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)
             menu.addItem(lock)
         }
@@ -279,19 +288,20 @@ final class NativeMenu {
     }
 
     private func keepAwakeItem() -> NSMenuItem {
-        let keepAwake = NSMenuItem(title: "Keep Awake", action: nil, keyEquivalent: "")
+        let keepAwake = NSMenuItem(title: String(localized: "Keep Awake"), action: nil, keyEquivalent: "")
         keepAwake.image = NSImage(systemSymbolName: "cup.and.saucer.fill", accessibilityDescription: nil)
         keepAwake.state = power.isKeepingAwake ? .on : .off
         if #available(macOS 15.0, *) {
             keepAwake.subtitle =
                 switch power.keepAwake?.endsAt {
-                case .some(let endsAt): "On until \(endsAt.formatted(date: .omitted, time: .shortened))"
-                case .none: power.isKeepingAwake ? "On until turned off" : "Off"
+                case .some(let endsAt):
+                    String(localized: "On until \(endsAt.formatted(date: .omitted, time: .shortened))")
+                case .none: power.isKeepingAwake ? String(localized: "On until turned off") : "Off"
                 }
         }
         let durations = NSMenu()
         if power.isKeepingAwake {
-            durations.addItem(ActionItem("Turn Off") { [power] in power.stopKeepAwake() })
+            durations.addItem(ActionItem(String(localized: "Turn Off")) { [power] in power.stopKeepAwake() })
             durations.addItem(.separator())
         }
         for minutes in PowerController.presets {
@@ -301,14 +311,16 @@ final class NativeMenu {
             item.state = power.isKeepingAwake && power.keepAwake?.minutes == minutes ? .on : .off
             durations.addItem(item)
         }
-        let custom = ActionItem("Custom…") { [power] in CustomKeepAwakeWindow.shared.show(power: power) }
+        let custom = ActionItem(String(localized: "Custom…")) { [power] in
+            CustomKeepAwakeWindow.shared.show(power: power)
+        }
         if let label = KeepAwakeSettings.customLabel(power.keepAwake?.minutes) {
-            custom.title = "\(label)…"
+            custom.title = String(localized: "\(label)…")
             custom.state = .on
         }
         durations.addItem(custom)
         durations.addItem(.separator())
-        let screensOn = ActionItem("Keep Screens On") { [power] in
+        let screensOn = ActionItem(String(localized: "Keep Screens On")) { [power] in
             KeepAwakeSettings.setKeepScreensOn(!KeepAwakeSettings.keepScreensOn, power: power)
         }
         screensOn.state = KeepAwakeSettings.keepScreensOn ? .on : .off
@@ -327,11 +339,13 @@ final class NativeMenu {
 
     private func addAppItems(to menu: NSMenu) {
         menu.addItem(
-            ActionItem("Copy Diagnostics") { [screens, modes] in Diagnostics.copy(screens: screens, modes: modes) })
-        let settings = ActionItem("Settings…", action: onOpenSettings)
+            ActionItem(String(localized: "Copy Diagnostics")) { [screens, modes] in
+                Diagnostics.copy(screens: screens, modes: modes)
+            })
+        let settings = ActionItem(String(localized: "Settings…"), action: onOpenSettings)
         settings.keyEquivalent = ","
         menu.addItem(settings)
-        let quit = ActionItem("Quit ModeDock") { NSApp.terminate(nil) }
+        let quit = ActionItem(String(localized: "Quit ModeDock")) { NSApp.terminate(nil) }
         quit.keyEquivalent = "q"
         menu.addItem(quit)
     }
@@ -352,7 +366,7 @@ final class NativeMenu {
         // Otherwise AppKit enables every item with a target and ignores `isEnabled` below.
         submenu.autoenablesItems = false
         if display.isEnabled, let screenModes {
-            submenu.addItem(.sectionHeader(title: "Resolution"))
+            submenu.addItem(.sectionHeader(title: String(localized: "Resolution")))
             for option in screenModes.options {
                 let isCurrent = screenModes.isCurrent(option)
                 if option.modes.count == 1, let mode = option.modes.first {
@@ -378,14 +392,15 @@ final class NativeMenu {
             }
             submenu.addItem(.separator())
             if let auto = brightness.screens[screen.id]?.autoBrightness {
-                let autoItem = ActionItem("Automatic Brightness") { [brightness] in
+                let autoItem = ActionItem(String(localized: "Automatic Brightness")) { [brightness] in
                     brightness.setAutoBrightness(!auto, for: screen.id)
                 }
                 autoItem.state = auto ? .on : .off
                 submenu.addItem(autoItem)
             }
             if !screenModes.isMain {
-                submenu.addItem(ActionItem("Use as Main Screen") { [modes] in modes.makeMain(screen.id) })
+                submenu.addItem(
+                    ActionItem(String(localized: "Use as Main Screen")) { [modes] in modes.makeMain(screen.id) })
             }
             if let available = inputs.screens[screen.id] {
                 submenu.addItem(inputItem(available, screen: screen))
@@ -393,11 +408,11 @@ final class NativeMenu {
         }
         if showStandby && screen.supportsDDC && display.isEnabled {
             submenu.addItem(
-                ActionItem(screen.isInStandby ? "Wake" : "Standby") { [screens] in
+                ActionItem(screen.isInStandby ? String(localized: "Wake") : "Standby") { [screens] in
                     Task { await screens.setStandby(!screen.isInStandby, screen: screen.id) }
                 })
         }
-        let power = ActionItem(display.isEnabled ? "Turn Off" : "Turn On") { [screens] in
+        let power = ActionItem(display.isEnabled ? "Turn Off" : String(localized: "Turn On")) { [screens] in
             screens.setEnabled(!display.isEnabled, screen: screen.id)
         }
         power.isEnabled = !display.isEnabled || screen.canDisable
@@ -432,7 +447,7 @@ private final class BrightnessMenuView: NSView {
             value: level.value, minValue: level.minimum, maxValue: 1, target: self, action: #selector(changed(_:)))
         slider.isContinuous = true
         slider.controlSize = .small
-        slider.toolTip = "Brightness of \(display.name)"
+        slider.toolTip = String(localized: "Brightness of \(display.name)")
         self.slider = slider
 
         // Sun icons on both ends, like the display slider in Control Center.
@@ -442,7 +457,7 @@ private final class BrightnessMenuView: NSView {
             let button = NSButton(checkboxWithTitle: "Auto", target: self, action: #selector(toggleAuto(_:)))
             button.controlSize = .small
             button.state = auto ? .on : .off
-            button.toolTip = "Adjust brightness automatically to the light around you."
+            button.toolTip = String(localized: "Adjust brightness to the light around you.")
             views.append(button)
             autoButton = button
         }

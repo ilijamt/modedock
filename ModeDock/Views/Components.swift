@@ -85,7 +85,7 @@ struct ActionTile: View {
                 Text(title)
                     .font(.caption)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.7)
                 if let detail {
                     Spacer(minLength: 4)
                     Text(verbatim: detail)
