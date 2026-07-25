@@ -13,14 +13,13 @@ enum MenuSection: String, CaseIterable, Identifiable {
         case .profiles: String(localized: "Profiles")
         case .power: String(localized: "Power")
         case .utilities: String(localized: "Utilities")
-        case .screenshots: String(localized: "Screenshots")
+        case .screenshots: String(localized: "Capture")
         }
     }
 
     /// For the tab bar, where five titles share the panel's width.
     var tabTitle: String {
         switch self {
-        case .screenshots: String(localized: "Capture")
         // Its own key, so languages with a long word for Utilities can use a shorter one here.
         case .utilities: String(localized: "tab.utilities", defaultValue: "Utilities")
         default: title

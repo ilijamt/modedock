@@ -15,12 +15,6 @@
             "value": "%1$lld時間%2$lld分"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$lld ч %2$lld мин"
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -56,24 +50,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "%lld時間"
-                }
-              }
-            }
-          }
-        },
-        "mk": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld час"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld часа"
                 }
               }
             }
@@ -131,24 +107,6 @@
             }
           }
         },
-        "mk": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld минута"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld минути"
-                }
-              }
-            }
-          }
-        },
         "nl": {
           "variations": {
             "plural": {
@@ -177,12 +135,6 @@
             "value": "%@を取り出せませんでした。使用中の可能性があります。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ не може да се исфрли. Можеби се користи."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -197,12 +149,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Finderの設定を保存できませんでした。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Поставките на Finder не може да се зачуваат."
           }
         },
         "nl": {
@@ -221,12 +167,6 @@
             "value": "ModeDockにFinderの制御が許可されていません。システム設定 → プライバシーとセキュリティ → オートメーションで許可してください。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ModeDock нема дозвола да го контролира Finder. Дозволете го во System Settings → Privacy & Security → Automation."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -241,12 +181,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Night Shiftを変更できませんでした。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Night Shift не може да се промени."
           }
         },
         "nl": {
@@ -265,12 +199,6 @@
             "value": "ゴミ箱を空にできませんでした。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Корпата не може да се испразни."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -285,12 +213,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "画面を1枚の画像に結合できませんでした。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Екраните не може да се спојат во една слика."
           }
         },
         "nl": {
@@ -309,12 +231,6 @@
             "value": "スクリーンショットをクリップボードにコピーできませんでした。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сликата од екранот не може да се копира во клипбордот."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -329,12 +245,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "スクリーンショットを撮れませんでした。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сликата од екранот не може да се направи."
           }
         },
         "nl": {
@@ -353,12 +263,6 @@
             "value": "スクリーンショットを撮れませんでした: %@"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сликата од екранот не може да се направи: %@"
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -373,12 +277,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "このMacではサポートされていません。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ова не е поддржано на овој Mac."
           }
         },
         "nl": {
@@ -397,12 +295,6 @@
             "value": "このバージョンのmacOSではサポートされていません。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ова не е поддржано на оваа верзија на macOS."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -417,12 +309,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "True Toneを変更できませんでした。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "True Tone не може да се промени."
           }
         },
         "nl": {
@@ -441,12 +327,6 @@
             "value": "オフにするまで"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "До исклучување"
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -463,12 +343,6 @@
             "value": "macOSが要求を実行しませんでした。"
           }
         },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS не го изврши барањето."
-          }
-        },
         "nl": {
           "stringUnit": {
             "state": "translated",
@@ -483,12 +357,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOSがスリープ防止を拒否しました。"
-          }
-        },
-        "mk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS одби да го држи Mac буден."
           }
         },
         "nl": {
