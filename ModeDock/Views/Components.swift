@@ -66,11 +66,12 @@ struct CircleToggle: View {
     }
 }
 
-/// A compact tile with an icon beside a short label, for one-tap actions. Tinted when on.
+/// A compact tile with an icon beside a short label. A switch (`isOn` set) shows its state in the
+/// icon's circle, like Control Center; a one-off action (`isOn` nil) has a plain icon.
 struct ActionTile: View {
     let title: String
     let systemImage: String
-    var isOn = false
+    var isOn: Bool?
     /// Shown at the right edge, such as the tile's keyboard shortcut.
     var detail: String?
     var detailIsPlaceholder = false
@@ -78,10 +79,8 @@ struct ActionTile: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 12, weight: .semibold))
-                    .frame(width: 16)
+            HStack(spacing: isOn == nil ? 5 : 6) {
+                icon
                 Text(title)
                     .font(.caption)
                     .lineLimit(1)
@@ -95,14 +94,28 @@ struct ActionTile: View {
                         .foregroundStyle(detailIsPlaceholder ? .tertiary : .secondary)
                 }
             }
-            .foregroundStyle(isOn ? .white : .primary)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
-            .surface(RoundedRectangle(cornerRadius: 10, style: .continuous), tint: isOn ? .accentColor : nil)
+            .frame(maxWidth: .infinity, alignment: isOn == nil ? .center : .leading)
+            .padding(.horizontal, isOn == nil ? 10 : 6)
+            .padding(.vertical, isOn == nil ? 9 : 5)
+            .surface(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityValue(isOn.map { $0 ? Text("On") : Text("Off") } ?? Text(verbatim: ""))
+    }
+
+    @ViewBuilder private var icon: some View {
+        if let isOn {
+            Image(systemName: systemImage)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(isOn ? .white : .primary)
+                .frame(width: 24, height: 24)
+                .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.1)), in: Circle())
+        } else {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+                .frame(width: 16)
+        }
     }
 }
 

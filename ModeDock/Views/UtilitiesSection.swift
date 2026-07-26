@@ -79,8 +79,10 @@ struct UtilitiesSection: View {
                     .tip(verbatim: toggle.help)
                 }
                 if !hidden.contains(.emptyTrash) {
-                    ActionTile(title: String(localized: "Empty Trash"), systemImage: "trash") { confirmingTrash = true }
-                        .tip("Empty the Trash. ModeDock asks first.")
+                    ActionTile(title: String(localized: "Empty Trash…"), systemImage: "trash") {
+                        confirmingTrash = true
+                    }
+                    .tip("Empty the Trash. ModeDock asks first.")
                 }
                 if !hidden.contains(.ejectDisks) {
                     ActionTile(title: utilities.ejectTitle, systemImage: "eject.fill") {

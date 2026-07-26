@@ -553,18 +553,18 @@
         }
       }
     },
-    "Adds other aspect ratios, low-resolution sizes and modes macOS hides. Some may not display correctly.": {
+    "Adds other aspect ratios, low-resolution sizes and modes macOS hides.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ほかの縦横比、低解像度サイズ、macOSが隠しているモードを追加します。正しく表示されないものもあります。"
+            "value": "ほかの縦横比、低解像度サイズ、macOSが隠しているモードを追加します。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Voegt andere beeldverhoudingen, lage resoluties en door macOS verborgen modi toe. Sommige werken mogelijk niet goed."
+            "value": "Voegt andere beeldverhoudingen, lage resoluties en door macOS verborgen modi toe."
           }
         }
       }
@@ -1257,22 +1257,6 @@
         }
       }
     },
-    "Brightness shortcuts change every screen. At least one screen always stays on.": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "輝度のショートカットはすべてのディスプレイに適用されます。少なくとも1台は常にオンのままです。"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Helderheidscombinaties wijzigen alle schermen. Er blijft altijd minstens één scherm aan."
-          }
-        }
-      }
-    },
     "Brightness sliders": {
       "localizations": {
         "ja": {
@@ -1545,22 +1529,6 @@
         }
       }
     },
-    "Capture straight away": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "すぐにキャプチャ"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meteen opnemen"
-          }
-        }
-      }
-    },
     "Capture the screen under the pointer.": {
       "localizations": {
         "ja": {
@@ -1669,6 +1637,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wijzig resolutie en verversingsfrequentie"
+          }
+        }
+      }
+    },
+    "Changes every screen.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべてのディスプレイに適用されます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wijzigt alle schermen."
           }
         }
       }
@@ -1835,22 +1819,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Klik op een venster. Esc annuleert."
-          }
-        }
-      }
-    },
-    "Click ✕ to clear a shortcut.": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✕をクリックするとショートカットを消去します。"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Klik op ✕ om een sneltoets te wissen."
           }
         }
       }
@@ -2315,22 +2283,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sleep om de volgorde te wijzigen"
-          }
-        }
-      }
-    },
-    "Drag to reorder": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ドラッグで並べ替え"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sleep om te ordenen"
           }
         }
       }
@@ -2815,6 +2767,22 @@
         }
       }
     },
+    "HDR keeps HDR detail and wide colour, saved as HEIC. Copies include the HDR image too.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HDRはディテールと広色域を保持し、HEICで保存します。コピーにもHDR画像が含まれます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HDR behoudt HDR-detail en breed kleurbereik, bewaard als HEIC. Kopieën bevatten ook het HDR-beeld."
+          }
+        }
+      }
+    },
     "Hidden files": {
       "localizations": {
         "ja": {
@@ -3243,22 +3211,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Deze resolutie behouden?"
-          }
-        }
-      }
-    },
-    "Keeps HDR detail and wide colour, saved as HEIC. Copies include the HDR image too.": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HDRのディテールと広色域を保持し、HEICで保存します。コピーにもHDR画像が含まれます。"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Behoudt HDR-detail en breed kleurbereik, bewaard als HEIC. Kopieën bevatten ook het HDR-beeld."
           }
         }
       }
@@ -4543,6 +4495,22 @@
         }
       }
     },
+    "Profiles include screen serial numbers.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロファイルにはディスプレイのシリアル番号が含まれます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profielen bevatten serienummers van schermen."
+          }
+        }
+      }
+    },
     "Put the Mac to sleep now.": {
       "localizations": {
         "ja": {
@@ -4575,18 +4543,18 @@
         }
       }
     },
-    "Puts a monitor into standby over DDC. Some only wake with their power button.": {
+    "Puts a monitor into standby over DDC.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "DDCでモニタをスタンバイにします。電源ボタンでしか復帰しないものもあります。"
+            "value": "DDCでモニタをスタンバイにします。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zet een monitor via DDC in stand-by. Sommige worden alleen wakker met hun aan/uit-knop."
+            "value": "Zet een monitor via DDC in stand-by."
           }
         }
       }
@@ -4687,38 +4655,6 @@
         }
       }
     },
-    "Reset %@": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@をリセット"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Herstel %@"
-          }
-        }
-      }
-    },
-    "Reset All Screens": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "すべてのディスプレイをリセット"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Herstel alle schermen"
-          }
-        }
-      }
-    },
     "Reset ModeDock settings?": {
       "localizations": {
         "ja": {
@@ -4731,6 +4667,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "ModeDock-instellingen herstellen?"
+          }
+        }
+      }
+    },
+    "Reset Screens": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ディスプレイをリセット"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herstel schermen"
           }
         }
       }
@@ -4991,18 +4943,18 @@
         }
       }
     },
-    "Save settings, shortcuts and profiles to a file and load them here or on another Mac. Profiles include screen serial numbers.": {
+    "Save settings, shortcuts and profiles to a file and load them here or on another Mac.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "設定、ショートカット、プロファイルをファイルに保存し、このMacや別のMacで読み込めます。プロファイルにはディスプレイのシリアル番号が含まれます。"
+            "value": "設定、ショートカット、プロファイルをファイルに保存し、このMacや別のMacで読み込めます。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bewaar instellingen, sneltoetsen en profielen in een bestand en laad ze hier of op een andere Mac. Profielen bevatten serienummers van schermen."
+            "value": "Bewaar instellingen, sneltoetsen en profielen in een bestand en laad ze hier of op een andere Mac."
           }
         }
       }
@@ -5739,6 +5691,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Laat schermen sluimeren:"
+          }
+        }
+      }
+    },
+    "Some may not display correctly.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正しく表示されないものもあります。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sommige werken mogelijk niet goed."
+          }
+        }
+      }
+    },
+    "Some monitors only wake with their power button.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "電源ボタンでしか復帰しないモニタもあります。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sommige monitors worden alleen wakker met hun aan/uit-knop."
           }
         }
       }
@@ -6639,18 +6623,18 @@
         }
       }
     },
-    "Wait %lld seconds before capturing": {
+    "Wait before capturing": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "キャプチャまで%lld秒待つ"
+            "value": "キャプチャまで待つ時間"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wacht %lld seconden voor de opname"
+            "value": "Wachttijd voor de opname"
           }
         }
       }

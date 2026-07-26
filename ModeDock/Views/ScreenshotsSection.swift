@@ -149,15 +149,17 @@ struct ScreenshotOptionsStrip: View {
             HStack(spacing: 4) {
                 Text("Timer").font(.callout)
                 Spacer(minLength: 4)
-                ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
-                    Chip(
-                        title: seconds == 0 ? String(localized: "Off") : String(localized: "\(seconds)s"),
-                        isOn: delay == seconds
-                    ) {
-                        delay = seconds
+                // One choice, so a segmented control rather than the chips used for on/off options.
+                Picker("Timer", selection: $delay) {
+                    ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
+                        Text(seconds == 0 ? String(localized: "Off") : String(localized: "\(seconds)s")).tag(seconds)
                     }
-                    .tip(seconds == 0 ? "Capture straight away" : "Wait \(seconds) seconds before capturing")
                 }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+                .tip("Wait before capturing")
             }
             HStack(spacing: 4) {
                 Text("Include").font(.callout)

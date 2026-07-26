@@ -6,15 +6,30 @@ struct SettingsPage<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        Form { content }
-            .formStyle(.columns)
-            // As wide as its content, centred in the window like other Mac settings.
-            .fixedSize()
-            .padding(.vertical, 24)
-            .frame(width: SettingsPage.width)
+        Form {
+            // An empty row as wide as the widest label, so the labels end at the same place on
+            // every tab and the controls don't move sideways when switching tabs. Longer labels
+            // (in some languages) still widen it.
+            LabeledContent {
+                EmptyView()
+            } label: {
+                Color.clear.frame(width: Self.labelWidth, height: 0)
+            }
+            .accessibilityHidden(true)
+            content
+        }
+        .formStyle(.columns)
+        .fixedSize()
+        .padding(.leading, Self.leading)
+        // The sizing row adds its own row spacing at the top.
+        .padding(.top, 18)
+        .padding(.bottom, 24)
+        .frame(width: SettingsPage.width, alignment: .leading)
     }
 
     static var width: CGFloat { 600 }
+    static var labelWidth: CGFloat { 120 }
+    static var leading: CGFloat { 56 }
 }
 
 /// A short explanation under a control, in the controls' column.

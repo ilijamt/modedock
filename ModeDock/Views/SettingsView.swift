@@ -85,7 +85,7 @@ private struct GeneralSettingsView: View {
                 isOn: Binding(get: { keepScreensOn }, set: { KeepAwakeSettings.setKeepScreensOn($0, power: power) })
             )
             .labeledSettingsRow("Keep Awake:")
-            SettingsNote("When off, screens can sleep while the Mac stays awake.")
+            .help("When off, screens can sleep while the Mac stays awake.")
         }
         .onAppear { launchAtLogin.refresh() }
     }
@@ -107,8 +107,8 @@ private struct AdvancedSettingsView: View {
 
             LabeledContent("Reset:") {
                 Button("Reset Settings…") { confirmingReset = true }
+                    .help("Every setting and shortcut goes back to its default. Profiles are kept.")
             }
-            SettingsNote("Every setting and shortcut goes back to its default. Profiles are kept.")
 
             SettingsGap()
 
@@ -121,8 +121,8 @@ private struct AdvancedSettingsView: View {
                     Diagnostics.copy(screens: screens, modes: modes)
                     copied = true
                 }
+                .help("Copy screen and macOS details for a bug report.")
             }
-            SettingsNote("Copy screen and macOS details for a bug report.")
         }
         .confirmationDialog("Reset ModeDock settings?", isPresented: $confirmingReset) {
             Button("Reset Settings", role: .destructive) { ScreenDefaults.resetSettings(modes: modes) }
@@ -164,14 +164,14 @@ private struct MenuSettingsView: View {
                 ForEach(PanelStyle.allCases) { Text($0.title).tag($0.rawValue) }
             }
             .fixedSize()
-            SettingsNote(LocalizedStringKey((PanelStyle(rawValue: panelStyle) ?? .cards).summary))
+            .help(LocalizedStringKey((PanelStyle(rawValue: panelStyle) ?? .cards).summary))
 
             Picker("Layout:", selection: $panelLayout) {
                 ForEach(PanelLayout.allCases) { Text($0.title).tag($0.rawValue) }
             }
             .fixedSize()
             .disabled(panelStyle == PanelStyle.menu.rawValue)
-            SettingsNote(LocalizedStringKey((PanelLayout(rawValue: panelLayout) ?? .tabs).summary))
+            .help(LocalizedStringKey((PanelLayout(rawValue: panelLayout) ?? .tabs).summary))
 
             SettingsGap()
 
@@ -209,7 +209,7 @@ private struct MenuSettingsView: View {
                 .background(.background, in: RoundedRectangle(cornerRadius: 6))
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator))
             }
-            SettingsNote("Turn sections on or off and choose what each shows. Drag to reorder.")
+            .help("Turn sections on or off and choose what each shows. Drag to reorder.")
         }
         // A drop anywhere else in the window ends the drag, so the dragged row doesn't stay faded.
         .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
@@ -345,8 +345,8 @@ private struct DisplaySettingsView: View {
         SettingsPage {
             Toggle("Show all resolutions", isOn: $showAllModes)
                 .labeledSettingsRow("Resolutions:")
-            SettingsNote(
-                "Adds other aspect ratios, low-resolution sizes and modes macOS hides. Some may not display correctly.")
+                .help("Adds other aspect ratios, low-resolution sizes and modes macOS hides.")
+            SettingsNote("Some may not display correctly.")
 
             SettingsGap()
 
@@ -360,33 +360,35 @@ private struct DisplaySettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            SettingsNote(
-                "How often brightness is sent to external monitors while dragging. Pick whatever looks smoothest.")
+            .help("How often brightness is sent to external monitors while dragging. Pick whatever looks smoothest.")
 
             SettingsGap()
 
             Toggle("Show Standby for external monitors", isOn: $showDDCStandby)
                 .labeledSettingsRow("Standby:")
-            SettingsNote("Puts a monitor into standby over DDC. Some only wake with their power button.")
+                .help("Puts a monitor into standby over DDC.")
+            SettingsNote("Some monitors only wake with their power button.")
 
             SettingsGap()
 
             LabeledContent("Reset:") {
-                VStack(alignment: .leading, spacing: 6) {
+                Menu("Reset Screens") {
                     ForEach(screens.screens.filter(\.display.isEnabled)) { screen in
-                        Button("Reset \(screen.display.name)") {
+                        Button(screen.display.name) {
                             ScreenDefaults.reset(screen.id, modes: modes, brightness: brightness)
                         }
                         .disabled(ScreenDefaults.isAtDefault(screen.id, modes: modes, brightness: brightness))
                     }
-                    Button("Reset All Screens") {
+                    Divider()
+                    Button("All Screens") {
                         ScreenDefaults.resetAll(screens: screens, modes: modes, brightness: brightness)
                     }
                 }
+                .fixedSize()
+                .help(
+                    "Restores the default resolution and refresh rate, removes dimming and turns automatic brightness back on."
+                )
             }
-            SettingsNote(
-                "Restores the default resolution and refresh rate, removes dimming and turns automatic brightness back on."
-            )
         }
         // Keeps the reset buttons' enabled state current while the window is open.
         .modifier(ModeRefresher(controller: screens, modes: modes, brightness: brightness))
@@ -432,10 +434,12 @@ private struct ShortcutSettingsView: View {
             case .screens:
                 SettingsPage {
                     ShortcutRecorder("Open ModeDock:", name: .togglePanel)
-                    SettingsNote("Click ✕ to clear a shortcut.")
                     SettingsGap()
-                    ShortcutRecorder("Brightness up:", name: .brightnessUp)
-                    ShortcutRecorder("Brightness down:", name: .brightnessDown)
+                    Group {
+                        ShortcutRecorder("Brightness up:", name: .brightnessUp)
+                        ShortcutRecorder("Brightness down:", name: .brightnessDown)
+                    }
+                    .help("Changes every screen.")
                     ShortcutRecorder("Sleep screens:", name: .sleepScreens)
                     ShortcutRecorder("Mirror on or off:", name: .toggleMirror)
                     ShortcutRecorder("Turn all screens on:", name: .turnAllScreensOn)
@@ -446,14 +450,13 @@ private struct ShortcutSettingsView: View {
                             index == 0 ? "Turn on or off:" : "", name: .toggleScreen(screen.display.identity),
                             detail: screen.display.name)
                     }
-                    SettingsNote("Brightness shortcuts change every screen. At least one screen always stays on.")
                     SettingsGap()
                     ShortcutRecorder("Next profile:", name: .nextProfile)
                     Picker("Cycle through:", selection: $profileCycleScope) {
                         ForEach(ProfileCycleScope.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                     .fixedSize()
-                    SettingsNote(
+                    .help(
                         "Each press moves to the next profile, and the highlighted one is applied when you stop. \"Connected screens\" lists only profiles for the screens plugged in now."
                     )
                 }
@@ -488,6 +491,7 @@ private struct BrightnessKeysToggle: View {
     var body: some View {
         Toggle("Brightness keys change every screen", isOn: $enabled)
             .labeledSettingsRow("Brightness:")
+            .help("Also dims monitors macOS can't.")
             .onChange(of: enabled) { _, on in
                 if on, !BrightnessKeys.isTrusted { BrightnessKeys.requestAccess() }
             }
@@ -505,8 +509,6 @@ private struct BrightnessKeysToggle: View {
                 Button("Open Settings") { BrightnessKeys.openPrivacySettings() }
             }
             .font(.callout)
-        } else {
-            SettingsNote("Also dims monitors macOS can't.")
         }
     }
 }
@@ -580,13 +582,12 @@ private struct ConfigurationSection: View {
                     Button("Export…") { sheet = .export }
                     Button("Import…", action: chooseFile)
                 }
+                .help("Save settings, shortcuts and profiles to a file and load them here or on another Mac.")
             }
             if let status {
                 Text(status).font(.caption).foregroundStyle(.secondary)
             }
-            SettingsNote(
-                "Save settings, shortcuts and profiles to a file and load them here or on another Mac. Profiles include screen serial numbers."
-            )
+            SettingsNote("Profiles include screen serial numbers.")
         }
         .sheet(item: $sheet) { sheet in
             switch sheet {
@@ -703,6 +704,9 @@ private struct DebugLogSection: View {
     var body: some View {
         Toggle("Write a debug log", isOn: $enabled)
             .labeledSettingsRow("Troubleshooting:")
+            .help(
+                "Writes a detailed log to ~/Library/Logs/ModeDock/ModeDock.log. Turn it on, repeat the problem and attach the log to your bug report. It never includes serial numbers or file contents and stays under about 4 MB."
+            )
             .onChange(of: enabled) { _, on in
                 if on { AppLog.app.notice("Debug logging on. \(AppLog.versionLine)") }
             }
@@ -721,9 +725,7 @@ private struct DebugLogSection: View {
                 copied = false
             }
         }
-        SettingsNote(
-            "Writes a detailed log to ~/Library/Logs/ModeDock/ModeDock.log. Turn it on, repeat the problem and attach the log to your bug report. It never includes serial numbers or file contents and stays under about 4 MB."
-        )
+
     }
 }
 
@@ -822,7 +824,7 @@ private struct ScreenshotSettingsView: View {
             Toggle("Folder", isOn: destinationBinding(folder: true))
                 .labeledSettingsRow("Save to:")
             Toggle("Clipboard", isOn: destinationBinding(folder: false))
-            SettingsNote("Both can be on. All Screens copies one image of every screen.")
+                .help("Both can be on. All Screens copies one image of every screen.")
 
             SettingsGap()
 
@@ -832,6 +834,7 @@ private struct ScreenshotSettingsView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .frame(maxWidth: 180, alignment: .leading)
+                        .fixedSize()
                         .help(folderURL.path)
                     Button("Choose…", action: chooseFolder)
                     if !folder.isEmpty {
@@ -850,13 +853,13 @@ private struct ScreenshotSettingsView: View {
                 Text("HDR").tag(true)
             }
             .fixedSize()
-            SettingsNote("Keeps HDR detail and wide colour, saved as HEIC. Copies include the HDR image too.")
+            .help("HDR keeps HDR detail and wide colour, saved as HEIC. Copies include the HDR image too.")
             Picker("All Screens:", selection: $combineScreens) {
                 Text("One image").tag(true)
                 Text("A file per screen").tag(false)
             }
             .fixedSize()
-            SettingsNote("One image lays the screens out as arranged in Displays settings.")
+            .help("One image lays the screens out as arranged in Displays settings.")
         }
     }
 
@@ -882,7 +885,7 @@ private struct ScreenshotSettingsView: View {
                 }
             }
             .fixedSize()
-            SettingsNote("Applies to Screen and All Screens.")
+            .help("Applies to Screen and All Screens.")
 
             SettingsGap()
 
@@ -890,8 +893,9 @@ private struct ScreenshotSettingsView: View {
                 .labeledSettingsRow("Include:")
             Toggle("Pointer in Area and Window (experimental)", isOn: $pointerEverywhere)
                 .disabled(!includePointer)
-            SettingsNote(
-                "macOS leaves the pointer out, so ModeDock draws it in. It may be slightly off with window shadows.")
+                .help(
+                    "macOS leaves the pointer out, so ModeDock draws it in. It may be slightly off with window shadows."
+                )
             Toggle("Window shadow", isOn: $windowShadow)
             Toggle("ModeDock panel", isOn: Binding(get: { !hidesPanel }, set: { hidesPanel = !$0 }))
 
@@ -1031,9 +1035,6 @@ private struct ProfileSettingsView: View {
                 .disabled(selected == nil)
                 .help("Delete the selected profile")
                 Spacer()
-                Text("Drag to reorder")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
             .frame(width: 170)

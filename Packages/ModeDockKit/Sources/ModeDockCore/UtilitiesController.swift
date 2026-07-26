@@ -170,10 +170,13 @@ public struct MacUtilitySystem: UtilitySystem {
     }
 
     /// macOS has no API for this; asking Finder empties the Trash on every volume, and asks the
-    /// user once to let ModeDock control Finder.
+    /// user once to let ModeDock control Finder. Finder reports an error when the Trash is
+    /// already empty, so that case is skipped.
     public func emptyTrash() throws {
         var error: NSDictionary?
-        NSAppleScript(source: "tell application \"Finder\" to empty trash")?.executeAndReturnError(&error)
+        NSAppleScript(
+            source: "tell application \"Finder\" to if (count items of trash) > 0 then empty trash"
+        )?.executeAndReturnError(&error)
         guard let error else { return }
         if error[NSAppleScript.errorNumber] as? Int == -1743 {
             throw UtilityError.failed(
