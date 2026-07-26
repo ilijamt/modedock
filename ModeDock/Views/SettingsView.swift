@@ -930,6 +930,7 @@ private struct ProfileSettingsView: View {
     @State private var selection: DisplayProfile.ID?
     @State private var deleting: DisplayProfile?
     @State private var editing: DisplayProfile.ID?
+    @State private var dragging: DisplayProfile.ID?
 
     private var selected: DisplayProfile? { profiles.profiles.first { $0.id == selection } }
 
@@ -991,6 +992,7 @@ private struct ProfileSettingsView: View {
             List(selection: $selection) {
                 ForEach(profiles.profiles) { profile in
                     HStack(spacing: 6) {
+                        dragHandle(profile)
                         Text(verbatim: profile.name).lineLimit(1)
                         if profile.autoApply { AutoTag() }
                         Spacer(minLength: 4)
@@ -1001,9 +1003,15 @@ private struct ProfileSettingsView: View {
                         }
                     }
                     .tag(profile.id)
+                    .opacity(dragging == profile.id ? 0.4 : 1)
+                    .onDrop(
+                        of: [.text],
+                        delegate: ReorderDropDelegate(target: profile.id, dragging: $dragging) {
+                            profiles.move($0, to: $1)
+                        })
                 }
-                .onMove(perform: move)
             }
+            .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
             .listStyle(.bordered)
             .frame(width: 170, height: 376)
 
@@ -1077,12 +1085,24 @@ private struct ProfileSettingsView: View {
         .formStyle(.columns)
     }
 
-    /// Dragging in the list; the order is the panel's and the Next Profile shortcut's.
-    private func move(from source: IndexSet, to destination: Int) {
-        guard let from = source.first else { return }
-        let to = destination > from ? destination - 1 : destination
-        guard to != from, profiles.profiles.indices.contains(to) else { return }
-        profiles.move(profiles.profiles[from].id, to: profiles.profiles[to].id)
+    /// Only the handle starts a drag, so clicking a row just selects it. The order is the
+    /// panel's and the Next Profile shortcut's.
+    private func dragHandle(_ profile: DisplayProfile) -> some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.caption)
+            .foregroundStyle(.tertiary)
+            .frame(width: 14, height: 18)
+            .contentShape(Rectangle())
+            .onHover { inside in
+                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+            }
+            .help("Drag to change the order")
+            .onDrag {
+                dragging = profile.id
+                return NSItemProvider(object: profile.id.uuidString as NSString)
+            } preview: {
+                Text(verbatim: profile.name).padding(6)
+            }
     }
 
 }
