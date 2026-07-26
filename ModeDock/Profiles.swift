@@ -15,15 +15,56 @@ extension KeyboardShortcuts.Name {
     }
 }
 
+/// Marks the profile that applies by itself when its screens are connected.
+struct AutoTag: View {
+    var body: some View {
+        Text("Auto")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.primary.opacity(0.1), in: Capsule())
+            .fixedSize()
+            .tip("Applied automatically when these exact screens are connected.")
+    }
+}
+
+extension ProfileSystemSettings.Setting {
+    var title: String {
+        switch self {
+        case .darkMode: String(localized: "Dark Mode")
+        case .nightShift: String(localized: "Night Shift")
+        case .trueTone: String(localized: "True Tone")
+        case .dockAutoHide: String(localized: "Hide Dock")
+        }
+    }
+}
+
+extension ProfileSystemSettings {
+    /// "Dark Mode Off · True Tone On", or nil when the profile sets none of them.
+    var summary: String? {
+        let parts = Setting.allCases.compactMap { setting -> String? in
+            guard let on = self[setting] else { return nil }
+            return on ? String(localized: "\(setting.title) On") : String(localized: "\(setting.title) Off")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+}
+
 extension DisplayProfile {
-    /// "2 screens · Mirrored".
-    var summary: String {
+    /// "2 screens · Mirrored · Automatic". Without "Automatic" where an Auto tag shows it.
+    func summary(includingAutomatic: Bool = true) -> String {
         let count = enabledScreens.count
         var parts = [String(localized: "\(count) screens")]
         if mirroring { parts.append(String(localized: "Mirrored")) }
-        if autoApply { parts.append(String(localized: "Automatic")) }
+        if autoApply, includingAutomatic { parts.append(String(localized: "Automatic")) }
+        if let settings = system.summary { parts.append(settings) }
         return parts.joined(separator: " · ")
     }
+
+    var summary: String { summary() }
+
+    /// Whether the summary says more than the number of screens, apart from being automatic.
+    var hasExtras: Bool { mirroring || !system.isEmpty }
 
     /// "Built-in Display, LS28 (off)".
     var screenList: String {

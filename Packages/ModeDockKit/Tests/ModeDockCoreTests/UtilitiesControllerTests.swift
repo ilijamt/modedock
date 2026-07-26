@@ -4,7 +4,7 @@ import Testing
 @testable import ModeDockCore
 
 @MainActor
-private final class FakeUtilitySystem: UtilitySystem {
+final class FakeUtilitySystem: UtilitySystem {
     var current = UtilityState(darkMode: true, dockAutoHide: false, nightShift: false, trueTone: nil)
     var volumes = [URL(fileURLWithPath: "/Volumes/Backup"), URL(fileURLWithPath: "/Volumes/Camera")]
     var busy: Set<String> = []

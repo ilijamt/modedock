@@ -55,12 +55,15 @@ private struct ProfileButton: View {
                     .foregroundStyle(isActive ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                     .frame(width: 24)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(verbatim: profile.name)
-                        .font(.system(size: 13, weight: .medium))
-                        .lineLimit(1)
-                        .padding(.trailing, 22)
-                    if profile.mirroring || profile.autoApply {
-                        Text(verbatim: profile.summary)
+                    HStack(spacing: 6) {
+                        Text(verbatim: profile.name)
+                            .font(.system(size: 13, weight: .medium))
+                            .lineLimit(1)
+                        if profile.autoApply { AutoTag() }
+                    }
+                    .padding(.trailing, 22)
+                    if profile.hasExtras {
+                        Text(verbatim: profile.summary(includingAutomatic: false))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -134,6 +137,7 @@ struct RowsProfilesSection: View {
                         .font(.caption.weight(.semibold))
                         .opacity(isActive ? 1 : 0)
                     Text(verbatim: profile.name).lineLimit(1)
+                    if profile.autoApply { AutoTag() }
                     Spacer(minLength: 4)
                     if profiles.applying == profile.id {
                         ProgressView().controlSize(.mini)

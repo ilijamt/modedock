@@ -80,6 +80,16 @@ public final class UtilitiesController {
     public func setTrueTone(_ on: Bool) { apply { try system.setTrueTone(on) } }
     public func emptyTrash() { apply { try system.emptyTrash() } }
 
+    /// Turns one of the settings a profile can set on or off.
+    public func set(_ setting: ProfileSystemSettings.Setting, to on: Bool) {
+        switch setting {
+        case .darkMode: setDarkMode(on)
+        case .nightShift: setNightShift(on)
+        case .trueTone: setTrueTone(on)
+        case .dockAutoHide: setDockAutoHide(on)
+        }
+    }
+
     /// Ejects every external and removable volume, and reports the ones that refused (for
     /// example because a file on them is open).
     public func ejectAll() async {

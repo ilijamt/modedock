@@ -371,6 +371,67 @@ struct ProfileControllerTests {
         #expect(reloaded.profiles.map(\.name) == ["Imported"])
     }
 
+    @Test func profilesSavedBeforeSystemSettingsStillLoad() throws {
+        let json =
+            #"{"id":"3B37EC40-0000-0000-0000-000000000001","name":"Desk","autoApply":false,"mirroring":false,"screens":[]}"#
+        let profile = try JSONDecoder().decode(DisplayProfile.self, from: Data(json.utf8))
+        #expect(profile.name == "Desk")
+        #expect(profile.system.isEmpty)
+    }
+
+    @Test func applySetsOnlyTheChosenSystemSettings() async {
+        let setup = await Setup()
+        let utilities = UtilitiesController(system: FakeUtilitySystem())
+        setup.profiles.utilities = utilities
+        let profile = setup.profiles.capture(name: "Desk")
+        setup.profiles.setSystemSetting(.darkMode, to: false, for: profile.id)
+        setup.profiles.setSystemSetting(.nightShift, to: true, for: profile.id)
+        utilities.refresh()
+        // The fake starts in Dark Mode with the Dock shown and Night Shift off.
+        #expect(!setup.profiles.isActive(setup.profiles.profiles[0]))
+
+        await setup.profiles.apply(setup.profiles.profiles[0])
+
+        #expect(utilities.state.darkMode == false)
+        #expect(utilities.state.nightShift == true)
+        #expect(utilities.state.dockAutoHide == false)
+        #expect(setup.profiles.isActive(setup.profiles.profiles[0]))
+    }
+
+    @Test func updateRefreshesOnlyTheSystemSettingsAProfileSets() async {
+        let setup = await Setup()
+        let system = FakeUtilitySystem()
+        let utilities = UtilitiesController(system: system)
+        setup.profiles.utilities = utilities
+        let profile = setup.profiles.capture(name: "Desk")
+        setup.profiles.setSystemSetting(.darkMode, to: false, for: profile.id)
+
+        system.current.darkMode = true
+        system.current.nightShift = true
+        setup.profiles.update(profile.id)
+
+        let updated = setup.profiles.profiles[0].system
+        #expect(updated.darkMode == true)
+        #expect(updated.nightShift == nil)
+    }
+
+    @Test func editScreenChangesWhatTheProfileApplies() async {
+        let setup = await Setup()
+        let profile = setup.profiles.capture(name: "Desk")
+        setup.profiles.editScreen(external.identity, in: profile.id) {
+            $0.modeKey = small.key
+            $0.brightness = 0.3
+        }
+        setup.profiles.editScreen(builtin.identity, in: profile.id) { $0.brightness = nil }
+
+        await setup.profiles.apply(setup.profiles.profiles[0])
+
+        #expect(setup.configurator.current[5] == small)
+        #expect(setup.brightnessSystem.levels[5] == 0.3)
+        // Left alone: the built-in screen's brightness wasn't set.
+        #expect(setup.brightnessSystem.levels[1] == 0.8)
+    }
+
     @Test func moveReordersProfiles() async {
         let setup = await Setup()
         let first = setup.profiles.capture(name: "A")

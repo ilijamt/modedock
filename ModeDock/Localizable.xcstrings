@@ -857,6 +857,22 @@
         }
       }
     },
+    "Also sets:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他の設定："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stelt ook in:"
+          }
+        }
+      }
+    },
     "Appearance, language, Keep Awake and debug logging": {
       "localizations": {
         "ja": {
@@ -885,6 +901,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Weergave:"
+          }
+        }
+      }
+    },
+    "Applied automatically when these exact screens are connected.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "これと同じディスプレイが接続されると自動で適用されます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wordt automatisch toegepast als precies deze schermen zijn aangesloten."
           }
         }
       }
@@ -933,6 +965,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Automatisch toepassen"
+          }
+        }
+      }
+    },
+    "Applying the profile switches these too. Leave as is keeps whatever they are then.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロファイルを適用すると、これらも切り替わります。「変更しない」はそのときの状態のままにします。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het profiel toepassen zet deze ook. Laten zoals het is houdt ze zoals ze op dat moment zijn."
           }
         }
       }
@@ -1855,6 +1903,22 @@
         }
       }
     },
+    "Connect the screen to change it.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変更するにはディスプレイを接続してください。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sluit het scherm aan om dit te wijzigen."
+          }
+        }
+      }
+    },
     "Copied": {
       "localizations": {
         "ja": {
@@ -2223,6 +2287,22 @@
         }
       }
     },
+    "Done": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完了"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gereed"
+          }
+        }
+      }
+    },
     "Drag to change the order": {
       "localizations": {
         "ja": {
@@ -2235,6 +2315,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sleep om de volgorde te wijzigen"
+          }
+        }
+      }
+    },
+    "Drag to reorder": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグで並べ替え"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep om te ordenen"
           }
         }
       }
@@ -2299,6 +2395,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Elke druk gaat naar het volgende profiel; het gemarkeerde wordt toegepast als je stopt. 'Aangesloten schermen' toont alleen profielen voor de schermen die nu zijn aangesloten."
+          }
+        }
+      }
+    },
+    "Edit…": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "編集…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wijzig…"
           }
         }
       }
@@ -3199,6 +3311,22 @@
         }
       }
     },
+    "Leave as is": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "変更しない"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laten zoals het is"
+          }
+        }
+      }
+    },
     "Let the Mac sleep again.": {
       "localizations": {
         "ja": {
@@ -3903,6 +4031,22 @@
         }
       }
     },
+    "Nothing else": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "なし"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niets anders"
+          }
+        }
+      }
+    },
     "Off": {
       "localizations": {
         "ja": {
@@ -3915,6 +4059,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uit"
+          }
+        }
+      }
+    },
+    "Off leaves the brightness as it is when the profile is applied.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフにすると、プロファイル適用時に輝度を変更しません。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uit laat de helderheid zoals die is wanneer het profiel wordt toegepast."
           }
         }
       }
@@ -4303,6 +4463,22 @@
         }
       }
     },
+    "Profile": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロファイル"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profiel"
+          }
+        }
+      }
+    },
     "Profile name": {
       "localizations": {
         "ja": {
@@ -4619,6 +4795,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Resolutie"
+          }
+        }
+      }
+    },
+    "Resolution:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "解像度："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resolutie:"
           }
         }
       }
@@ -5179,6 +5371,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Selecteer een profiel."
+          }
+        }
+      }
+    },
+    "Set brightness": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輝度を設定"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stel helderheid in"
           }
         }
       }
@@ -5759,6 +5967,22 @@
         }
       }
     },
+    "Switches to this profile from any app.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "どのアプリからでもこのプロファイルに切り替えます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schakelt vanuit elke app over naar dit profiel."
+          }
+        }
+      }
+    },
     "System": {
       "localizations": {
         "ja": {
@@ -5803,6 +6027,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dat is geen geldige duur."
+          }
+        }
+      }
+    },
+    "The arrangement stays as saved. Update from Current takes it from your screens as they are now.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置は保存したままです。「現在の構成で更新」で今の配置を取り込みます。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De opstelling blijft zoals bewaard. Werk bij vanuit huidige neemt hem over van je schermen zoals ze nu zijn."
           }
         }
       }
@@ -6123,6 +6363,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aan of uit:"
+          }
+        }
+      }
+    },
+    "Turn on:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オン："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanzetten:"
           }
         }
       }

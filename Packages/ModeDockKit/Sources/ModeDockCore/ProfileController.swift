@@ -25,6 +25,8 @@ public final class ProfileController {
     private let defaults: UserDefaults
     /// How long macOS gets to bring screens up or down before ModeDock reads them again.
     private let settleDelay: Duration
+    /// Sets the profiles' Mac-wide settings (Dark Mode and the like); none are applied without it.
+    public var utilities: UtilitiesController?
     /// The screens connected at the last auto-apply check; nil before the first one.
     private var lastConnected: Set<DisplayIdentity>?
     /// The profile last applied, saved or updated, which wins when several match the screens.
@@ -68,7 +70,33 @@ public final class ProfileController {
         guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
         profiles[index].screens = currentScreens()
         profiles[index].mirroring = currentMirroring()
+        // Only the settings the profile already sets take the current values.
+        if let utilities {
+            utilities.refresh()
+            for setting in ProfileSystemSettings.Setting.allCases where profiles[index].system[setting] != nil {
+                profiles[index].system[setting] =
+                    utilities.state[keyPath: setting.state] ?? profiles[index].system[setting]
+            }
+        }
         lastUsed = id
+    }
+
+    /// Changes what a profile sets for one of its screens: whether it's on, its mode (a
+    /// DisplayMode key) or its brightness (nil leaves brightness alone). The arrangement isn't
+    /// edited here; Update from Current takes it from the screens as they are.
+    public func editScreen(
+        _ identity: DisplayIdentity, in id: DisplayProfile.ID, _ change: (inout ProfileScreen) -> Void
+    ) {
+        guard let index = profiles.firstIndex(where: { $0.id == id }),
+            let screen = profiles[index].screens.firstIndex(where: { $0.identity == identity })
+        else { return }
+        change(&profiles[index].screens[screen])
+    }
+
+    /// Sets or clears (nil) one of a profile's Mac-wide settings.
+    public func setSystemSetting(_ setting: ProfileSystemSettings.Setting, to value: Bool?, for id: DisplayProfile.ID) {
+        guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
+        profiles[index].system[setting] = value
     }
 
     public func rename(_ id: DisplayProfile.ID, to name: String) {
@@ -130,8 +158,8 @@ public final class ProfileController {
 
     // MARK: - Matching
 
-    /// Whether the screens that are on, their resolutions and mirroring are what `profile` saved.
-    /// Brightness and arrangement aren't compared.
+    /// Whether the screens that are on, their resolutions, mirroring and the Mac-wide settings it
+    /// sets are what `profile` saved. Brightness and arrangement aren't compared.
     public func isActive(_ profile: DisplayProfile) -> Bool {
         let enabled = screens.screens.filter { $0.display.isEnabled && !$0.display.identity.isPlaceholder }
         guard Set(enabled.map(\.display.identity)) == Set(profile.enabledScreens.map(\.identity)),
@@ -143,7 +171,7 @@ public final class ProfileController {
             else { return true }
             let current = modes.screens[screen.id]?.current ?? configurator.currentMode(for: screen.id)
             return current?.key == key
-        }
+        } && (utilities.map { profile.system.matches($0.state) } ?? true)
     }
 
     /// How far a screen's brightness can be from the profile's and still count as the same.
@@ -233,6 +261,17 @@ public final class ProfileController {
             else { continue }
             brightness.set(value, for: screen.id)
             note(brightness.lastError)
+        }
+
+        if let utilities, !profile.system.isEmpty {
+            utilities.refresh()
+            for setting in ProfileSystemSettings.Setting.allCases {
+                guard let wanted = profile.system[setting], let current = utilities.state[keyPath: setting.state],
+                    current != wanted
+                else { continue }
+                utilities.set(setting, to: wanted)
+                note(utilities.lastError)
+            }
         }
 
         lastError = errors.isEmpty ? nil : errors.joined(separator: " ")

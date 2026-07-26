@@ -44,7 +44,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let power = PowerController()
     private let utilities = UtilitiesController()
     private lazy var inputs = MonitorInputController(ddc: ddc)
-    private lazy var profiles = ProfileController(screens: screens, modes: modes, brightness: brightness)
+    private lazy var profiles: ProfileController = {
+        let profiles = ProfileController(screens: screens, modes: modes, brightness: brightness)
+        profiles.utilities = utilities
+        return profiles
+    }()
     private let screenshots = ScreenshotCoordinator(controller: ScreenshotController())
     private lazy var shortcutActions = ShortcutActions(
         screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, profiles: profiles)

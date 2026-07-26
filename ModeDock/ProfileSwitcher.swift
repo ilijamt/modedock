@@ -157,6 +157,7 @@ private struct ProfileSwitcherView: View {
                     Text(verbatim: profile.name)
                         .font(.system(size: 13, weight: .semibold))
                         .lineLimit(1)
+                    if profile.autoApply { AutoTag() }
                     if profile.id == model.current {
                         Text("Current")
                             .font(.caption2.weight(.semibold))
@@ -165,8 +166,8 @@ private struct ProfileSwitcherView: View {
                             .background(.primary.opacity(0.12), in: Capsule())
                     }
                 }
-                if profile.mirroring || profile.autoApply {
-                    Text(verbatim: profile.summary).font(.caption)
+                if profile.hasExtras {
+                    Text(verbatim: profile.summary(includingAutomatic: false)).font(.caption)
                 }
                 ProfileScreenLines(profile: profile)
             }

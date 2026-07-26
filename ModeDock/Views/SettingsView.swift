@@ -42,7 +42,7 @@ enum SettingsTab: String, CaseIterable {
         case .general: GeneralSettingsView(power: power)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
-        case .profiles: ProfileSettingsView(profiles: profiles, screens: screens)
+        case .profiles: ProfileSettingsView(profiles: profiles, screens: screens, modes: modes)
         case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
         case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles)
@@ -413,7 +413,7 @@ private struct ShortcutSettingsView: View {
     @State private var tab = Tab(launchArgument: true) ?? .screens
 
     enum Tab: String, CaseIterable, Identifiable {
-        case screens, power
+        case screens, power, capture
 
         var id: String { rawValue }
 
@@ -421,6 +421,7 @@ private struct ShortcutSettingsView: View {
             switch self {
             case .screens: String(localized: "Panel & Screens")
             case .power: String(localized: "Power & Utilities")
+            case .capture: String(localized: "Capture")
             }
         }
     }
@@ -464,6 +465,15 @@ private struct ShortcutSettingsView: View {
                     ShortcutRecorder("True Tone on or off:", name: .toggleTrueTone)
                     ShortcutRecorder("Desktop icons on or off:", name: .toggleDesktopIcons)
                     ShortcutRecorder("Eject all disks:", name: .ejectAllDisks)
+                }
+            case .capture:
+                SettingsPage {
+                    SystemScreenshotKeysToggle()
+                    SettingsGap()
+                    ShortcutRecorder("Capture area:", name: .captureArea)
+                    ShortcutRecorder("Capture window:", name: .captureWindow)
+                    ShortcutRecorder("Capture screen:", name: .captureScreen)
+                    ShortcutRecorder("Capture all screens:", name: .captureAllScreens)
                 }
             }
         }
@@ -779,7 +789,7 @@ private struct ScreenshotSettingsView: View {
     @State private var tab = Tab(launchArgument: true) ?? .saving
 
     enum Tab: String, CaseIterable, Identifiable {
-        case saving, capturing, shortcuts
+        case saving, capturing
 
         var id: String { rawValue }
 
@@ -787,7 +797,6 @@ private struct ScreenshotSettingsView: View {
             switch self {
             case .saving: String(localized: "Saving")
             case .capturing: String(localized: "Capturing")
-            case .shortcuts: String(localized: "Shortcuts")
             }
         }
     }
@@ -797,7 +806,6 @@ private struct ScreenshotSettingsView: View {
             switch tab {
             case .saving: saving
             case .capturing: capturing
-            case .shortcuts: shortcuts
             }
         }
         // Picks up a permission granted in System Settings while this window is open.
@@ -901,17 +909,6 @@ private struct ScreenshotSettingsView: View {
         }
     }
 
-    private var shortcuts: some View {
-        SettingsPage {
-            SystemScreenshotKeysToggle()
-            SettingsGap()
-            ShortcutRecorder("Capture area:", name: .captureArea)
-            ShortcutRecorder("Capture window:", name: .captureWindow)
-            ShortcutRecorder("Capture screen:", name: .captureScreen)
-            ShortcutRecorder("Capture all screens:", name: .captureAllScreens)
-        }
-    }
-
     private func chooseFolder() {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
@@ -929,8 +926,10 @@ private struct ScreenshotSettingsView: View {
 private struct ProfileSettingsView: View {
     let profiles: ProfileController
     let screens: ScreenController
+    let modes: DisplayModeController
     @State private var selection: DisplayProfile.ID?
     @State private var deleting: DisplayProfile?
+    @State private var editing: DisplayProfile.ID?
 
     private var selected: DisplayProfile? { profiles.profiles.first { $0.id == selection } }
 
@@ -951,7 +950,7 @@ private struct ProfileSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
-                .frame(width: 360, height: 270, alignment: .topLeading)
+                .frame(width: 360, height: 400, alignment: .topLeading)
             }
             .padding([.top, .horizontal], 24)
 
@@ -962,7 +961,16 @@ private struct ProfileSettingsView: View {
         }
         .padding(.bottom, 24)
         .frame(width: SettingsPage<EmptyView>.width)
-        .onAppear { selection = selection ?? profiles.currentProfile?.id ?? profiles.profiles.first?.id }
+        .onAppear {
+            selection = selection ?? profiles.currentProfile?.id ?? profiles.profiles.first?.id
+            // `-settingsSubTab edit` opens the editor, for screenshots.
+            if UserDefaults.standard.string(forKey: "settingsSubTab")?.hasPrefix("edit") == true { editing = selection }
+        }
+        .sheet(isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
+            if let id = editing {
+                ProfileEditor(id: id, profiles: profiles, screens: screens, modes: modes) { editing = nil }
+            }
+        }
         .confirmationDialog(
             "Delete \(deleting?.name ?? String(localized: "the profile"))?",
             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
@@ -984,6 +992,7 @@ private struct ProfileSettingsView: View {
                 ForEach(profiles.profiles) { profile in
                     HStack(spacing: 6) {
                         Text(verbatim: profile.name).lineLimit(1)
+                        if profile.autoApply { AutoTag() }
                         Spacer(minLength: 4)
                         if profiles.currentProfile?.id == profile.id {
                             Image(systemName: "checkmark.circle.fill")
@@ -996,7 +1005,7 @@ private struct ProfileSettingsView: View {
                 .onMove(perform: move)
             }
             .listStyle(.bordered)
-            .frame(width: 170, height: 246)
+            .frame(width: 170, height: 376)
 
             HStack(spacing: 0) {
                 Button {
@@ -1014,6 +1023,9 @@ private struct ProfileSettingsView: View {
                 .disabled(selected == nil)
                 .help("Delete the selected profile")
                 Spacer()
+                Text("Drag to reorder")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
             .frame(width: 170)
@@ -1021,10 +1033,12 @@ private struct ProfileSettingsView: View {
         }
     }
 
+    /// What the profile does, at a glance; Edit… changes it.
     private func details(_ profile: DisplayProfile) -> some View {
         Form {
-            TextField("Name:", text: name(of: profile))
-                .frame(width: 200)
+            LabeledContent("Name:") {
+                Text(verbatim: profile.name).fontWeight(.semibold)
+            }
             LabeledContent("Screens:") {
                 // One screen per line pair: the full name, then what the profile sets for it.
                 VStack(alignment: .leading, spacing: 6) {
@@ -1040,21 +1054,24 @@ private struct ProfileSettingsView: View {
                 }
                 .frame(width: 240, alignment: .leading)
             }
-            Toggle("Apply automatically", isOn: autoApply(of: profile))
-                .labeledSettingsRow("Automatic:")
-            if !profile.autoApply, let other = profiles.automaticProfile(sharingScreensWith: profile.id) {
-                SettingsNote("Replaces \u{201C}\(other.name)\u{201D} for these screens.", width: 240)
-            } else {
-                SettingsNote(
-                    "When these exact screens are connected. Only one profile per set of screens can do this.",
-                    width: 240)
+            SettingsGap()
+            LabeledContent("Also sets:") {
+                Text(verbatim: profile.system.summary ?? String(localized: "Nothing else"))
+                    .foregroundStyle(profile.system.isEmpty ? .secondary : .primary)
             }
-            ShortcutRecorder("Shortcut:", name: .profile(profile.id))
+            LabeledContent("Automatic:") {
+                Text(profile.autoApply ? "On" : "Off").foregroundStyle(.secondary)
+            }
+            LabeledContent("Shortcut:") {
+                Text(verbatim: profile.shortcutText ?? String(localized: "Not set")).foregroundStyle(.secondary)
+            }
+            SettingsGap()
             HStack {
                 Button("Apply") { Task { await profiles.apply(profile) } }
                     .disabled(profiles.applying != nil)
                 Button("Update from Current") { profiles.update(profile.id) }
                     .help("Replace this profile with the current setup.")
+                Button("Edit…") { editing = profile.id }
             }
         }
         .formStyle(.columns)
@@ -1068,12 +1085,240 @@ private struct ProfileSettingsView: View {
         profiles.move(profiles.profiles[from].id, to: profiles.profiles[to].id)
     }
 
-    private func name(of profile: DisplayProfile) -> Binding<String> {
-        Binding(get: { profile.name }, set: { profiles.rename(profile.id, to: $0) })
+}
+
+/// Everything about one profile, with room for each part.
+private struct ProfileEditor: View {
+    let id: DisplayProfile.ID
+    let profiles: ProfileController
+    let screens: ScreenController
+    let modes: DisplayModeController
+    let onDone: () -> Void
+    /// Everything as it was when the editor opened, for Cancel. All profiles, because making one
+    /// automatic can switch that off on another; and the shortcut, which saves as it's recorded.
+    @State private var original: (profiles: [DisplayProfile], shortcut: KeyboardShortcuts.Shortcut?)?
+    @State private var tab =
+        UserDefaults.standard.string(forKey: "settingsSubTab") == "edit-screens" ? Tab.screens : .profile
+
+    enum Tab: String, CaseIterable, Identifiable {
+        case profile, screens
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .profile: String(localized: "Profile")
+            case .screens: String(localized: "Screens")
+            }
+        }
     }
 
-    private func autoApply(of profile: DisplayProfile) -> Binding<Bool> {
-        Binding(get: { profile.autoApply }, set: { profiles.setAutoApply($0, for: profile.id) })
+    private var profile: DisplayProfile? { profiles.profiles.first { $0.id == id } }
+
+    enum Choice: Hashable {
+        case leave, on, off
+
+        init(_ value: Bool?) {
+            self = value.map { $0 ? .on : .off } ?? .leave
+        }
+
+        var value: Bool? {
+            switch self {
+            case .leave: nil
+            case .on: true
+            case .off: false
+            }
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker("", selection: $tab) {
+                ForEach(Tab.allCases) { Text(verbatim: $0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .padding(.bottom, 16)
+
+            if let profile {
+                switch tab {
+                case .profile: general(profile)
+                case .screens: screenSettings(profile)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button("Cancel", action: cancel).keyboardShortcut(.cancelAction)
+                Button("Done", action: onDone).keyboardShortcut(.defaultAction)
+            }
+            .padding(.top, 12)
+        }
+        .padding(20)
+        .frame(width: 520)
+        .onAppear {
+            original = (profiles.profiles, KeyboardShortcuts.getShortcut(for: .profile(id)))
+        }
+    }
+
+    private func cancel() {
+        if let original {
+            profiles.replaceAll(with: original.profiles)
+            KeyboardShortcuts.setShortcut(original.shortcut, for: .profile(id))
+        }
+        onDone()
+    }
+
+    private func general(_ profile: DisplayProfile) -> some View {
+        Form {
+            TextField("Name:", text: Binding(get: { profile.name }, set: { profiles.rename(id, to: $0) }))
+                .frame(width: 240)
+
+            SettingsGap()
+
+            Toggle(
+                "Apply automatically",
+                isOn: Binding(get: { profile.autoApply }, set: { profiles.setAutoApply($0, for: id) })
+            )
+            .labeledSettingsRow("Automatic:")
+            if !profile.autoApply, let other = profiles.automaticProfile(sharingScreensWith: id) {
+                SettingsNote("Replaces \u{201C}\(other.name)\u{201D} for these screens.", width: 300)
+            } else {
+                SettingsNote(
+                    "When these exact screens are connected. Only one profile per set of screens can do this.",
+                    width: 300)
+            }
+            ShortcutRecorder("Shortcut:", name: .profile(id))
+            SettingsNote("Switches to this profile from any app.", width: 300)
+
+            SettingsGap()
+
+            ForEach(Array(availableSettings.enumerated()), id: \.offset) { index, setting in
+                LabeledContent(index == 0 ? "Also sets:" : "") {
+                    HStack {
+                        Text(verbatim: setting.title).frame(width: 110, alignment: .leading)
+                        Picker(
+                            setting.title,
+                            selection: Binding(
+                                get: { Choice(profile.system[setting]) },
+                                set: { profiles.setSystemSetting(setting, to: $0.value, for: id) })
+                        ) {
+                            Text("Leave as is").tag(Choice.leave)
+                            Text("On").tag(Choice.on)
+                            Text("Off").tag(Choice.off)
+                        }
+                        .labelsHidden()
+                        .fixedSize()
+                    }
+                }
+            }
+            SettingsNote(
+                "Applying the profile switches these too. Leave as is keeps whatever they are then.", width: 300)
+        }
+        .formStyle(.columns)
+        .fixedSize()
+    }
+
+    /// Each screen's state, resolution and brightness. The arrangement isn't edited here.
+    private func screenSettings(_ profile: DisplayProfile) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(Array(profile.screens.enumerated()), id: \.offset) { index, screen in
+                if index > 0 { Divider() }
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verbatim: screen.name).font(.headline)
+                    Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 8) {
+                        GridRow {
+                            Text("Turn on:").gridColumnAlignment(.trailing)
+                            Toggle(
+                                "On",
+                                isOn: Binding(
+                                    get: { screen.isEnabled },
+                                    set: { on in profiles.editScreen(screen.identity, in: id) { $0.isEnabled = on } })
+                            )
+                            .labelsHidden()
+                        }
+                        GridRow {
+                            Text("Resolution:")
+                            resolution(screen)
+                        }
+                        .disabled(!screen.isEnabled)
+                        GridRow {
+                            Text("Brightness:")
+                            brightness(screen)
+                        }
+                        .disabled(!screen.isEnabled)
+                    }
+                }
+            }
+            SettingsNote(
+                "The arrangement stays as saved. Update from Current takes it from your screens as they are now.",
+                width: 420)
+        }
+        .frame(width: 460, alignment: .leading)
+    }
+
+    /// The connected screen's modes; the saved one as text when the screen isn't connected.
+    @ViewBuilder
+    private func resolution(_ screen: ProfileScreen) -> some View {
+        if let connected = screens.screens.first(where: { $0.display.identity == screen.identity }),
+            let options = modes.screens[connected.id]?.options
+        {
+            let all = options.flatMap(\.modes)
+            Picker(
+                "Resolution",
+                selection: Binding(
+                    get: { screen.modeKey ?? "" },
+                    set: { key in profiles.editScreen(screen.identity, in: id) { $0.modeKey = key } })
+            ) {
+                if let key = screen.modeKey, !all.contains(where: { $0.key == key }) {
+                    Text(verbatim: screen.resolution ?? key).tag(key)
+                }
+                ForEach(all) { mode in
+                    Text(verbatim: mode.summary + (mode.isHiDPI ? "" : " (1x)")).tag(mode.key)
+                }
+            }
+            .labelsHidden()
+            .fixedSize()
+        } else {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: screen.resolution ?? "–")
+                SettingsNote("Connect the screen to change it.", width: 260)
+            }
+        }
+    }
+
+    private func brightness(_ screen: ProfileScreen) -> some View {
+        HStack(spacing: 8) {
+            Toggle(
+                "Set brightness",
+                isOn: Binding(
+                    get: { screen.brightness != nil },
+                    set: { on in profiles.editScreen(screen.identity, in: id) { $0.brightness = on ? 0.7 : nil } })
+            )
+            .labelsHidden()
+            .help("Off leaves the brightness as it is when the profile is applied.")
+            Slider(
+                value: Binding(
+                    get: { screen.brightness ?? 0.7 },
+                    set: { value in profiles.editScreen(screen.identity, in: id) { $0.brightness = value } }),
+                in: 0...1
+            )
+            .frame(width: 160)
+            .disabled(screen.brightness == nil)
+            Text(verbatim: screen.brightness.map { "\(Int(($0 * 100).rounded()))%" } ?? "")
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .frame(width: 40, alignment: .trailing)
+        }
+    }
+
+    /// The settings this Mac has; True Tone, for one, needs a display that supports it.
+    private var availableSettings: [ProfileSystemSettings.Setting] {
+        let state = profiles.utilities?.state
+        return ProfileSystemSettings.Setting.allCases.filter { setting in
+            state.map { $0[keyPath: setting.stateKeyPath] != nil } ?? true
+        }
     }
 }
 

@@ -10,20 +10,90 @@ public struct DisplayProfile: Codable, Identifiable, Hashable, Sendable {
     public var autoApply: Bool
     public var mirroring: Bool
     public var screens: [ProfileScreen]
+    /// Mac-wide settings the profile also sets; each is left alone unless the user picks one.
+    public var system: ProfileSystemSettings
 
     public init(
         id: UUID = UUID(), name: String, autoApply: Bool = false, mirroring: Bool = false,
-        screens: [ProfileScreen]
+        screens: [ProfileScreen], system: ProfileSystemSettings = ProfileSystemSettings()
     ) {
         self.id = id
         self.name = name
         self.autoApply = autoApply
         self.mirroring = mirroring
         self.screens = screens
+        self.system = system
+    }
+
+    // Profiles saved before system settings existed decode with none set.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        autoApply = try container.decode(Bool.self, forKey: .autoApply)
+        mirroring = try container.decode(Bool.self, forKey: .mirroring)
+        screens = try container.decode([ProfileScreen].self, forKey: .screens)
+        system = try container.decodeIfPresent(ProfileSystemSettings.self, forKey: .system) ?? ProfileSystemSettings()
     }
 
     public var enabledScreens: [ProfileScreen] { screens.filter(\.isEnabled) }
     public var identities: Set<DisplayIdentity> { Set(screens.map(\.identity)) }
+}
+
+/// The Mac-wide settings a profile can set. nil leaves that setting as it is.
+public struct ProfileSystemSettings: Codable, Hashable, Sendable {
+    public var darkMode: Bool?
+    public var nightShift: Bool?
+    public var trueTone: Bool?
+    public var dockAutoHide: Bool?
+
+    public init(darkMode: Bool? = nil, nightShift: Bool? = nil, trueTone: Bool? = nil, dockAutoHide: Bool? = nil) {
+        self.darkMode = darkMode
+        self.nightShift = nightShift
+        self.trueTone = trueTone
+        self.dockAutoHide = dockAutoHide
+    }
+
+    public enum Setting: CaseIterable, Sendable {
+        case darkMode, nightShift, trueTone, dockAutoHide
+
+        var keyPath: WritableKeyPath<ProfileSystemSettings, Bool?> {
+            switch self {
+            case .darkMode: \.darkMode
+            case .nightShift: \.nightShift
+            case .trueTone: \.trueTone
+            case .dockAutoHide: \.dockAutoHide
+            }
+        }
+
+        /// Where UtilityState keeps this setting's current value.
+        public var stateKeyPath: KeyPath<UtilityState, Bool?> { state }
+
+        var state: KeyPath<UtilityState, Bool?> {
+            switch self {
+            case .darkMode: \.darkMode
+            case .nightShift: \.nightShift
+            case .trueTone: \.trueTone
+            case .dockAutoHide: \.dockAutoHide
+            }
+        }
+    }
+
+    public subscript(setting: Setting) -> Bool? {
+        get { self[keyPath: setting.keyPath] }
+        set { self[keyPath: setting.keyPath] = newValue }
+    }
+
+    public var isEmpty: Bool { Setting.allCases.allSatisfy { self[$0] == nil } }
+
+    /// Whether `state` already has every setting this sets. Settings the Mac doesn't have are
+    /// skipped.
+    func matches(_ state: UtilityState) -> Bool {
+        Setting.allCases.allSatisfy { setting in
+            guard let wanted = self[setting], let current = state[keyPath: setting.state] else { return true }
+            return wanted == current
+        }
+    }
 }
 
 /// One screen in a profile, matched to a connected screen by its EDID identity.
