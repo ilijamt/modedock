@@ -9,3 +9,5 @@ Packages/*/Package.resolved
 docs/
 .vscode/
 
+# wrangler dev state
+.wrangler/
