@@ -27,7 +27,10 @@ public final class DisplayModeController {
     public private(set) var screens: [CGDirectDisplayID: ScreenModes] = [:]
     public private(set) var pending: PendingChange?
     public private(set) var isMirroring = false
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorResolution) } }
+    }
     /// Called when a change needs confirmation, so the app can show the prompt.
     public var onConfirmationNeeded: ((PendingChange) -> Void)?
 
@@ -84,6 +87,7 @@ public final class DisplayModeController {
 
     public func select(_ mode: DisplayMode, for display: CGDirectDisplayID) {
         guard pending == nil, let identity = identity(of: display) else { return }
+        Telemetry.shared.record(.screenResolution)
         let previous = configurator.currentMode(for: display)
         guard previous?.id != mode.id else { return }
         // The mode the user is leaving works, so switching back to it never needs a prompt.
@@ -106,6 +110,7 @@ public final class DisplayModeController {
     }
 
     public func confirm() {
+        if pending != nil { Telemetry.shared.record(.resolutionKept) }
         guard let change = pending else { return }
         revertTask?.cancel()
         if let identity = identity(of: change.display) { markConfirmed(change.new, on: identity) }
@@ -113,6 +118,7 @@ public final class DisplayModeController {
     }
 
     public func revert() {
+        if pending != nil { Telemetry.shared.record(.resolutionReverted) }
         guard let change = pending else { return }
         revertTask?.cancel()
         pending = nil
@@ -138,6 +144,7 @@ public final class DisplayModeController {
     }
 
     public func makeMain(_ display: CGDirectDisplayID) {
+        Telemetry.shared.record(.screenMain)
         let origins = configurator.origins(of: displays.map(\.id))
         guard let shifted = DisplayArrangement.origins(makingMain: display, from: origins) else { return }
         lastError = errorMessage { try configurator.setOrigins(shifted) }
@@ -146,6 +153,7 @@ public final class DisplayModeController {
 
     /// Mirrors every screen that's on onto the main screen, or stops mirroring.
     public func setMirroring(_ on: Bool) {
+        Telemetry.shared.record(.screenMirroring)
         let ids = displays.map(\.id)
         let main = ids.first { screens[$0]?.isMain == true } ?? ids.first
         lastError = errorMessage { try configurator.setMirroring(ids, to: on ? main : nil) }

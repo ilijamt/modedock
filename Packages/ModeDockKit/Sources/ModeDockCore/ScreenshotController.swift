@@ -10,6 +10,15 @@ public enum ScreenshotMode: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
+    var telemetryEvent: TelemetryEvent {
+        switch self {
+        case .area: .captureArea
+        case .window: .captureWindow
+        case .screen: .captureScreen
+        case .allScreens: .captureAllScreens
+        }
+    }
+
     /// Area and window wait for the user to pick what to capture, and can be cancelled with Esc.
     public var isInteractive: Bool { self == .area || self == .window }
 }
@@ -125,7 +134,10 @@ public protocol ScreenshotSystem {
 @Observable
 public final class ScreenshotController {
     public private(set) var hasPermission: Bool
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorCapture) } }
+    }
     /// The files the last capture saved; empty when it was only copied.
     public private(set) var lastSaved: [URL] = []
     public private(set) var isCapturing = false
@@ -160,6 +172,7 @@ public final class ScreenshotController {
     ) async -> ScreenshotResult {
         refreshPermission()
         guard hasPermission else { return .needsPermission }
+        Telemetry.shared.record(mode.telemetryEvent)
         guard !isCapturing else { return .cancelled }
         isCapturing = true
         defer { isCapturing = false }

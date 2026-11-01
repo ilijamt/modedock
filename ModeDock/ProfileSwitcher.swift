@@ -58,6 +58,7 @@ final class ProfileSwitcher {
     func next() {
         guard profiles.applying == nil, !model.applying else { return }
         if panel.isVisible {
+            Telemetry.shared.record(.profileSwitcherStep)
             model.selected = (model.selected + 1) % model.candidates.count
         } else if !open() {
             return
@@ -67,6 +68,7 @@ final class ProfileSwitcher {
 
     /// Fills the list and shows the window, with the profile after the current one selected.
     private func open() -> Bool {
+        Telemetry.shared.record(.profileSwitcher)
         modes.refresh(
             displays: screens.screens.map(\.display),
             showAllModes: UserDefaults.standard.bool(forKey: SettingsKey.showAllModes))

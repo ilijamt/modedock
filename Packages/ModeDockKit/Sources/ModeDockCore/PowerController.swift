@@ -190,6 +190,7 @@ public final class PowerController {
     /// Starts Keep Awake, replacing one that's already running.
     /// `minutes` nil keeps the Mac awake until turned off.
     public func startKeepAwake(minutes: Int?, keepScreensOn: Bool) {
+        Telemetry.shared.record(.keepAwake)
         stopKeepAwake()
         guard let id = preventSleep(keepScreensOn: keepScreensOn) else { return }
         assertion = id
@@ -225,10 +226,12 @@ public final class PowerController {
 
     /// Keep Awake only holds off idle sleep, so it doesn't block this.
     public func sleep() {
+        Telemetry.shared.record(.macSlept)
         lastError = errorMessage { try system.sleep() }
     }
 
     public func lockScreen() {
+        Telemetry.shared.record(.screenLocked)
         lastError = errorMessage { try system.lockScreen() }
     }
 

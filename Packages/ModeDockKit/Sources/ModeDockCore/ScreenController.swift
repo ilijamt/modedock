@@ -20,7 +20,10 @@ public final class ScreenController {
     }
 
     public private(set) var screens: [Screen] = []
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorScreen) } }
+    }
 
     private let system: DisplaySystem
     private let ddc: DDCControlling
@@ -94,6 +97,7 @@ public final class ScreenController {
     }
 
     public func setStandby(_ on: Bool, screen id: CGDirectDisplayID) async {
+        Telemetry.shared.record(.screenStandby)
         guard let identity = screens.first(where: { $0.id == id })?.display.identity else { return }
         lastError = await errorMessage {
             let mode = on ? DDCPacket.PowerMode.off : DDCPacket.PowerMode.on
@@ -104,6 +108,7 @@ public final class ScreenController {
     }
 
     public func sleepAllDisplays() {
+        Telemetry.shared.record(.screensSlept)
         lastError = errorMessage { try system.sleepAllDisplays() }
     }
 

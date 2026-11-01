@@ -85,7 +85,8 @@ final class NativeMenu {
             menu.addItem(ActionItem(String(localized: "Sleep All Screens")) { [screens] in screens.sleepAllDisplays() })
         }
         if !hidden.contains(.allOn) {
-            let allOn = ActionItem(String(localized: "Turn All On")) { [screens] in Task { await screens.restoreAll() }
+            let allOn = ActionItem(String(localized: "Turn All On")) { [screens] in
+                Telemetry.shared.record(.screensAllOn); Task { await screens.restoreAll() }
             }
             // Not setShortcut(for:): that keeps an observer per item, and the menu is rebuilt on every open.
             allOn.setShortcut(KeyboardShortcuts.getShortcut(for: .turnAllScreensOn))
@@ -413,6 +414,7 @@ final class NativeMenu {
                 })
         }
         let power = ActionItem(display.isEnabled ? "Turn Off" : String(localized: "Turn On")) { [screens] in
+            Telemetry.shared.record(.screenToggled)
             screens.setEnabled(!display.isEnabled, screen: screen.id)
         }
         power.isEnabled = !display.isEnabled || screen.canDisable
@@ -508,6 +510,8 @@ private final class BrightnessMenuView: NSView {
 
     @objc private func changed(_ sender: NSSlider) {
         brightness.set(sender.doubleValue, for: display.id)
+        // Once per drag, when the mouse comes up.
+        if NSApp.currentEvent?.type == .leftMouseUp { Telemetry.shared.record(.screenBrightness) }
     }
 
     @objc private func toggleAuto(_ sender: NSButton) {
@@ -527,5 +531,9 @@ private final class ActionItem: NSMenuItem {
 
     required init(coder: NSCoder) { fatalError("not used") }
 
-    @objc private func run() { handler() }
+    @objc private func run() {
+        // Menu actions arrive on the main thread.
+        MainActor.assumeIsolated { Telemetry.shared.record(.menuUsed) }
+        handler()
+    }
 }

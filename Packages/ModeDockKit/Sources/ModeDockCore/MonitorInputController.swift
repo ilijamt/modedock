@@ -17,7 +17,10 @@ public final class MonitorInputController {
     public static let commonInputs: [UInt8] = [0x0F, 0x11, 0x12]
 
     public private(set) var screens: [CGDirectDisplayID: Inputs] = [:]
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorInput) } }
+    }
 
     private let ddc: DDCControlling
     private var identities: [CGDirectDisplayID: DisplayIdentity] = [:]
@@ -50,6 +53,7 @@ public final class MonitorInputController {
 
     public func select(_ input: UInt8, for display: CGDirectDisplayID) async {
         guard let identity = identities[display], screens[display]?.current != input else { return }
+        Telemetry.shared.record(.screenInput)
         lastError = await errorMessage {
             try await ddc.write(DDCPacket.VCP.inputSource, value: UInt16(input), to: identity)
         }

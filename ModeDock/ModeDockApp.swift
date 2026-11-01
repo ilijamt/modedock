@@ -97,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, inputs: inputs,
             profiles: profiles, screenshots: screenshots,
             onShow: { [weak self] in
+                Telemetry.shared.record(.panelOpened)
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
                 self?.utilities.refresh()
@@ -124,20 +125,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await profiles.autoApplyIfNeeded()
             dynamicShortcuts.start()
         }
+        // Sends whole days of anonymous counts when allowed and a server is set; otherwise nothing.
+        Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                await Telemetry.shared.sendIfDue(
+                    context: .current(),
+                    setup: .current(screens: self.screens, profiles: self.profiles, power: self.power))
+                try? await Task.sleep(for: .seconds(6 * 3600))
+            }
+        }
 
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
+            Telemetry.shared.record(.shortcutUsed)
             self?.menuBar?.toggle()
         }
         for mode in ScreenshotMode.allCases {
             guard let name = mode.shortcut else { continue }
-            KeyboardShortcuts.onKeyUp(for: name) { [weak self] in self?.screenshots.take(mode) }
+            KeyboardShortcuts.onKeyUp(for: name) { [weak self] in
+                Telemetry.shared.record(.shortcutUsed)
+                self?.screenshots.take(mode)
+            }
         }
         KeyboardShortcuts.onKeyUp(for: .turnAllScreensOn) { [weak self] in
             guard let self else { return }
+            Telemetry.shared.record(.shortcutUsed)
+            Telemetry.shared.record(.screensAllOn)
             Task { await self.screens.restoreAll() }
         }
         shortcutActions.start()
         brightnessKeys.onPress = { [weak self] direction in
+            Telemetry.shared.record(.brightnessKeys)
             self?.shortcutActions.changeBrightness(by: Double(direction) * ShortcutActions.brightnessStep)
         }
         brightnessKeys.update()

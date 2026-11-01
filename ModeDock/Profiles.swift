@@ -182,6 +182,7 @@ final class DynamicShortcuts {
             let id = profile.id
             wanted[.profile(id)] = { [profiles] in
                 guard let profile = profiles.profiles.first(where: { $0.id == id }) else { return }
+                Telemetry.shared.record(.shortcutUsed)
                 Task { await profiles.apply(profile) }
             }
         }
@@ -189,6 +190,8 @@ final class DynamicShortcuts {
             let identity = screen.display.identity
             wanted[.toggleScreen(identity)] = { [screens] in
                 guard let screen = screens.screens.first(where: { $0.display.identity == identity }) else { return }
+                Telemetry.shared.record(.shortcutUsed)
+                Telemetry.shared.record(.screenToggled)
                 screens.setEnabled(!screen.display.isEnabled, screen: screen.id)
             }
         }

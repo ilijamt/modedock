@@ -15,7 +15,10 @@ struct BrightnessSlider: View {
             Slider(
                 value: Binding(get: { level.value }, set: { brightness.set($0, for: display.id) }),
                 in: level.minimum...1
-            )
+            ) { editing in
+                // Once per drag, when it ends.
+                if !editing { Telemetry.shared.record(.screenBrightness) }
+            }
             Image(systemName: "sun.max").foregroundStyle(.secondary)
             if showsAuto, let auto = level.autoBrightness {
                 AutoChip(isOn: auto) { brightness.setAutoBrightness(!auto, for: display.id) }

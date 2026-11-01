@@ -59,7 +59,10 @@ public protocol UtilitySystem {
 @Observable
 public final class UtilitiesController {
     public private(set) var state = UtilityState()
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorUtility) } }
+    }
     public private(set) var isEjecting = false
 
     private let system: UtilitySystem
@@ -72,21 +75,23 @@ public final class UtilitiesController {
         state = system.state()
     }
 
-    public func setDarkMode(_ on: Bool) { apply { try system.setDarkMode(on) } }
-    public func setDockAutoHide(_ on: Bool) { apply { try system.setDockAutoHide(on) } }
-    public func setDesktopIcons(_ shown: Bool) { apply { try system.setDesktopIcons(shown) } }
-    public func setHiddenFiles(_ shown: Bool) { apply { try system.setHiddenFiles(shown) } }
-    public func setNightShift(_ on: Bool) { apply { try system.setNightShift(on) } }
-    public func setTrueTone(_ on: Bool) { apply { try system.setTrueTone(on) } }
-    public func emptyTrash() { apply { try system.emptyTrash() } }
+    public func setDarkMode(_ on: Bool) { apply(.darkMode) { try system.setDarkMode(on) } }
+    public func setDockAutoHide(_ on: Bool) { apply(.dockAutoHide) { try system.setDockAutoHide(on) } }
+    public func setDesktopIcons(_ shown: Bool) { apply(.desktopIcons) { try system.setDesktopIcons(shown) } }
+    public func setHiddenFiles(_ shown: Bool) { apply(.hiddenFiles) { try system.setHiddenFiles(shown) } }
+    public func setNightShift(_ on: Bool) { apply(.nightShift) { try system.setNightShift(on) } }
+    public func setTrueTone(_ on: Bool) { apply(.trueTone) { try system.setTrueTone(on) } }
+    public func emptyTrash() { apply(.trashEmptied) { try system.emptyTrash() } }
 
-    /// Turns one of the settings a profile can set on or off.
+    /// Turns one of the settings a profile can set on or off. Not counted as someone using it.
     public func set(_ setting: ProfileSystemSettings.Setting, to on: Bool) {
-        switch setting {
-        case .darkMode: setDarkMode(on)
-        case .nightShift: setNightShift(on)
-        case .trueTone: setTrueTone(on)
-        case .dockAutoHide: setDockAutoHide(on)
+        apply(nil) {
+            switch setting {
+            case .darkMode: try system.setDarkMode(on)
+            case .nightShift: try system.setNightShift(on)
+            case .trueTone: try system.setTrueTone(on)
+            case .dockAutoHide: try system.setDockAutoHide(on)
+            }
         }
     }
 
@@ -94,6 +99,7 @@ public final class UtilitiesController {
     /// example because a file on them is open).
     public func ejectAll() async {
         guard !isEjecting else { return }
+        Telemetry.shared.record(.disksEjected)
         isEjecting = true
         defer {
             isEjecting = false
@@ -113,7 +119,8 @@ public final class UtilitiesController {
             : String(localized: "Couldn't eject \(failed.joined(separator: ", ")). It may be in use.", bundle: .module)
     }
 
-    private func apply(_ change: () throws -> Void) {
+    private func apply(_ event: TelemetryEvent?, _ change: () throws -> Void) {
+        if let event { Telemetry.shared.record(event) }
         lastError = errorMessage(change)
         refresh()
     }

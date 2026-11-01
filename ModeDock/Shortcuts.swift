@@ -51,30 +51,45 @@ final class ShortcutActions {
     }
 
     func start() {
-        KeyboardShortcuts.onKeyDown(for: .brightnessUp) { [weak self] in self?.changeBrightness(by: Self.brightnessStep)
+        onKeyDown(.brightnessUp) { [weak self] in self?.changeBrightness(by: Self.brightnessStep)
         }
-        KeyboardShortcuts.onKeyDown(for: .brightnessDown) { [weak self] in
+        onKeyDown(.brightnessDown) { [weak self] in
             self?.changeBrightness(by: -Self.brightnessStep)
         }
-        KeyboardShortcuts.onKeyUp(for: .sleepScreens) { [weak self] in self?.screens.sleepAllDisplays() }
-        KeyboardShortcuts.onKeyUp(for: .toggleMirror) { [weak self] in self?.toggleMirror() }
-        KeyboardShortcuts.onKeyUp(for: .nextProfile) { [weak self] in self?.switcher.next() }
-        KeyboardShortcuts.onKeyUp(for: .toggleKeepAwake) { [weak self] in self?.toggleKeepAwake() }
-        KeyboardShortcuts.onKeyUp(for: .toggleDarkMode) { [weak self] in
+        onKeyUp(.sleepScreens) { [weak self] in self?.screens.sleepAllDisplays() }
+        onKeyUp(.toggleMirror) { [weak self] in self?.toggleMirror() }
+        onKeyUp(.nextProfile) { [weak self] in self?.switcher.next() }
+        onKeyUp(.toggleKeepAwake) { [weak self] in self?.toggleKeepAwake() }
+        onKeyUp(.toggleDarkMode) { [weak self] in
             self?.toggle("Dark Mode", "circle.lefthalf.filled", { $0.darkMode }) { $0.setDarkMode($1) }
         }
-        KeyboardShortcuts.onKeyUp(for: .toggleNightShift) { [weak self] in
+        onKeyUp(.toggleNightShift) { [weak self] in
             self?.toggle("Night Shift", "sunset.fill", { $0.nightShift }) { $0.setNightShift($1) }
         }
-        KeyboardShortcuts.onKeyUp(for: .toggleTrueTone) { [weak self] in
+        onKeyUp(.toggleTrueTone) { [weak self] in
             self?.toggle("True Tone", "sun.max.fill", { $0.trueTone }) { $0.setTrueTone($1) }
         }
-        KeyboardShortcuts.onKeyUp(for: .toggleDesktopIcons) { [weak self] in
+        onKeyUp(.toggleDesktopIcons) { [weak self] in
             self?.toggle(String(localized: "Desktop Icons"), "square.grid.2x2", { $0.desktopIcons }) {
                 $0.setDesktopIcons($1)
             }
         }
-        KeyboardShortcuts.onKeyUp(for: .ejectAllDisks) { [weak self] in self?.ejectAll() }
+        onKeyUp(.ejectAllDisks) { [weak self] in self?.ejectAll() }
+    }
+
+    /// Global shortcuts, counted (anonymously, when allowed) as source.shortcut.
+    private func onKeyUp(_ name: KeyboardShortcuts.Name, _ action: @escaping @MainActor () -> Void) {
+        KeyboardShortcuts.onKeyUp(for: name) {
+            Telemetry.shared.record(.shortcutUsed)
+            action()
+        }
+    }
+
+    private func onKeyDown(_ name: KeyboardShortcuts.Name, _ action: @escaping @MainActor () -> Void) {
+        KeyboardShortcuts.onKeyDown(for: name) {
+            Telemetry.shared.record(.shortcutUsed)
+            action()
+        }
     }
 
     private var displays: [Display] { screens.screens.map(\.display) }

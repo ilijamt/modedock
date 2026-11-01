@@ -65,8 +65,11 @@ struct RowsScreensSection: View {
             }
         default:
             Row {
-                Button("Turn All On") { Task { await controller.restoreAll() } }
-                    .buttonStyle(.plain)
+                Button("Turn All On") {
+                    Telemetry.shared.record(.screensAllOn)
+                    Task { await controller.restoreAll() }
+                }
+                .buttonStyle(.plain)
                 Spacer()
                 if let shortcut = KeyboardShortcuts.Name.turnAllScreensOn.shortcutText {
                     Text(verbatim: shortcut).foregroundStyle(.secondary)
@@ -101,7 +104,10 @@ private struct ScreenRows: View {
                 "On",
                 isOn: Binding(
                     get: { display.isEnabled },
-                    set: { controller.setEnabled($0, screen: screen.id) })
+                    set: {
+                        Telemetry.shared.record(.screenToggled)
+                        controller.setEnabled($0, screen: screen.id)
+                    })
             )
             .toggleStyle(.switch)
             .labelsHidden()

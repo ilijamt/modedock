@@ -16,7 +16,10 @@ public final class ProfileController {
     }
     /// The profile being applied right now.
     public private(set) var applying: DisplayProfile.ID?
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorProfile) } }
+    }
 
     private let screens: ScreenController
     private let modes: DisplayModeController
@@ -59,6 +62,7 @@ public final class ProfileController {
     /// Saves the current setup as a new profile.
     @discardableResult
     public func capture(name: String) -> DisplayProfile {
+        Telemetry.shared.record(.profileSaved)
         let profile = DisplayProfile(name: name, mirroring: currentMirroring(), screens: currentScreens())
         profiles.append(profile)
         lastUsed = profile.id
@@ -214,6 +218,11 @@ public final class ProfileController {
     /// then restores mirroring or the arrangement, and brightness. Screens in the profile that
     /// aren't connected are skipped.
     public func apply(_ profile: DisplayProfile) async {
+        Telemetry.shared.record(.profileApplied)
+        await perform(profile)
+    }
+
+    private func perform(_ profile: DisplayProfile) async {
         guard applying == nil else { return }
         applying = profile.id
         lastUsed = profile.id
@@ -291,7 +300,8 @@ public final class ProfileController {
         // After a screen is plugged in or out the whole profile is applied, which also restores
         // its brightness. At launch nothing changed, so a setup that already matches is kept.
         if isLaunch, isActive(profile) { return }
-        await apply(profile)
+        Telemetry.shared.record(.profileAutoApplied)
+        await perform(profile)
     }
 
     // MARK: - Helpers

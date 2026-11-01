@@ -45,7 +45,7 @@ enum SettingsTab: String, CaseIterable {
         case .profiles: ProfileSettingsView(profiles: profiles, screens: screens, modes: modes)
         case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
-        case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles)
+        case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles, power: power)
         case .about: AboutView()
         }
     }
@@ -96,6 +96,7 @@ private struct AdvancedSettingsView: View {
     let screens: ScreenController
     let modes: DisplayModeController
     let profiles: ProfileController
+    let power: PowerController
     @State private var confirmingReset = false
     @State private var copied = false
 
@@ -113,6 +114,10 @@ private struct AdvancedSettingsView: View {
             SettingsGap()
 
             DebugLogSection()
+
+            SettingsGap()
+
+            UsageDataSection(screens: screens, profiles: profiles, power: power)
 
             SettingsGap()
 
@@ -693,6 +698,82 @@ private struct ConfigGroupPicker: View {
         .padding(20)
         .frame(width: 420)
         .onAppear { chosen = Set(available) }
+    }
+}
+
+/// Opt-in anonymous usage statistics, with the exact data that would be sent.
+private struct UsageDataSection: View {
+    let screens: ScreenController
+    let profiles: ProfileController
+    let power: PowerController
+    @State private var showingData = false
+
+    private var telemetry: Telemetry { .shared }
+
+    var body: some View {
+        Toggle(
+            "Share anonymous usage statistics",
+            isOn: Binding(get: { telemetry.isEnabled }, set: { telemetry.setEnabled($0) })
+        )
+        .labeledSettingsRow("Usage data:")
+        Button("Show Data…") { showingData = true }
+            .disabled(!telemetry.isEnabled)
+        SettingsNote(
+            "Counts how often each feature is used per day, and how ModeDock is set up (such as how many profiles and shortcuts), with the app and macOS versions, so we know what to improve. No names, screen models, files or times. Turning it off deletes everything kept so far."
+        )
+        if Telemetry.endpoint == nil {
+            SettingsNote("Nothing is sent yet: there's no server for it.")
+        }
+        EmptyView()
+            .sheet(isPresented: $showingData) {
+                UsageDataView(
+                    report: telemetry.preview(
+                        context: .current(),
+                        setup: .current(screens: screens, profiles: profiles, power: power))
+                ) {
+                    showingData = false
+                }
+            }
+    }
+}
+
+/// The report exactly as it would be sent.
+private struct UsageDataView: View {
+    let report: TelemetryReport?
+    let onClose: () -> Void
+
+    private var json: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return report.flatMap { try? encoder.encode($0) }.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Usage Data").font(.headline)
+            Text(
+                "This is everything ModeDock would send. The install ID is random and changes if you turn this off and on."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                Text(verbatim: json)
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+            }
+            .frame(height: 300)
+            .background(.background, in: RoundedRectangle(cornerRadius: 6))
+            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator))
+            HStack {
+                Spacer()
+                Button("Close", action: onClose).keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 480)
     }
 }
 

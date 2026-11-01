@@ -32,8 +32,11 @@ struct MenuView: View {
             header.padding([.horizontal, .top], 14)
 
             if isTabbed, !layout.visible.isEmpty {
-                PanelTabBar(sections: layout.visible, selected: selectedTab) { selectedTabID = $0.rawValue }
-                    .padding(.horizontal, 14)
+                PanelTabBar(sections: layout.visible, selected: selectedTab) { section in
+                    Telemetry.shared.record(.panelTab, detail: section.rawValue)
+                    selectedTabID = section.rawValue
+                }
+                .padding(.horizontal, 14)
             }
 
             ScrollView {
@@ -253,6 +256,7 @@ private struct ScreensSection: View {
 
                 if !hidden.contains(.allOn) {
                     ActionTile(title: String(localized: "All On"), systemImage: "power") {
+                        Telemetry.shared.record(.screensAllOn)
                         Task { await controller.restoreAll() }
                     }
                     .tip(
@@ -374,6 +378,7 @@ private struct ScreenCard: View {
             }
 
             CircleToggle(systemImage: "power", isOn: display.isEnabled) {
+                Telemetry.shared.record(.screenToggled)
                 controller.setEnabled(!display.isEnabled, screen: screen.id)
             }
             .disabled(display.isEnabled && !screen.canDisable)

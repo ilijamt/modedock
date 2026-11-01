@@ -157,6 +157,8 @@ enum Configuration {
     private static let shortcutPrefix = "KeyboardShortcuts_"
 
     static func export(_ groups: Set<ConfigGroup>, profiles: ProfileController) throws -> Data {
+        Telemetry.shared.record(.configurationExported)
+        for group in groups { Telemetry.shared.record(.configurationExported, detail: group.rawValue) }
         let defaults = UserDefaults.standard
         let stored = defaults.dictionaryRepresentation()
         var file = ConfigFile(appVersion: Bundle.main.versionString, exportedAt: .now, groups: [:])
@@ -196,6 +198,8 @@ enum Configuration {
     /// Replaces the chosen groups with the file's; settings and shortcuts a group doesn't list
     /// go back to their defaults. Other groups stay as they are.
     static func apply(_ file: ConfigFile, groups: Set<ConfigGroup>, profiles: ProfileController) {
+        Telemetry.shared.record(.configurationImported)
+        for group in groups { Telemetry.shared.record(.configurationImported, detail: group.rawValue) }
         let defaults = UserDefaults.standard
         for group in ConfigGroup.allCases where groups.contains(group) {
             guard let data = file.groups[group] else { continue }

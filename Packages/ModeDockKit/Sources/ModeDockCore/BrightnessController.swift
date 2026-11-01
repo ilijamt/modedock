@@ -21,7 +21,10 @@ public final class BrightnessController {
     public nonisolated static let softwareMinimum = 0.15
 
     public private(set) var screens: [CGDirectDisplayID: ScreenBrightness] = [:]
-    public private(set) var lastError: String?
+    public private(set) var lastError: String? {
+        // Counted by kind only, when a new error appears.
+        didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorBrightness) } }
+    }
 
     private let system: BrightnessSystem
     private let ddc: DDCControlling
