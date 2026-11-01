@@ -226,12 +226,12 @@ public final class PowerController {
 
     /// Keep Awake only holds off idle sleep, so it doesn't block this.
     public func sleep() {
-        Telemetry.shared.record(.macSlept)
+        Telemetry.shared.record(.macSleep)
         lastError = errorMessage { try system.sleep() }
     }
 
     public func lockScreen() {
-        Telemetry.shared.record(.screenLocked)
+        Telemetry.shared.record(.screenLock)
         lastError = errorMessage { try system.lockScreen() }
     }
 

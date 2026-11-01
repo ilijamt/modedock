@@ -378,7 +378,7 @@ private struct ScreenCard: View {
             }
 
             CircleToggle(systemImage: "power", isOn: display.isEnabled) {
-                Telemetry.shared.record(.screenToggled)
+                Telemetry.shared.record(.screenToggle)
                 controller.setEnabled(!display.isEnabled, screen: screen.id)
             }
             .disabled(display.isEnabled && !screen.canDisable)

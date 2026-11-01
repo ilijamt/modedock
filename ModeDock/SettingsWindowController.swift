@@ -30,7 +30,7 @@ final class SettingsWindowController {
     }
 
     func show() {
-        Telemetry.shared.record(.settingsOpened)
+        Telemetry.shared.record(.settingsOpen)
         let window = window ?? makeWindow()
         self.window = window
         // Agent apps aren't frontmost, and macOS may refuse to activate one, so also bring the

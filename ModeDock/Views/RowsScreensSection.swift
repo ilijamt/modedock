@@ -105,7 +105,7 @@ private struct ScreenRows: View {
                 isOn: Binding(
                     get: { display.isEnabled },
                     set: {
-                        Telemetry.shared.record(.screenToggled)
+                        Telemetry.shared.record(.screenToggle)
                         controller.setEnabled($0, screen: screen.id)
                     })
             )

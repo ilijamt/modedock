@@ -414,7 +414,7 @@ final class NativeMenu {
                 })
         }
         let power = ActionItem(display.isEnabled ? "Turn Off" : String(localized: "Turn On")) { [screens] in
-            Telemetry.shared.record(.screenToggled)
+            Telemetry.shared.record(.screenToggle)
             screens.setEnabled(!display.isEnabled, screen: screen.id)
         }
         power.isEnabled = !display.isEnabled || screen.canDisable
@@ -533,7 +533,7 @@ private final class ActionItem: NSMenuItem {
 
     @objc private func run() {
         // Menu actions arrive on the main thread.
-        MainActor.assumeIsolated { Telemetry.shared.record(.menuUsed) }
+        MainActor.assumeIsolated { Telemetry.shared.record(.sourceMenu) }
         handler()
     }
 }

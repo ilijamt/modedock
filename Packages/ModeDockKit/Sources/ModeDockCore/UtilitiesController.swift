@@ -81,7 +81,7 @@ public final class UtilitiesController {
     public func setHiddenFiles(_ shown: Bool) { apply(.hiddenFiles) { try system.setHiddenFiles(shown) } }
     public func setNightShift(_ on: Bool) { apply(.nightShift) { try system.setNightShift(on) } }
     public func setTrueTone(_ on: Bool) { apply(.trueTone) { try system.setTrueTone(on) } }
-    public func emptyTrash() { apply(.trashEmptied) { try system.emptyTrash() } }
+    public func emptyTrash() { apply(.emptyTrash) { try system.emptyTrash() } }
 
     /// Turns one of the settings a profile can set on or off. Not counted as someone using it.
     public func set(_ setting: ProfileSystemSettings.Setting, to on: Bool) {
@@ -99,7 +99,7 @@ public final class UtilitiesController {
     /// example because a file on them is open).
     public func ejectAll() async {
         guard !isEjecting else { return }
-        Telemetry.shared.record(.disksEjected)
+        Telemetry.shared.record(.ejectDisks)
         isEjecting = true
         defer {
             isEjecting = false

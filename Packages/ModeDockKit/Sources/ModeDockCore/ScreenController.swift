@@ -108,7 +108,7 @@ public final class ScreenController {
     }
 
     public func sleepAllDisplays() {
-        Telemetry.shared.record(.screensSlept)
+        Telemetry.shared.record(.screensSleep)
         lastError = errorMessage { try system.sleepAllDisplays() }
     }
 

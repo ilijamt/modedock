@@ -110,7 +110,7 @@ public final class DisplayModeController {
     }
 
     public func confirm() {
-        if pending != nil { Telemetry.shared.record(.resolutionKept) }
+        if pending != nil { Telemetry.shared.record(.resolutionKeep) }
         guard let change = pending else { return }
         revertTask?.cancel()
         if let identity = identity(of: change.display) { markConfirmed(change.new, on: identity) }
@@ -118,7 +118,7 @@ public final class DisplayModeController {
     }
 
     public func revert() {
-        if pending != nil { Telemetry.shared.record(.resolutionReverted) }
+        if pending != nil { Telemetry.shared.record(.resolutionRevert) }
         guard let change = pending else { return }
         revertTask?.cancel()
         pending = nil

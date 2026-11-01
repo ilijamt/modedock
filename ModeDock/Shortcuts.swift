@@ -77,17 +77,17 @@ final class ShortcutActions {
         onKeyUp(.ejectAllDisks) { [weak self] in self?.ejectAll() }
     }
 
-    /// Global shortcuts, counted (anonymously, when allowed) as source.shortcut.
+    /// Global shortcuts, counted (anonymously, when allowed) as source.shortcut, by name.
     private func onKeyUp(_ name: KeyboardShortcuts.Name, _ action: @escaping @MainActor () -> Void) {
         KeyboardShortcuts.onKeyUp(for: name) {
-            Telemetry.shared.record(.shortcutUsed)
+            Telemetry.shared.recordShortcut(name.rawValue)
             action()
         }
     }
 
     private func onKeyDown(_ name: KeyboardShortcuts.Name, _ action: @escaping @MainActor () -> Void) {
         KeyboardShortcuts.onKeyDown(for: name) {
-            Telemetry.shared.record(.shortcutUsed)
+            Telemetry.shared.recordShortcut(name.rawValue)
             action()
         }
     }

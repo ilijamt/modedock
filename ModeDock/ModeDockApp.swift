@@ -62,7 +62,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var displayObserver: DisplayObserver?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Telemetry.shared.record(.appLaunch)
         AppLog.app.notice("Started. \(AppLog.versionLine)")
+        // After the menu bar item is up, so the question doesn't come before the app.
+        Task {
+            try? await Task.sleep(for: .seconds(2))
+            UsageDataPrompt.askIfNeeded()
+        }
         AppAppearance.apply()
         applyDDCWriteInterval()
         // Keep Awake only stops idle sleep, so a sleep that happens anyway (Sleep Mac, closing the
@@ -97,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             screens: screens, modes: modes, brightness: brightness, power: power, utilities: utilities, inputs: inputs,
             profiles: profiles, screenshots: screenshots,
             onShow: { [weak self] in
-                Telemetry.shared.record(.panelOpened)
+                Telemetry.shared.record(.panelOpen)
                 self?.refreshBrightness()
                 self?.power.refreshBattery()
                 self?.utilities.refresh()
@@ -125,31 +131,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await profiles.autoApplyIfNeeded()
             dynamicShortcuts.start()
         }
-        // Sends whole days of anonymous counts when allowed and a server is set; otherwise nothing.
+        // Sends the anonymous counts when allowed and a server is set. Checks hourly, so a report
+        // goes out soon after `Telemetry.interval` even when the Mac slept through it.
         Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
+                // Also marks days the Mac stays on with ModeDock running but unused.
+                Telemetry.shared.markActive()
                 await Telemetry.shared.sendIfDue(
                     context: .current(),
                     setup: .current(screens: self.screens, profiles: self.profiles, power: self.power))
-                try? await Task.sleep(for: .seconds(6 * 3600))
+                try? await Task.sleep(for: .seconds(3600))
             }
         }
 
         KeyboardShortcuts.onKeyUp(for: .togglePanel) { [weak self] in
-            Telemetry.shared.record(.shortcutUsed)
+            Telemetry.shared.recordShortcut(KeyboardShortcuts.Name.togglePanel.rawValue)
             self?.menuBar?.toggle()
         }
         for mode in ScreenshotMode.allCases {
             guard let name = mode.shortcut else { continue }
             KeyboardShortcuts.onKeyUp(for: name) { [weak self] in
-                Telemetry.shared.record(.shortcutUsed)
+                Telemetry.shared.recordShortcut(name.rawValue)
                 self?.screenshots.take(mode)
             }
         }
         KeyboardShortcuts.onKeyUp(for: .turnAllScreensOn) { [weak self] in
             guard let self else { return }
-            Telemetry.shared.record(.shortcutUsed)
+            Telemetry.shared.recordShortcut(KeyboardShortcuts.Name.turnAllScreensOn.rawValue)
             Telemetry.shared.record(.screensAllOn)
             Task { await self.screens.restoreAll() }
         }

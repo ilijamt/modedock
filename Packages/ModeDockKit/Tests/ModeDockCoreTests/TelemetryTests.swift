@@ -15,6 +15,16 @@ private actor RecordingSender: TelemetrySender {
     }
 }
 
+/// Runs `during` while a report is being sent, to act on Telemetry mid-send.
+private struct HookSender: TelemetrySender {
+    let during: @MainActor @Sendable () async -> Void
+
+    func send(_ report: TelemetryReport, to url: URL) async -> Bool {
+        await during()
+        return true
+    }
+}
+
 @MainActor
 struct TelemetryTests {
     private let context = TelemetryContext(
@@ -28,23 +38,35 @@ struct TelemetryTests {
 
     @Test func recordsNothingUntilTurnedOn() {
         let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender())
-        telemetry.record(.panelOpened)
+        telemetry.record(.panelOpen)
         #expect(telemetry.preview(context: context) == nil)
     }
 
-    @Test func countsEachFeaturePerDay() {
-        var date = Date(timeIntervalSince1970: 1_763_200_000)  // 2025-11-15 UTC
+    @Test func countsEachFeatureAndEachDayItRan() {
+        var date = Date(timeIntervalSince1970: 1_763_200_000)
         let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender(), now: { date })
         telemetry.setEnabled(true)
-        telemetry.record(.panelOpened)
-        telemetry.record(.panelOpened)
+        telemetry.record(.panelOpen)
+        telemetry.record(.panelOpen)
         telemetry.record(.captureArea)
+        telemetry.markActive()
         date += 86_400
-        telemetry.record(.panelOpened)
+        telemetry.record(.panelOpen)
 
-        let report = telemetry.preview(context: context)
-        #expect(report?.days["2025-11-15"] == ["panel.opened": 2, "capture.area": 1])
-        #expect(report?.days["2025-11-16"] == ["panel.opened": 1])
+        #expect(
+            telemetry.preview(context: context)?.counts
+                == ["panel.open": 3, "capture.area": 1, "app.active": 2])
+    }
+
+    @Test func countsADayWithNothingUsed() {
+        var date = Date(timeIntervalSince1970: 1_763_200_000)
+        let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender(), now: { date })
+        telemetry.setEnabled(true)
+        telemetry.markActive()
+        telemetry.markActive()
+        date += 86_400
+        telemetry.markActive()
+        #expect(telemetry.preview(context: context)?.counts == ["app.active": 2])
     }
 
     @Test func optingOutDeletesEverything() {
@@ -52,56 +74,130 @@ struct TelemetryTests {
         let telemetry = Telemetry(defaults: defaults, sender: RecordingSender())
         telemetry.setEnabled(true)
         let first = telemetry.preview(context: context)?.install
-        telemetry.record(.panelOpened)
+        telemetry.record(.panelOpen)
 
         telemetry.setEnabled(false)
         telemetry.setEnabled(true)
 
-        #expect(telemetry.preview(context: context)?.days.isEmpty == true)
+        #expect(telemetry.preview(context: context)?.counts.isEmpty == true)
         // A new install ID, so the earlier reports can't be linked to the new ones.
         #expect(telemetry.preview(context: context)?.install != first)
     }
 
-    @Test func sendsOnlyCompleteDaysAndForgetsThem() async {
+    @Test func sendsTheCountsSinceTheLastReportAndStartsAgain() async {
         var date = Date(timeIntervalSince1970: 1_763_200_000)
         let sender = RecordingSender()
         let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint, now: { date })
         telemetry.setEnabled(true)
-        telemetry.record(.profileApplied)
-        date += 86_400
-        telemetry.record(.panelOpened)
+        telemetry.record(.profileApply)
 
         #expect(await telemetry.sendIfDue(context: context))
+        #expect(telemetry.preview(context: context)?.counts.isEmpty == true)
+
+        date += 86_400
+        telemetry.record(.panelOpen)
+        #expect(await telemetry.sendIfDue(context: context))
+
         let reports = await sender.reports
-        #expect(reports.count == 1)
-        #expect(reports.first?.days == ["2025-11-15": ["profile.applied": 1]])
+        #expect(
+            reports.map(\.counts) == [
+                ["profile.apply": 1, "app.active": 1], ["panel.open": 1, "app.active": 1],
+            ])
         #expect(reports.first?.context == context)
-        // Today's count stays for a later report.
-        #expect(telemetry.preview(context: context)?.days == ["2025-11-16": ["panel.opened": 1]])
+        // Each accepted batch has its own ID.
+        #expect(reports[0].report != reports[1].report)
     }
 
-    @Test func keepsDaysWhenSendingFailsAndWaitsBeforeTryingAgain() async {
+    @Test func keepsCountingWhenSendingFailsAndResendsUnderTheSameID() async {
         var date = Date(timeIntervalSince1970: 1_763_200_000)
         let sender = RecordingSender()
         await sender.setSucceeds(false)
         let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint, now: { date })
         telemetry.setEnabled(true)
-        telemetry.record(.profileApplied)
-        date += 86_400
+        telemetry.record(.profileApply)
 
         #expect(await !telemetry.sendIfDue(context: context))
-        #expect(telemetry.preview(context: context)?.days["2025-11-15"] == ["profile.applied": 1])
+        // Waits before trying again.
         #expect(await !telemetry.sendIfDue(context: context))
         #expect(await sender.reports.count == 1)
+
+        date += 86_400
+        telemetry.record(.profileApply)
+        await sender.setSucceeds(true)
+        #expect(await telemetry.sendIfDue(context: context))
+
+        let reports = await sender.reports
+        #expect(reports.count == 2)
+        #expect(reports[1].counts == ["profile.apply": 2, "app.active": 2])
+        #expect(reports[0].report == reports[1].report)
+    }
+
+    @Test func sendNowDoesNotWait() async {
+        let sender = RecordingSender()
+        let telemetry = Telemetry(
+            defaults: makeDefaults(), sender: sender, endpoint: endpoint,
+            now: { Date(timeIntervalSince1970: 1_763_200_000) })
+        telemetry.setEnabled(true)
+        telemetry.record(.panelOpen)
+        #expect(await telemetry.sendNow(context: context))
+        telemetry.record(.panelOpen)
+        #expect(await !telemetry.sendIfDue(context: context))
+        #expect(await telemetry.sendNow(context: context))
+        #expect(await sender.reports.count == 2)
+    }
+
+    @Test func keepsWhatWasCountedWhileSendingAndNeverSendsTwiceAtOnce() async {
+        var telemetry: Telemetry!
+        var overlapping: Bool?
+        let sender = HookSender {
+            telemetry.record(.panelOpen)
+            overlapping = await telemetry.sendNow(context: context)
+        }
+        telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint)
+        telemetry.setEnabled(true)
+        telemetry.record(.captureArea)
+
+        #expect(await telemetry.sendNow(context: context))
+        #expect(overlapping == false)
+        #expect(telemetry.preview(context: context)?.counts == ["panel.open": 1])
+    }
+
+    @Test func takesNothingOffWhenTurnedOffAndOnWhileSending() async {
+        var telemetry: Telemetry!
+        let sender = HookSender {
+            telemetry.setEnabled(false)
+            telemetry.setEnabled(true)
+            telemetry.record(.panelOpen)
+        }
+        telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint)
+        telemetry.setEnabled(true)
+        telemetry.record(.panelOpen)
+
+        #expect(await !telemetry.sendNow(context: context))
+        #expect(telemetry.preview(context: context)?.counts == ["panel.open": 1, "app.active": 1])
+    }
+
+    @Test func asksOnANewInstallAndNotAfterAnAnswer() {
+        let defaults = makeDefaults()
+        let telemetry = Telemetry(defaults: defaults, sender: RecordingSender())
+        #expect(telemetry.shouldAsk)
+        telemetry.setEnabled(false)
+        #expect(!telemetry.shouldAsk)
+        // Opting out deletes the data, not the answer.
+        #expect(!Telemetry(defaults: defaults, sender: RecordingSender()).shouldAsk)
+    }
+
+    @Test func asksAgainWhenTheConsentVersionGoesUp() {
+        let defaults = makeDefaults()
+        defaults.set(Telemetry.consentVersion - 1, forKey: "telemetry.askedVersion")
+        #expect(Telemetry(defaults: defaults, sender: RecordingSender()).shouldAsk)
     }
 
     @Test func sendsNothingWithoutAnEndpoint() async {
-        var date = Date(timeIntervalSince1970: 1_763_200_000)
         let sender = RecordingSender()
-        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, now: { date })
+        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender)
         telemetry.setEnabled(true)
-        telemetry.record(.profileApplied)
-        date += 86_400
+        telemetry.record(.profileApply)
 
         #expect(await !telemetry.sendIfDue(context: context))
         #expect(await sender.reports.isEmpty)
@@ -110,23 +206,25 @@ struct TelemetryTests {
     @Test func theReportHoldsOnlyCountsAndBroadFacts() throws {
         let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender())
         telemetry.setEnabled(true)
-        telemetry.record(.screenToggled)
+        telemetry.record(.screenToggle)
         let json = try JSONEncoder().encode(telemetry.preview(context: context))
         let object = try JSONSerialization.jsonObject(with: json) as? [String: Any]
-        #expect(Set(object?.keys ?? [:].keys) == ["schema", "install", "context", "days"])
+        #expect(Set(object?.keys ?? [:].keys) == ["schema", "install", "report", "context", "counts"])
         let contextKeys = (object?["context"] as? [String: Any])?.keys.sorted()
-        #expect(contextKeys == ["appVersion", "language", "osVersion"])
+        #expect(contextKeys == ["appVersion", "architecture", "language", "osVersion"])
     }
 
     @Test func countsTheEventWithItsDetail() {
-        let date = Date(timeIntervalSince1970: 1_763_200_000)
-        let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender(), now: { date })
+        let telemetry = Telemetry(defaults: makeDefaults(), sender: RecordingSender())
         telemetry.setEnabled(true)
         telemetry.record(.panelTab, detail: "screens")
-        telemetry.record(.panelTab, detail: "power")
+        telemetry.recordShortcut("captureArea")
         #expect(
-            telemetry.preview(context: context)?.days["2025-11-15"]
-                == ["panel.tab.screens": 1, "panel.tab.power": 1])
+            telemetry.preview(context: context)?.counts
+                == [
+                    "panel.tab.screens": 1, "source.shortcut": 1, "source.shortcut.captureArea": 1,
+                    "app.active": 1,
+                ])
     }
 
     @Test func bucketsTheTimeSinceOptingIn() {
@@ -142,12 +240,10 @@ struct TelemetryTests {
     }
 
     @Test func sendsTheSetupWithTheCounts() async {
-        var date = Date(timeIntervalSince1970: 1_763_200_000)
         let sender = RecordingSender()
-        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint, now: { date })
+        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: endpoint)
         telemetry.setEnabled(true)
-        telemetry.record(.panelOpened)
-        date += 86_400
+        telemetry.record(.panelOpen)
         var setup = TelemetrySetup()
         setup.profiles = 3
         setup.hiddenSections = ["utilities"]

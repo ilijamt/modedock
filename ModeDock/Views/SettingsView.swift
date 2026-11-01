@@ -39,19 +39,21 @@ enum SettingsTab: String, CaseIterable {
         power: PowerController, profiles: ProfileController, screenshots: ScreenshotController
     ) -> some View {
         switch self {
-        case .general: GeneralSettingsView(power: power)
+        case .general: GeneralSettingsView(screens: screens, profiles: profiles, power: power)
         case .menu: MenuSettingsView()
         case .displays: DisplaySettingsView(screens: screens, modes: modes, brightness: brightness)
         case .profiles: ProfileSettingsView(profiles: profiles, screens: screens, modes: modes)
         case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
-        case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles, power: power)
+        case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles)
         case .about: AboutView()
         }
     }
 }
 
 private struct GeneralSettingsView: View {
+    let screens: ScreenController
+    let profiles: ProfileController
     let power: PowerController
     @Environment(LaunchAtLogin.self) private var launchAtLogin
     @AppStorage(AppAppearance.key) private var appearance = AppAppearance.system.rawValue
@@ -86,6 +88,10 @@ private struct GeneralSettingsView: View {
             )
             .labeledSettingsRow("Keep Awake:")
             .help("When off, screens can sleep while the Mac stays awake.")
+
+            SettingsGap()
+
+            UsageDataSection(screens: screens, profiles: profiles, power: power)
         }
         .onAppear { launchAtLogin.refresh() }
     }
@@ -96,7 +102,6 @@ private struct AdvancedSettingsView: View {
     let screens: ScreenController
     let modes: DisplayModeController
     let profiles: ProfileController
-    let power: PowerController
     @State private var confirmingReset = false
     @State private var copied = false
 
@@ -114,10 +119,6 @@ private struct AdvancedSettingsView: View {
             SettingsGap()
 
             DebugLogSection()
-
-            SettingsGap()
-
-            UsageDataSection(screens: screens, profiles: profiles, power: power)
 
             SettingsGap()
 
@@ -707,6 +708,7 @@ private struct UsageDataSection: View {
     let profiles: ProfileController
     let power: PowerController
     @State private var showingData = false
+    @State private var sendResult: String?
 
     private var telemetry: Telemetry { .shared }
 
@@ -718,13 +720,6 @@ private struct UsageDataSection: View {
         .labeledSettingsRow("Usage data:")
         Button("Show Data…") { showingData = true }
             .disabled(!telemetry.isEnabled)
-        SettingsNote(
-            "Counts how often each feature is used per day, and how ModeDock is set up (such as how many profiles and shortcuts), with the app and macOS versions, so we know what to improve. No names, screen models, files or times. Turning it off deletes everything kept so far."
-        )
-        if Telemetry.endpoint == nil {
-            SettingsNote("Nothing is sent yet: there's no server for it.")
-        }
-        EmptyView()
             .sheet(isPresented: $showingData) {
                 UsageDataView(
                     report: telemetry.preview(
@@ -734,6 +729,28 @@ private struct UsageDataSection: View {
                     showingData = false
                 }
             }
+        SettingsNote("Which features you use and how ModeDock is set up. Nothing personal.")
+        #if DEBUG
+            // Debug builds only, for a local server; not translated.
+            if let endpoint = telemetry.endpoint {
+                HStack {
+                    Button {
+                        Task {
+                            let sent = await telemetry.sendNow(
+                                context: .current(),
+                                setup: .current(screens: screens, profiles: profiles, power: power))
+                            sendResult = sent ? "Sent" : "Not sent: nothing counted, or the server refused it"
+                        }
+                    } label: {
+                        Text(verbatim: "Send Now")
+                    }
+                    .disabled(!telemetry.isEnabled)
+                    Text(verbatim: sendResult ?? endpoint.absoluteString)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        #endif
     }
 }
 
@@ -751,12 +768,10 @@ private struct UsageDataView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Usage Data").font(.headline)
-            Text(
-                "This is everything ModeDock would send. The install ID is random and changes if you turn this off and on."
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+            Text("Everything ModeDock sends.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 Text(verbatim: json)
                     .font(.system(.caption, design: .monospaced))
