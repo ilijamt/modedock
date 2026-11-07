@@ -1,4 +1,3 @@
-/// Runs `body` and returns the message of the error it threw, or nil when it succeeded.
 @MainActor
 func errorMessage(_ body: () throws -> Void) -> String? {
     do {

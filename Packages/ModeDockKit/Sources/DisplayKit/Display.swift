@@ -1,7 +1,6 @@
 import CoreGraphics
 
-/// Vendor, model and serial from the EDID. Unlike `CGDirectDisplayID`, this survives
-/// reconnects and reboots.
+/// Unlike `CGDirectDisplayID`, this survives reconnects and reboots.
 public struct DisplayIdentity: Hashable, Codable, Sendable {
     public let vendor: UInt32
     public let model: UInt32
@@ -24,7 +23,6 @@ public struct Display: Identifiable, Hashable, Sendable {
     public let identity: DisplayIdentity
     public var name: String
     public let isBuiltin: Bool
-    /// False while ModeDock has the display disabled.
     public var isEnabled: Bool
 
     public init(
@@ -43,7 +41,6 @@ public struct Display: Identifiable, Hashable, Sendable {
 }
 
 public enum DisplayPolicy {
-    /// A display may be disabled only if at least one other display stays enabled.
     public static func canDisable(_ id: CGDirectDisplayID, enabled: Set<CGDirectDisplayID>) -> Bool {
         enabled.contains(id) && enabled.count > 1
     }

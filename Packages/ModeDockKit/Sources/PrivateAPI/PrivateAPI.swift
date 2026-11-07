@@ -2,8 +2,7 @@ import CoreGraphics
 import Darwin
 import IOKit
 
-/// Private macOS symbols, resolved at runtime so a missing one disables a single feature
-/// instead of failing to launch.
+/// Resolved at runtime so a missing symbol disables a single feature instead of failing to launch.
 public enum PrivateAPI {
     public typealias ConfigureDisplayEnabled =
         @convention(c) (CGDisplayConfigRef?, CGDirectDisplayID, Bool) -> CGError
@@ -23,7 +22,6 @@ public enum PrivateAPI {
     public typealias GetBrightness = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Float>) -> Int32
     public typealias SetBrightness = @convention(c) (CGDirectDisplayID, Float) -> Int32
 
-    /// Built-in and Apple displays (Studio Display, Pro Display XDR).
     public static let canChangeBrightness: CanChangeBrightness? = symbol("DisplayServicesCanChangeBrightness")
     public static let getBrightness: GetBrightness? = symbol("DisplayServicesGetBrightness")
     public static let setBrightness: SetBrightness? = symbol("DisplayServicesSetBrightness")
@@ -31,23 +29,20 @@ public enum PrivateAPI {
     public typealias GetFlag = @convention(c) (CGDirectDisplayID, UnsafeMutablePointer<Bool>) -> Int32
     public typealias SetFlag = @convention(c) (CGDirectDisplayID, Bool) -> Int32
 
-    /// Automatic brightness ("ambient light compensation"), for displays with a light sensor.
     public static let hasAutoBrightness: CanChangeBrightness? = symbol("DisplayServicesHasAmbientLightCompensation")
     public static let autoBrightnessEnabled: GetFlag? = symbol("DisplayServicesAmbientLightCompensationEnabled")
     public static let setAutoBrightness: SetFlag? = symbol("DisplayServicesEnableAmbientLightCompensation")
 
     public typealias LockScreen = @convention(c) () -> Int32
 
-    /// Locks the screen right away, like Control-Command-Q.
     public static let lockScreen: LockScreen? = symbol("SACLockScreenImmediate")
 
     public typealias GetSwitch = @convention(c) () -> Bool
     public typealias SetSwitch = @convention(c) (Bool) -> Void
 
-    /// System-wide dark mode, without the Automation permission System Events would need.
+    /// Avoids the Automation permission System Events would need.
     public static let darkMode: GetSwitch? = symbol("SLSGetAppearanceThemeLegacy")
     public static let setDarkMode: SetSwitch? = symbol("SLSSetAppearanceThemeLegacy")
-    /// The Dock's "Automatically hide and show the Dock".
     public static let dockAutoHide: GetSwitch? = symbol("CoreDockGetAutoHideEnabled")
     public static let setDockAutoHide: SetSwitch? = symbol("CoreDockSetAutoHideEnabled")
 

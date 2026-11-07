@@ -3,10 +3,7 @@ import IOKit
 import IOKit.graphics
 import IOKit.i2c
 
-/// DDC on Intel Macs, over the framebuffer's I²C bus.
-///
-/// Untested: written against the IOKit headers and the approach other DDC tools use, but no Intel
-/// Mac was available to try it on.
+/// Untested: no Intel Mac was available to try it on.
 public actor IntelDDCService: DDCControlling {
     private var framebuffers: [DisplayIdentity: io_service_t] = [:]
 
@@ -73,7 +70,6 @@ public actor IntelDDCService: DDCControlling {
         return bytes
     }
 
-    /// Tries each I²C bus of the framebuffer until one accepts the request.
     private func perform(_ request: inout IOI2CRequest, on framebuffer: io_service_t) throws {
         var busCount: IOItemCount = 0
         guard IOFBGetI2CInterfaceCount(framebuffer, &busCount) == KERN_SUCCESS, busCount > 0 else {
@@ -123,7 +119,6 @@ public actor IntelDDCService: DDCControlling {
     }
 }
 
-/// The DDC implementation for this Mac's architecture.
 public func makeDDCService() -> DDCControlling {
     #if arch(x86_64)
         IntelDDCService()

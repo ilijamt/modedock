@@ -84,7 +84,6 @@ struct DisplayModeControllerTests {
         controller.confirm()
         #expect(controller.pending == nil)
 
-        // Back to the starting mode, then to the confirmed one again: no more prompts.
         controller.select(native, for: 5)
         controller.select(small, for: 5)
         #expect(controller.pending == nil)

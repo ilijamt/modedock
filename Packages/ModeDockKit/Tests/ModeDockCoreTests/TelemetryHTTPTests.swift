@@ -3,8 +3,6 @@ import Testing
 
 @testable import ModeDockCore
 
-/// A server inside the test process: answers each request with the status in its URL
-/// (`?status=500`, 204 by default) and keeps what it received, by URL.
 private final class FakeServer: URLProtocol, @unchecked Sendable {
     struct Received: Sendable {
         let method: String?
@@ -62,7 +60,7 @@ struct TelemetryHTTPTests {
         context: TelemetryContext(appVersion: "0.1.0", osVersion: "26.1", language: "en"),
         setup: nil, counts: ["panel.open": 2])
 
-    /// A URL of its own per test, as tests run in parallel.
+    /// Tests run in parallel.
     private func url(status: Int? = nil) -> URL {
         URL(string: "https://telemetry.test/\(UUID().uuidString)" + (status.map { "?status=\($0)" } ?? ""))!
     }

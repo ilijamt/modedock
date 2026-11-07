@@ -19,7 +19,6 @@ public enum ScreenshotMode: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// Area and window wait for the user to pick what to capture, and can be cancelled with Esc.
     public var isInteractive: Bool { self == .area || self == .window }
 }
 
@@ -47,9 +46,7 @@ public enum ScreenshotFormat: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Where a capture goes: saved in a folder, copied to the clipboard, or both.
 public struct ScreenshotDestination: Equatable, Sendable {
-    /// Where the files are kept; nil to only copy them.
     public var folder: URL?
     public var copiesToClipboard: Bool
 
@@ -65,15 +62,13 @@ public struct ScreenshotDestination: Equatable, Sendable {
 public struct ScreenshotOptions: Equatable, Sendable {
     public var destination: ScreenshotDestination
     public var format: ScreenshotFormat
-    /// Only possible for screen captures; screencapture refuses it in interactive modes.
+    /// screencapture refuses it in interactive modes.
     public var includePointer: Bool
     public var playSound: Bool
     public var windowShadow: Bool
-    /// Seconds to wait before a screen capture; area and window captures start right away.
     public var delay: Int
-    /// All Screens saves one image laid out like the displays instead of a file per screen.
     public var combinesScreens: Bool
-    /// Keeps HDR content's extended range; only files saved as captured keep it.
+    /// Only files saved as captured keep the extended range.
     public var hdr: Bool
 
     /// screencapture writes HDR captures as HEIC whatever format is asked for.
@@ -103,30 +98,22 @@ public enum ScreenshotResult: Equatable, Sendable {
     case failed
 }
 
-/// What the controller needs from macOS, abstracted for tests.
 @MainActor
 public protocol ScreenshotSystem {
     func hasPermission() -> Bool
-    /// Shows the system's Screen Recording prompt (once per app; later calls do nothing).
+    /// Later calls do nothing.
     func requestPermission()
-    /// Runs screencapture with `arguments` and returns its exit status.
     func capture(arguments: [String]) async throws -> Int32
     func fileExists(_ url: URL) -> Bool
     func removeFile(_ url: URL)
-    /// Where captures that are only copied are written first.
     func temporaryFolder() -> URL
-    /// Puts the image on the clipboard; false when that failed. With `bounds`, one per file, the
-    /// images are combined into one, laid out like the displays.
     func copyImages(_ files: [URL], arrangedIn bounds: [CGRect]?, hdr: Bool) -> Bool
-    /// Writes one image of `files` laid out by `bounds` to `file`; false when that failed.
     func combineImages(
         _ files: [URL], arrangedIn bounds: [CGRect], into file: URL, format: ScreenshotFormat, hdr: Bool
     ) -> Bool
-    /// The display's position and size in the global display space.
     func bounds(of display: CGDirectDisplayID) -> CGRect
     /// screencapture numbers screens from 1 in the order of the active display list.
     func activeDisplays() -> [CGDirectDisplayID]
-    /// Where macOS saves screenshots (Screenshot app → Options → Save to), or the Desktop.
     func defaultFolder() -> URL
 }
 
@@ -135,14 +122,12 @@ public protocol ScreenshotSystem {
 public final class ScreenshotController {
     public private(set) var hasPermission: Bool
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
+        // Only the error kind is counted, never its text.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorCapture) } }
     }
-    /// The files the last capture saved; empty when it was only copied.
     public private(set) var lastSaved: [URL] = []
     public private(set) var isCapturing = false
-    /// Runs on the captured files before they're combined, copied or kept, to change them in
-    /// place; for example to draw the pointer where screencapture leaves it out.
+    /// For example to draw the pointer where screencapture leaves it out.
     public var processCaptures: ((ScreenshotMode, [URL]) -> Void)?
 
     private let system: ScreenshotSystem
@@ -165,7 +150,6 @@ public final class ScreenshotController {
         refreshPermission()
     }
 
-    /// Takes a screenshot. `display` is the screen for `.screen`; the main screen when nil.
     @discardableResult
     public func capture(
         _ mode: ScreenshotMode, display: CGDirectDisplayID? = nil, options: ScreenshotOptions, date: Date = .now
@@ -236,9 +220,8 @@ public final class ScreenshotController {
         return saved.isEmpty ? .copied : .saved(saved)
     }
 
-    /// Where each screen's image goes in one image of them all, laid out like the displays: the
-    /// canvas size and a frame per screen, in pixels at `scale`, with the origin at the bottom
-    /// left. `bounds` are in the global display space, whose origin is the main screen's top left.
+    /// `bounds` are in the global display space, whose origin is the main screen's top left; the
+    /// canvas origin is the bottom left.
     public static func arrangement(of bounds: [CGRect], scale: CGFloat) -> (size: CGSize, frames: [CGRect]) {
         guard let first = bounds.first else { return (.zero, []) }
         let union = bounds.dropFirst().reduce(first) { $0.union($1) }
@@ -250,7 +233,6 @@ public final class ScreenshotController {
         return (CGSize(width: union.width * scale, height: union.height * scale), frames)
     }
 
-    /// The screencapture arguments for one capture.
     public static func arguments(
         mode: ScreenshotMode, options: ScreenshotOptions, displayIndex: Int?, files: [URL]
     ) -> [String] {
@@ -273,8 +255,6 @@ public final class ScreenshotController {
         return arguments
     }
 
-    /// "ModeDock 2026-11-15 at 01.23.45.png", numbered per screen for All Screens, and never
-    /// overwriting an existing file.
     public func fileURLs(in folder: URL, count: Int, options: ScreenshotOptions, date: Date) -> [URL] {
         let base = "ModeDock \(Self.timestamp(date))"
         let suffixes = count > 1 ? (1...count).map { " (\($0))" } : [""]
@@ -297,7 +277,6 @@ public final class ScreenshotController {
     }
 }
 
-/// The real implementation: `/usr/sbin/screencapture` and the CoreGraphics permission calls.
 @MainActor
 public struct MacScreenshotSystem: ScreenshotSystem {
     public init() {}
@@ -399,9 +378,8 @@ public struct MacScreenshotSystem: ScreenshotSystem {
         }
     }
 
-    /// Draws each screen's image where its display is, at the sharpest screen's scale so Retina
-    /// detail is kept. Gaps between displays stay transparent. HDR captures are drawn at 16 bits
-    /// in their own colour space, which keeps their precision and wide colour.
+    /// Drawn at the sharpest screen's scale so Retina detail is kept. HDR captures are drawn at
+    /// 16 bits in their own colour space.
     private static func combine(_ images: [CGImage], bounds: [CGRect], hdr: Bool) -> CGImage? {
         let scale = zip(images, bounds).map { CGFloat($0.width) / max($1.width, 1) }.max() ?? 1
         let layout = ScreenshotController.arrangement(of: bounds, scale: scale)

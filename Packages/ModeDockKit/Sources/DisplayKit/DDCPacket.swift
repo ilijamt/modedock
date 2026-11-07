@@ -1,5 +1,4 @@
-/// DDC/CI (MCCS) packet encoding. The display's I²C address is 0x37; the host sends from 0x51
-/// and the display replies to 0x50.
+/// I²C address 0x37; the host sends from 0x51 and the display replies to 0x50.
 public enum DDCPacket {
     public static let chipAddress: UInt32 = 0x37
     public static let hostAddress: UInt32 = 0x51
@@ -12,7 +11,7 @@ public enum DDCPacket {
 
     public enum PowerMode {
         public static let on: UInt16 = 0x01
-        /// DPM off: the monitor blanks and powers down its panel, but still listens on DDC.
+        /// The monitor blanks its panel but still listens on DDC.
         public static let off: UInt16 = 0x04
     }
 
@@ -47,13 +46,12 @@ public enum DDCPacket {
         )
     }
 
-    /// Asks for the part of the monitor's capabilities string that starts at `offset`.
     public static func capabilitiesRequest(offset: UInt16) -> [UInt8] {
         withChecksum([0x83, 0xF3, UInt8(offset >> 8), UInt8(offset & 0xFF)], seed: 0x6E ^ 0x51)
     }
 
     /// Reply layout: 6E <0x80 | length> E3 <offsetHi> <offsetLo> <data…> <checksum>, where length
-    /// counts E3, the offset and the data. Returns the data (empty at the end of the string).
+    /// counts E3, the offset and the data.
     public static func parseCapabilitiesReply(_ bytes: [UInt8], offset: UInt16) -> [UInt8]? {
         guard bytes.count >= 6, bytes[0] == 0x6E, bytes[1] & 0x80 != 0, bytes[2] == 0xE3 else { return nil }
         let length = Int(bytes[1] & 0x7F)
@@ -64,8 +62,7 @@ public enum DDCPacket {
         return Array(bytes[5..<(2 + length)])
     }
 
-    /// The input sources listed for VCP 0x60 in a capabilities string such as
-    /// "(prot(monitor)…vcp(02 10 60(0F 11 12) D6(01 04))…)".
+    /// Capabilities strings look like "(prot(monitor)…vcp(02 10 60(0F 11 12) D6(01 04))…)".
     public static func inputSources(inCapabilities capabilities: String) -> [UInt8] {
         let text = capabilities.uppercased()
         guard let match = text.firstMatch(of: /(?:^|[^0-9A-F])60\(([0-9A-F ]*)\)/) else { return [] }
@@ -76,7 +73,6 @@ public enum DDCPacket {
         }
     }
 
-    /// MCCS names for the common input source values.
     public static func inputName(_ input: UInt8) -> String {
         switch input {
         case 0x01, 0x02: "VGA \(input)"

@@ -17,12 +17,10 @@ public enum DDCError: Error, Equatable, LocalizedError {
 }
 
 public protocol DDCControlling: Sendable {
-    /// Rescans the I/O Registry; call after displays are connected or disconnected.
     func refresh() async
     func read(_ code: UInt8, from display: DisplayIdentity) async throws -> DDCPacket.Reply
-    /// Sends the value `attempts` times; many monitors drop a single write now and then.
+    /// Many monitors drop a single write now and then.
     func write(_ code: UInt8, value: UInt16, to display: DisplayIdentity, attempts: Int) async throws
-    /// The monitor's MCCS capabilities string, which lists the features and values it supports.
     func capabilities(of display: DisplayIdentity) async throws -> String
 }
 
@@ -33,10 +31,7 @@ extension DDCControlling {
     }
 }
 
-/// The DDC/CI request and retry timing shared by the DDC services; each one supplies only how
-/// bytes reach the monitor and come back.
 enum DDCExchange {
-    /// Up to three tries, throwing the last try's error.
     static func read(
         _ code: UInt8, send: ([UInt8]) throws -> Void, receive: () throws -> [UInt8]
     ) throws -> DDCPacket.Reply {
@@ -56,10 +51,9 @@ enum DDCExchange {
         throw lastError
     }
 
-    /// Reads the capabilities string piece by piece; each reply carries up to 32 bytes.
     static func capabilities(send: ([UInt8]) throws -> Void, receive: () throws -> [UInt8]) throws -> String {
         var data: [UInt8] = []
-        // A capabilities string is a few hundred bytes; the cap only stops a monitor that never ends.
+        // The cap only stops a monitor that never ends the string.
         for _ in 0..<64 {
             let offset = UInt16(data.count)
             var chunk: [UInt8]?
@@ -89,8 +83,7 @@ enum DDCExchange {
     }
 }
 
-/// DDC over the Apple Silicon `IOAVService` I²C interface. Calls block for tens of
-/// milliseconds, so they run on this actor rather than the main thread.
+/// Calls block for tens of milliseconds, so they run on this actor.
 public actor DDCService: DDCControlling {
     private var services: [DisplayIdentity: CFTypeRef] = [:]
 
@@ -145,9 +138,9 @@ public actor DDCService: DDCControlling {
         return buffer
     }
 
-    /// In the I/O Registry each external display's framebuffer (`IOMobileFramebufferShim` or
-    /// `AppleCLCD2`, which carries the EDID attributes) comes right before its
-    /// `DCPAVServiceProxy`, so the two are paired by walking the tree in order.
+    /// Each external display's framebuffer (`IOMobileFramebufferShim` or `AppleCLCD2`, which carries
+    /// the EDID attributes) comes right before its `DCPAVServiceProxy` in the I/O Registry, so the
+    /// two are paired by walking the tree in order.
     private static func scanExternalServices() -> [DisplayIdentity: CFTypeRef] {
         guard let create = PrivateAPI.avServiceCreateWithService else { return [:] }
         var iterator = io_iterator_t()

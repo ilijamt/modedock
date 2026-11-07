@@ -2,23 +2,21 @@ import CoreGraphics
 import DisplayKit
 import Observation
 
-/// Switches external monitors between their inputs over DDC (VCP 0x60).
 @MainActor
 @Observable
 public final class MonitorInputController {
     public struct Inputs: Equatable, Sendable {
-        /// The input the monitor shows now. DDC only works over that input, so it's this Mac's.
+        /// DDC only works over the active input, so it's this Mac's.
         public var current: UInt8
-        /// From the monitor's capabilities string, or common inputs when it doesn't list any.
         public var available: [UInt8]
     }
 
-    /// DisplayPort 1, HDMI 1 and HDMI 2: offered when a monitor doesn't list its inputs.
+    /// Offered when a monitor doesn't list its inputs.
     public static let commonInputs: [UInt8] = [0x0F, 0x11, 0x12]
 
     public private(set) var screens: [CGDirectDisplayID: Inputs] = [:]
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
+        // Only the error kind is counted, never its text.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorInput) } }
     }
 
@@ -31,7 +29,6 @@ public final class MonitorInputController {
         self.ddc = ddc
     }
 
-    /// Reads the current input of every external screen that's on and answers over DDC.
     public func refresh(displays: [Display]) async {
         var updated: [CGDirectDisplayID: Inputs] = [:]
         for display in displays where display.isEnabled && !display.isBuiltin {

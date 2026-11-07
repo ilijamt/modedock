@@ -2,9 +2,7 @@ import CoreGraphics
 import Foundation
 
 public struct DisplayMode: Identifiable, Hashable, Sendable {
-    /// `CGDisplayModeGetIODisplayModeID`; unique per display.
     public let id: Int32
-    /// Size in points ("looks like").
     public let width: Int
     public let height: Int
     public let pixelWidth: Int
@@ -13,14 +11,13 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
     public let refreshRate: Double
     public let isUsableForDesktop: Bool
     public let isNative: Bool
-    /// The mode macOS picks for this display out of the box ("Default for display").
     public let isDefault: Bool
 
     public var isHiDPI: Bool { pixelWidth > width }
 
     public var roundedRefreshRate: Int { Int(refreshRate.rounded()) }
 
-    /// Identifies the same mode across reconnects, where `id` may change.
+    /// `id` may change across reconnects.
     public var key: String {
         "\(width)x\(height)\(isHiDPI ? "@2x" : "")@\(roundedRefreshRate)"
     }
@@ -41,13 +38,11 @@ public struct DisplayMode: Identifiable, Hashable, Sendable {
     }
 }
 
-/// One entry in the resolution menu: a size, with one mode per refresh rate.
 public struct ResolutionOption: Identifiable, Hashable, Sendable {
     public let width: Int
     public let height: Int
     public let isHiDPI: Bool
     public let isNative: Bool
-    /// Highest refresh rate first.
     public let modes: [DisplayMode]
 
     public var id: String { "\(width)x\(height)\(isHiDPI ? "@2x" : "")" }
@@ -56,9 +51,8 @@ public struct ResolutionOption: Identifiable, Hashable, Sendable {
 }
 
 public enum ModeCatalog {
-    /// Groups modes into menu entries, largest first. Unless `showAll` is set, it keeps the list
-    /// close to System Settings: modes usable for the desktop, in the native aspect ratio, and
-    /// only the HiDPI version of a size when one exists.
+    /// Unless `showAll` is set, the list stays close to System Settings: modes usable for the desktop,
+    /// in the native aspect ratio, and only the HiDPI version of a size when one exists.
     public static func options(from modes: [DisplayMode], showAll: Bool) -> [ResolutionOption] {
         var candidates = modes
         if !showAll {
@@ -111,8 +105,7 @@ public enum ModeCatalog {
         let hiDPI: Bool
     }
 
-    /// Several modes can share a size and refresh rate (different pixel encodings); keep one,
-    /// preferring the native and then the largest backing size.
+    /// Several modes can share a size and refresh rate (different pixel encodings).
     private static func uniqueByRefreshRate(_ modes: [DisplayMode]) -> [DisplayMode] {
         let byRate = Dictionary(grouping: modes, by: \.roundedRefreshRate)
         return byRate.values

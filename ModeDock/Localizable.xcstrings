@@ -1983,18 +1983,18 @@
         }
       }
     },
-    "Counts of which features you use and how ModeDock is set up. Nothing personal. You can change this in Settings → General.": {
+    "Counts of which features you use, how ModeDock is set up, and your country. Nothing personal. You can change this in Settings → General.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用した機能の回数とModeDockの設定内容です。個人情報は含みません。「設定」→「一般」でいつでも変更できます。"
+            "value": "使用した機能の回数、ModeDockの設定内容、国です。個人情報は含みません。「設定」→「一般」でいつでも変更できます。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hoe vaak je welke functies gebruikt en hoe ModeDock is ingesteld. Niets persoonlijks. Je kunt dit wijzigen in Instellingen → Algemeen."
+            "value": "Hoe vaak je welke functies gebruikt, hoe ModeDock is ingesteld en je land. Niets persoonlijks. Je kunt dit wijzigen in Instellingen → Algemeen."
           }
         }
       }
@@ -2607,18 +2607,18 @@
         }
       }
     },
-    "Everything ModeDock sends.": {
+    "Everything ModeDock sends. The server adds your country, not your IP address.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ModeDockが送信するすべてのデータ。"
+            "value": "ModeDockが送信するすべてのデータ。サーバーは国を追加しますが、IPアドレスは保存しません。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alles wat ModeDock verzendt."
+            "value": "Alles wat ModeDock verzendt. De server voegt je land toe, niet je IP-adres."
           }
         }
       }
@@ -6879,18 +6879,18 @@
         }
       }
     },
-    "Which features you use and how ModeDock is set up. Nothing personal.": {
+    "Which features you use, how ModeDock is set up, and your country. Nothing personal.": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用した機能とModeDockの設定内容。個人情報は含みません。"
+            "value": "使用した機能、ModeDockの設定内容、国。個人情報は含みません。"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welke functies je gebruikt en hoe ModeDock is ingesteld. Niets persoonlijks."
+            "value": "Welke functies je gebruikt, hoe ModeDock is ingesteld en je land. Niets persoonlijks."
           }
         }
       }

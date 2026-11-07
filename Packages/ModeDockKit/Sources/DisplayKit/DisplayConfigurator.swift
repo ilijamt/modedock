@@ -1,8 +1,6 @@
 import CoreGraphics
 import Foundation
 
-/// Display modes, arrangement and mirroring. Abstracted so the controller can be tested without
-/// real displays.
 @MainActor
 public protocol DisplayConfiguring {
     func modes(for display: CGDirectDisplayID, includeDuplicates: Bool) -> [DisplayMode]
@@ -10,13 +8,10 @@ public protocol DisplayConfiguring {
     func setMode(_ mode: DisplayMode, for display: CGDirectDisplayID) throws
     func origins(of displays: [CGDirectDisplayID]) -> [CGDirectDisplayID: CGPoint]
     func setOrigins(_ origins: [CGDirectDisplayID: CGPoint]) throws
-    /// The display each display mirrors, for displays that mirror another.
     func mirrors(of displays: [CGDirectDisplayID]) -> [CGDirectDisplayID: CGDirectDisplayID]
-    /// Mirrors `displays` onto `source`, or stops mirroring them when `source` is nil.
     func setMirroring(_ displays: [CGDirectDisplayID], to source: CGDirectDisplayID?) throws
 }
 
-/// Applies one change as a CoreGraphics configuration transaction, cancelled when the change fails.
 func configureDisplays(_ option: CGConfigureOption, _ change: (CGDisplayConfigRef?) -> CGError) throws {
     var config: CGDisplayConfigRef?
     var result = CGBeginDisplayConfiguration(&config)
@@ -87,7 +82,7 @@ public struct CoreGraphicsDisplayConfigurator: DisplayConfiguring {
         return CGDisplayCopyAllDisplayModes(display, options) as? [CGDisplayMode] ?? []
     }
 
-    /// `.permanently` makes the change survive logout, the same as System Settings.
+    /// Survives logout, like System Settings.
     private func configure(_ change: (CGDisplayConfigRef?) -> CGError) throws {
         try configureDisplays(.permanently, change)
     }

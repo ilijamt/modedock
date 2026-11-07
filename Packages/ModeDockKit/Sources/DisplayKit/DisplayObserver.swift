@@ -2,7 +2,6 @@ import CoreGraphics
 import Foundation
 import os
 
-/// Calls `onChange` once after displays are connected, disconnected, enabled or reconfigured.
 /// CoreGraphics sends a burst of callbacks per change, so they are coalesced.
 @MainActor
 public final class DisplayObserver {
@@ -14,7 +13,6 @@ public final class DisplayObserver {
         CGDisplayRegisterReconfigurationCallback(Self.callback, Unmanaged.passUnretained(self).toOpaque())
     }
 
-    /// Must be called before the observer is released.
     public func stop() {
         pending?.cancel()
         CGDisplayRemoveReconfigurationCallback(Self.callback, Unmanaged.passUnretained(self).toOpaque())

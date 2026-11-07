@@ -12,7 +12,7 @@ public final class ScreenController {
     public struct Screen: Identifiable, Equatable, Sendable {
         public var display: Display
         public var supportsDDC: Bool
-        /// Set by ModeDock; a monitor can also be woken with its own power button.
+        /// A monitor can also be woken with its own power button.
         public var isInStandby: Bool
         public var canDisable: Bool
 
@@ -21,7 +21,7 @@ public final class ScreenController {
 
     public private(set) var screens: [Screen] = []
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
+        // Only the error kind is counted, never its text.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorScreen) } }
     }
 
@@ -30,7 +30,7 @@ public final class ScreenController {
     private let defaults: UserDefaults
     private static let disabledKey = "disabledDisplayIDs"
 
-    /// Displays ModeDock disabled. Persisted so a crash doesn't leave a screen off.
+    /// Persisted so a crash doesn't leave a screen off.
     private var disabled: Set<CGDirectDisplayID> {
         didSet { defaults.set(disabled.map { Int($0) }, forKey: Self.disabledKey) }
     }
@@ -50,7 +50,6 @@ public final class ScreenController {
         self.disabled = Set(saved.map { CGDirectDisplayID($0) })
     }
 
-    /// Re-enables displays left off by a previous run, then loads the current state.
     public func start() async {
         for id in disabled {
             try? system.setEnabled(true, display: id)
@@ -112,7 +111,6 @@ public final class ScreenController {
         lastError = errorMessage { try system.sleepAllDisplays() }
     }
 
-    /// Turns every display back on: the ones ModeDock disabled and the ones it put in standby.
     public func restoreAll() async {
         restoreDisabled()
         for identity in standby {
@@ -122,7 +120,7 @@ public final class ScreenController {
         refresh()
     }
 
-    /// Synchronous part of `restoreAll`, safe to call while the app terminates.
+    /// Safe to call while the app terminates.
     public func restoreDisabled() {
         for id in disabled {
             do {

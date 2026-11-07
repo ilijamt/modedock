@@ -729,7 +729,7 @@ private struct UsageDataSection: View {
                     showingData = false
                 }
             }
-        SettingsNote("Which features you use and how ModeDock is set up. Nothing personal.")
+        SettingsNote("Which features you use, how ModeDock is set up, and your country. Nothing personal.")
         #if DEBUG
             // Debug builds only, for a local server; not translated.
             if let endpoint = telemetry.endpoint {
@@ -768,7 +768,7 @@ private struct UsageDataView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Usage Data").font(.headline)
-            Text("Everything ModeDock sends.")
+            Text("Everything ModeDock sends. The server adds your country, not your IP address.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

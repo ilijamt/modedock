@@ -1,9 +1,8 @@
 import Foundation
 import os
 
-/// ModeDock's log: always the system log, and with debug logging on, also a file that can be
-/// attached to a bug report. macOS doesn't keep debug messages, so the file is the only record
-/// of them. Messages must never contain serial numbers.
+/// macOS doesn't keep debug messages, so the file is the only record of them.
+/// Messages must never contain serial numbers.
 public struct AppLog: Sendable {
     public static let screens = AppLog("screens")
 
@@ -36,8 +35,6 @@ public struct AppLog: Sendable {
     }
 }
 
-/// ~/Library/Logs/ModeDock/ModeDock.log, written only while debug logging is on. It's moved to
-/// ModeDock.1.log when it passes 2 MB, so at most two files are kept.
 public enum LogFile {
     public static let enabledKey = "debugLogging"
     public static let url = FileManager.default.homeDirectoryForCurrentUser
@@ -55,7 +52,6 @@ public enum LogFile {
         queue.async { append(line) }
     }
 
-    /// The previous file, then the current one.
     public static func contents() -> String {
         queue.sync {
             [previousURL, url].compactMap { try? String(contentsOf: $0, encoding: .utf8) }.joined()

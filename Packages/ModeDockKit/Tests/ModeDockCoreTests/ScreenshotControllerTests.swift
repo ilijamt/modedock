@@ -14,7 +14,6 @@ private final class FakeScreenshotSystem: ScreenshotSystem {
     var arrangements: [[CGRect]?] = []
     var copySucceeds = true
     var runs: [[String]] = []
-    /// What a capture does: write the files it was given, or nothing (Esc).
     var behaviour: Behaviour = .succeed
     var status: Int32 = 0
 
@@ -171,7 +170,6 @@ struct ScreenshotControllerTests {
         let controller = ScreenshotController(system: system)
         #expect(await controller.capture(.allScreens, options: options(.clipboard), date: date) == .copied)
         #expect(system.copied.first?.count == 2)
-        // Copied as one image, laid out like the displays.
         #expect(
             system.arrangements.first
                 == [CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: -1512, y: 98, width: 1512, height: 982)])
@@ -186,7 +184,6 @@ struct ScreenshotControllerTests {
 
         #expect(await controller.capture(.allScreens, options: combined, date: date) == .saved([expected]))
         #expect(system.combined == [expected])
-        // The per-screen captures were temporary.
         #expect(system.files == [expected.path])
     }
 
@@ -203,7 +200,6 @@ struct ScreenshotControllerTests {
     }
 
     @Test func arrangesScreensLikeTheDisplays() {
-        // A laptop to the left of the main screen, lower down.
         let layout = ScreenshotController.arrangement(
             of: [CGRect(x: 0, y: 0, width: 1920, height: 1080), CGRect(x: -1512, y: 98, width: 1512, height: 982)],
             scale: 2)

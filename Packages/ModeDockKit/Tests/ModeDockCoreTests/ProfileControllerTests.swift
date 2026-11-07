@@ -127,7 +127,6 @@ private struct Setup {
         await reload()
     }
 
-    /// What the app does after the screens change.
     func reload() async {
         let displays = screens.screens.map(\.display)
         modes.refresh(displays: displays, showAllModes: false)
@@ -154,7 +153,6 @@ struct ProfileControllerTests {
         let setup = await Setup()
         let profile = setup.profiles.capture(name: "Desk")
 
-        // Change everything the profile covers.
         setup.screens.setEnabled(false, screen: 1)
         setup.configurator.current[5] = small
         setup.configurator.originsByDisplay[5] = CGPoint(x: 100, y: 0)
@@ -215,7 +213,6 @@ struct ProfileControllerTests {
         #expect(setup.configurator.current[5] == large)
         #expect(setup.configurator.originsByDisplay[5] == .zero)
         #expect(setup.profiles.lastError == nil)
-        // The TV is part of the profile, so this setup isn't it.
         #expect(!setup.profiles.isActive(profile))
     }
 
@@ -274,14 +271,12 @@ struct ProfileControllerTests {
         setup.profiles.setAutoApply(true, for: profile.id)
         profile = setup.profiles.profiles[0]
 
-        // Undock: the TV goes away and the external monitor changes mode.
         setup.system.displays.removeAll { $0.id == 7 }
         await setup.screens.displaysChanged()
         await setup.profiles.autoApplyIfNeeded()
         setup.configurator.current[5] = large
         await setup.reload()
 
-        // Dock again: the profile comes back.
         setup.system.displays.append(tv)
         await setup.screens.displaysChanged()
         await setup.reload()
@@ -341,7 +336,6 @@ struct ProfileControllerTests {
         await setup.profiles.apply(bright)
         #expect(setup.profiles.currentProfile?.id == bright.id)
 
-        // Drifted away from both.
         setup.brightnessSystem.levels[5] = 0.4
         await setup.reload()
         #expect(setup.profiles.currentProfile == nil)
@@ -387,7 +381,6 @@ struct ProfileControllerTests {
         setup.profiles.setSystemSetting(.darkMode, to: false, for: profile.id)
         setup.profiles.setSystemSetting(.nightShift, to: true, for: profile.id)
         utilities.refresh()
-        // The fake starts in Dark Mode with the Dock shown and Night Shift off.
         #expect(!setup.profiles.isActive(setup.profiles.profiles[0]))
 
         await setup.profiles.apply(setup.profiles.profiles[0])

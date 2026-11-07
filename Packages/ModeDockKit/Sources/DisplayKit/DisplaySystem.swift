@@ -23,7 +23,6 @@ public enum DisplayError: Error, Equatable, LocalizedError {
     }
 }
 
-/// Talks to CoreGraphics. Abstracted so the controller can be tested without real displays.
 @MainActor
 public protocol DisplaySystem {
     func onlineDisplays() -> [Display]
@@ -79,7 +78,6 @@ public struct CoreGraphicsDisplaySystem: DisplaySystem {
     }
 }
 
-/// Which private APIs this macOS version provides.
 public enum DisplayCapabilities {
     public static var canDisableDisplays: Bool { PrivateAPI.configureDisplayEnabled != nil }
     public static var canUseDDC: Bool {

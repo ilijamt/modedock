@@ -15,7 +15,6 @@ private actor RecordingSender: TelemetrySender {
     }
 }
 
-/// Runs `during` while a report is being sent, to act on Telemetry mid-send.
 private struct HookSender: TelemetrySender {
     let during: @MainActor @Sendable () async -> Void
 
@@ -104,7 +103,6 @@ struct TelemetryTests {
                 ["profile.apply": 1, "app.active": 1], ["panel.open": 1, "app.active": 1],
             ])
         #expect(reports.first?.context == context)
-        // Each accepted batch has its own ID.
         #expect(reports[0].report != reports[1].report)
     }
 
@@ -117,7 +115,6 @@ struct TelemetryTests {
         telemetry.record(.profileApply)
 
         #expect(await !telemetry.sendIfDue(context: context))
-        // Waits before trying again.
         #expect(await !telemetry.sendIfDue(context: context))
         #expect(await sender.reports.count == 1)
 
@@ -195,7 +192,7 @@ struct TelemetryTests {
 
     @Test func sendsNothingWithoutAnEndpoint() async {
         let sender = RecordingSender()
-        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender)
+        let telemetry = Telemetry(defaults: makeDefaults(), sender: sender, endpoint: nil)
         telemetry.setEnabled(true)
         telemetry.record(.profileApply)
 

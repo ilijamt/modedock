@@ -10,13 +10,11 @@ public final class DisplayModeController {
         public var options: [ResolutionOption]
         public var current: DisplayMode?
         public var isMain: Bool
-        /// The mode macOS marks as the default for this display, if it reports one.
         public var defaultMode: DisplayMode? = nil
 
         public var isAtDefault: Bool { defaultMode == nil || defaultMode?.id == current?.id }
     }
 
-    /// A mode change waiting for the user to keep it; reverted automatically at `deadline`.
     public struct PendingChange: Equatable, Sendable {
         public let display: CGDirectDisplayID
         public let previous: DisplayMode
@@ -28,10 +26,9 @@ public final class DisplayModeController {
     public private(set) var pending: PendingChange?
     public private(set) var isMirroring = false
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
+        // Only the error kind is counted, never its text.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorResolution) } }
     }
-    /// Called when a change needs confirmation, so the app can show the prompt.
     public var onConfirmationNeeded: ((PendingChange) -> Void)?
 
     private let configurator: DisplayConfiguring
@@ -54,20 +51,17 @@ public final class DisplayModeController {
 
     public var canMirror: Bool { displays.count > 1 }
 
-    /// Reloads modes for the screens that are on.
     public func refresh(displays: [Display], showAllModes: Bool) {
         self.displays = displays.filter(\.isEnabled)
         self.showAllModes = showAllModes
         reload()
     }
 
-    /// Reloads modes for the screens that are on, keeping the current "show all" setting.
     public func refresh(displays: [Display]) {
         refresh(displays: displays, showAllModes: showAllModes)
     }
 
-    /// Switches to the mode with `key` without asking for confirmation, for modes known to work
-    /// such as the ones saved in a profile. Does nothing when the display already uses that mode.
+    /// For modes known to work, such as the ones saved in a profile.
     public func applyKnownMode(key: String, for display: CGDirectDisplayID) throws {
         if configurator.currentMode(for: display)?.key == key { return }
         // Several modes can share a key (different pixel encodings); prefer the native, then the largest.
@@ -130,15 +124,13 @@ public final class DisplayModeController {
         reload()
     }
 
-    /// Switches back to the display's default mode. It's the mode macOS itself picks, so it
-    /// doesn't ask for confirmation.
+    /// It's the mode macOS itself picks, so it doesn't ask for confirmation.
     public func resetToDefault(_ display: CGDirectDisplayID) {
         guard let mode = screens[display]?.defaultMode, let identity = identity(of: display) else { return }
         markConfirmed(mode, on: identity)
         select(mode, for: display)
     }
 
-    /// Forgets which modes were kept, so switching to them asks for confirmation again.
     public func forgetConfirmedModes() {
         defaults.removeObject(forKey: Self.confirmedKey)
     }
@@ -151,7 +143,6 @@ public final class DisplayModeController {
         reload()
     }
 
-    /// Mirrors every screen that's on onto the main screen, or stops mirroring.
     public func setMirroring(_ on: Bool) {
         Telemetry.shared.record(.screenMirroring)
         let ids = displays.map(\.id)

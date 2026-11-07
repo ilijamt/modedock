@@ -3,7 +3,6 @@ import Foundation
 import Observation
 import PrivateAPI
 
-/// The current state of the system toggles. nil means this Mac doesn't support that toggle.
 public struct UtilityState: Equatable, Sendable {
     public var darkMode: Bool?
     public var dockAutoHide: Bool?
@@ -11,7 +10,6 @@ public struct UtilityState: Equatable, Sendable {
     public var hiddenFiles = false
     public var nightShift: Bool?
     public var trueTone: Bool?
-    /// External and removable volumes that Eject All would eject.
     public var ejectableVolumes = 0
 
     public init(
@@ -40,7 +38,6 @@ public enum UtilityError: Error, LocalizedError {
     }
 }
 
-/// The system calls behind the utilities, abstracted for tests.
 @MainActor
 public protocol UtilitySystem {
     func state() -> UtilityState
@@ -60,7 +57,6 @@ public protocol UtilitySystem {
 public final class UtilitiesController {
     public private(set) var state = UtilityState()
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorUtility) } }
     }
     public private(set) var isEjecting = false
@@ -83,7 +79,7 @@ public final class UtilitiesController {
     public func setTrueTone(_ on: Bool) { apply(.trueTone) { try system.setTrueTone(on) } }
     public func emptyTrash() { apply(.emptyTrash) { try system.emptyTrash() } }
 
-    /// Turns one of the settings a profile can set on or off. Not counted as someone using it.
+    /// Not counted as someone using it.
     public func set(_ setting: ProfileSystemSettings.Setting, to on: Bool) {
         apply(nil) {
             switch setting {
@@ -95,8 +91,6 @@ public final class UtilitiesController {
         }
     }
 
-    /// Ejects every external and removable volume, and reports the ones that refused (for
-    /// example because a file on them is open).
     public func ejectAll() async {
         guard !isEjecting else { return }
         Telemetry.shared.record(.ejectDisks)
@@ -126,8 +120,7 @@ public final class UtilitiesController {
     }
 }
 
-/// The real implementation: private SkyLight, Dock and CoreBrightness calls where they avoid
-/// permission prompts, Finder preferences, and Finder's AppleScript for emptying the Trash.
+/// Private SkyLight, Dock and CoreBrightness calls where they avoid permission prompts.
 @MainActor
 public struct MacUtilitySystem: UtilitySystem {
     private static let finder = "com.apple.finder" as CFString
@@ -176,9 +169,8 @@ public struct MacUtilitySystem: UtilitySystem {
         }
     }
 
-    /// macOS has no API for this; asking Finder empties the Trash on every volume, and asks the
-    /// user once to let ModeDock control Finder. Finder reports an error when the Trash is
-    /// already empty, so that case is skipped.
+    /// macOS has no API for this. Asking Finder asks the user once to let ModeDock control Finder,
+    /// and Finder reports an error when the Trash is already empty, so that case is skipped.
     public func emptyTrash() throws {
         var error: NSDictionary?
         NSAppleScript(

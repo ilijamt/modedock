@@ -12,7 +12,7 @@ enum UsageDataPrompt {
         alert.messageText = String(localized: "Share anonymous usage data?")
         alert.informativeText = String(
             localized:
-                "Counts of which features you use and how ModeDock is set up. Nothing personal. You can change this in Settings → General."
+                "Counts of which features you use, how ModeDock is set up, and your country. Nothing personal. You can change this in Settings → General."
         )
         alert.addButton(withTitle: String(localized: "Share"))
         alert.addButton(withTitle: String(localized: "Don't Share")).keyEquivalent = "\u{1b}"

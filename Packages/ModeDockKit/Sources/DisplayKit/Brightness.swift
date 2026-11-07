@@ -1,28 +1,20 @@
 import CoreGraphics
 import PrivateAPI
 
-/// How a screen's brightness is controlled.
 public enum BrightnessBackend: Equatable, Sendable {
-    /// DisplayServices: built-in and Apple displays.
     case system
-    /// The monitor's own backlight over DDC.
     case ddc(maximum: UInt16)
-    /// Gamma dimming for screens with neither; it dims the image, not the backlight.
+    /// Dims the image, not the backlight.
     case software
 }
 
-/// Brightness through DisplayServices and gamma tables. Abstracted for tests.
 @MainActor
 public protocol BrightnessSystem {
     func canControl(_ display: CGDirectDisplayID) -> Bool
-    /// 0...1, or nil when it can't be read.
     func brightness(of display: CGDirectDisplayID) -> Double?
     func setBrightness(_ value: Double, of display: CGDirectDisplayID) throws
-    /// 1 removes the dimming.
     func setSoftwareDimming(_ value: Double, of display: CGDirectDisplayID)
-    /// Restores every display's normal colours.
     func resetSoftwareDimming()
-    /// nil when the display has no light sensor.
     func autoBrightness(of display: CGDirectDisplayID) -> Bool?
     func setAutoBrightness(_ enabled: Bool, of display: CGDirectDisplayID) throws
 }

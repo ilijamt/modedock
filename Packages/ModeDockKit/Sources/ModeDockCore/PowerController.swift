@@ -8,13 +8,12 @@ import PrivateAPI
 public struct BatteryStatus: Equatable, Sendable {
     public enum State: Equatable, Sendable {
         case onBattery, charging, charged
-        /// Plugged in but not charging, for example with Optimized Battery Charging.
+        /// For example with Optimized Battery Charging.
         case notCharging
     }
 
     public var percent: Int
     public var state: State
-    /// Until empty on battery, until full while charging; nil while macOS is still estimating.
     public var minutesRemaining: Int?
 
     public init(percent: Int, state: State, minutesRemaining: Int? = nil) {
@@ -23,8 +22,7 @@ public struct BatteryStatus: Equatable, Sendable {
         self.minutesRemaining = minutesRemaining
     }
 
-    /// Reads one entry of `IOPSGetPowerSourceDescription`. Returns nil for anything but the
-    /// internal battery (UPSs and accessories also show up there).
+    /// UPSs and accessories also show up there.
     public init?(description: [String: Any]) {
         guard description[kIOPSTypeKey] as? String == kIOPSInternalBatteryType,
             description[kIOPSIsPresentKey] as? Bool ?? true,
@@ -53,10 +51,8 @@ public struct BatteryStatus: Equatable, Sendable {
     }
 }
 
-/// Power management calls, abstracted for tests.
 @MainActor
 public protocol PowerSystem {
-    /// Returns an assertion id, or nil when macOS refused it.
     func preventSleep(keepScreensOn: Bool, reason: String) -> UInt32?
     func allowSleep(_ assertion: UInt32)
     func sleep() throws
@@ -120,10 +116,8 @@ public enum PowerError: Error, LocalizedError {
 @MainActor
 @Observable
 public final class PowerController {
-    /// The durations offered in menus, in minutes; nil is "until turned off".
     public static let presets: [Int?] = [nil, 15, 30, 60, 120, 240, 480]
 
-    /// String(localized: "Until turned off", bundle: .module), "15 minutes", "2 hours", "1 h 30 min".
     public static func title(minutes: Int?) -> String {
         guard let minutes else { return String(localized: "Until turned off", bundle: .module) }
         let (hours, rest) = minutes.quotientAndRemainder(dividingBy: 60)
@@ -134,8 +128,7 @@ public final class PowerController {
         }
     }
 
-    /// Reads a typed duration: "90" (minutes), "45m", "2h", "1h30", "1h 30m", "1:30" or "1.5h".
-    /// Returns nil for anything else, for zero, and for more than a week.
+    /// Accepts "90" (minutes), "45m", "2h", "1h30", "1h 30m", "1:30" or "1.5h".
     public static func minutes(from text: String) -> Int? {
         let text = text.lowercased().replacingOccurrences(of: " ", with: "")
         guard !text.isEmpty else { return nil }
@@ -158,7 +151,6 @@ public final class PowerController {
         return Int(total.rounded())
     }
 
-    /// Minutes from `now` until the next `time` of day; tomorrow when it has already passed today.
     public static func minutes(until time: Date, from now: Date = Date(), calendar: Calendar = .current) -> Int {
         let parts = calendar.dateComponents([.hour, .minute], from: time)
         let next =
@@ -168,7 +160,6 @@ public final class PowerController {
     }
 
     public struct KeepAwake: Equatable, Sendable {
-        /// nil when it lasts until turned off.
         public var minutes: Int?
         public var endsAt: Date?
     }
@@ -187,8 +178,6 @@ public final class PowerController {
 
     public var isKeepingAwake: Bool { keepAwake != nil }
 
-    /// Starts Keep Awake, replacing one that's already running.
-    /// `minutes` nil keeps the Mac awake until turned off.
     public func startKeepAwake(minutes: Int?, keepScreensOn: Bool) {
         Telemetry.shared.record(.keepAwake)
         stopKeepAwake()
@@ -207,7 +196,6 @@ public final class PowerController {
         }
     }
 
-    /// Switches between keeping the screens on and letting them sleep, without restarting the timer.
     public func setKeepScreensOn(_ keepScreensOn: Bool) {
         guard let old = assertion else { return }
         guard let id = preventSleep(keepScreensOn: keepScreensOn) else { return }

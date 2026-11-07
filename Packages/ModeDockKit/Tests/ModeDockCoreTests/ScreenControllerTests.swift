@@ -9,7 +9,6 @@ import Testing
 private final class FakeDisplaySystem: DisplaySystem {
     var displays: [Display]
     var failNextChange = false
-    /// Mimics macOS dropping a disabled display from the online list.
     var hideDisabled = false
     private(set) var sleepCount = 0
 
@@ -118,7 +117,6 @@ struct ScreenControllerTests {
         first.setEnabled(false, screen: 5)
         #expect(!system.displays[1].isEnabled)
 
-        // A new controller (next launch) with the same defaults turns it back on.
         let next = ScreenController(system: system, ddc: FakeDDC(supported: []), defaults: defaults)
         await next.start()
         #expect(system.displays[1].isEnabled)

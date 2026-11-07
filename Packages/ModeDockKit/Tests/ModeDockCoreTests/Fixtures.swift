@@ -11,7 +11,6 @@ let tv = Display(
     id: 7, identity: DisplayIdentity(vendor: 4268, model: 3, serial: 0),
     name: "TV", isBuiltin: false, isEnabled: true)
 
-/// Fresh user defaults for each test, so tests don't see each other's settings.
 func makeDefaults() -> UserDefaults {
     UserDefaults(suiteName: "ModeDockCoreTests-\(UUID().uuidString)") ?? .standard
 }

@@ -1,6 +1,5 @@
 import Foundation
 
-/// Night Shift and True Tone through the private CoreBrightness clients that System Settings uses.
 public enum CoreBrightness {
     private typealias GetBool = @convention(c) (AnyObject, Selector) -> Bool
     private typealias SetBool = @convention(c) (AnyObject, Selector, Bool) -> Bool
@@ -12,13 +11,12 @@ public enum CoreBrightness {
     nonisolated(unsafe) private static let blueLightClient = client("CBBlueLightClient")
     nonisolated(unsafe) private static let trueToneClient = client("CBTrueToneClient")
 
-    /// nil when Night Shift isn't available on this Mac.
     public static func nightShift() -> Bool? {
         guard let blueLight = blueLightClient, let get: GetStatus = method(blueLight, "getBlueLightStatus:") else {
             return nil
         }
-        // The C struct is { BOOL active, enabled, sunSchedulePermitted; int mode; 4 × int schedule;
-        // uint64 disableFlags; BOOL available } — 40 bytes with padding. A larger buffer is used so a
+        // The C struct is { BOOL active, enabled, sunSchedulePermitted; int mode; 4 x int schedule;
+        // uint64 disableFlags; BOOL available }, 40 bytes with padding. A larger buffer is used so a
         // longer struct in a future macOS can't write past it.
         var buffer = [UInt8](repeating: 0, count: 128)
         let ok = buffer.withUnsafeMutableBytes { raw in
@@ -33,7 +31,6 @@ public enum CoreBrightness {
         return set(blueLight, NSSelectorFromString("setEnabled:"), enabled)
     }
 
-    /// nil when no connected screen supports True Tone.
     public static func trueTone() -> Bool? {
         guard let trueTone = trueToneClient, let get: GetBool = method(trueTone, "supported"),
             get(trueTone, NSSelectorFromString("supported")),

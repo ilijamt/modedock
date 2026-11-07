@@ -6,18 +6,15 @@ import os
 
 private let log = AppLog.screens
 
-/// Saves the current screen setup as a profile and puts it back later, by hand or automatically
-/// when the same screens are connected again.
 @MainActor
 @Observable
 public final class ProfileController {
     public private(set) var profiles: [DisplayProfile] = [] {
         didSet { save() }
     }
-    /// The profile being applied right now.
     public private(set) var applying: DisplayProfile.ID?
     public private(set) var lastError: String? {
-        // Counted by kind only, when a new error appears.
+        // Only the error kind is counted, never its text.
         didSet { if lastError != nil, lastError != oldValue { Telemetry.shared.record(.errorProfile) } }
     }
 
@@ -26,13 +23,11 @@ public final class ProfileController {
     private let brightness: BrightnessController
     private let configurator: DisplayConfiguring
     private let defaults: UserDefaults
-    /// How long macOS gets to bring screens up or down before ModeDock reads them again.
+    /// Time macOS gets to bring screens up or down before ModeDock reads them again.
     private let settleDelay: Duration
-    /// Sets the profiles' Mac-wide settings (Dark Mode and the like); none are applied without it.
     public var utilities: UtilitiesController?
-    /// The screens connected at the last auto-apply check; nil before the first one.
     private var lastConnected: Set<DisplayIdentity>?
-    /// The profile last applied, saved or updated, which wins when several match the screens.
+    /// Wins when several profiles match the screens.
     private var lastUsed: DisplayProfile.ID?
     private static let storageKey = "displayProfiles"
 
@@ -57,9 +52,6 @@ public final class ProfileController {
         }
     }
 
-    // MARK: - Editing
-
-    /// Saves the current setup as a new profile.
     @discardableResult
     public func capture(name: String) -> DisplayProfile {
         Telemetry.shared.record(.profileSave)
@@ -69,12 +61,10 @@ public final class ProfileController {
         return profile
     }
 
-    /// Replaces a profile's setup with the current one, keeping its name and options.
     public func update(_ id: DisplayProfile.ID) {
         guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
         profiles[index].screens = currentScreens()
         profiles[index].mirroring = currentMirroring()
-        // Only the settings the profile already sets take the current values.
         if let utilities {
             utilities.refresh()
             for setting in ProfileSystemSettings.Setting.allCases where profiles[index].system[setting] != nil {
@@ -85,9 +75,6 @@ public final class ProfileController {
         lastUsed = id
     }
 
-    /// Changes what a profile sets for one of its screens: whether it's on, its mode (a
-    /// DisplayMode key) or its brightness (nil leaves brightness alone). The arrangement isn't
-    /// edited here; Update from Current takes it from the screens as they are.
     public func editScreen(
         _ identity: DisplayIdentity, in id: DisplayProfile.ID, _ change: (inout ProfileScreen) -> Void
     ) {
@@ -97,7 +84,6 @@ public final class ProfileController {
         change(&profiles[index].screens[screen])
     }
 
-    /// Sets or clears (nil) one of a profile's Mac-wide settings.
     public func setSystemSetting(_ setting: ProfileSystemSettings.Setting, to value: Bool?, for id: DisplayProfile.ID) {
         guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
         profiles[index].system[setting] = value
@@ -108,8 +94,7 @@ public final class ProfileController {
         profiles[index].name = name
     }
 
-    /// Only one profile applies automatically for a set of screens, so turning it on turns it off
-    /// for the others saved with the same screens.
+    /// Only one profile applies automatically for a set of screens.
     public func setAutoApply(_ on: Bool, for id: DisplayProfile.ID) {
         guard let index = profiles.firstIndex(where: { $0.id == id }) else { return }
         var updated = profiles
@@ -123,14 +108,11 @@ public final class ProfileController {
         profiles = updated
     }
 
-    /// The profile that applies automatically for the same screens as `id`, other than `id`
-    /// itself: the one that turning it on for `id` would replace.
     public func automaticProfile(sharingScreensWith id: DisplayProfile.ID) -> DisplayProfile? {
         guard let profile = profiles.first(where: { $0.id == id }) else { return nil }
         return profiles.first { $0.id != id && $0.autoApply && $0.identities == profile.identities }
     }
 
-    /// Puts a profile where `target` is, shifting the others, as when it's dragged onto it.
     public func move(_ id: DisplayProfile.ID, to target: DisplayProfile.ID) {
         guard id != target, let from = profiles.firstIndex(where: { $0.id == id }),
             let to = profiles.firstIndex(where: { $0.id == target })
@@ -140,8 +122,7 @@ public final class ProfileController {
         profiles = updated
     }
 
-    /// Moves a profile up (negative) or down the list, which is the order of the panel and of
-    /// the Next Profile shortcut.
+    /// The order of the panel and of the Next Profile shortcut.
     public func move(_ id: DisplayProfile.ID, by offset: Int) {
         guard let index = profiles.firstIndex(where: { $0.id == id }), profiles.indices.contains(index + offset)
         else { return }
@@ -150,7 +131,6 @@ public final class ProfileController {
         profiles = updated
     }
 
-    /// Replaces every profile, as when importing a configuration.
     public func replaceAll(with profiles: [DisplayProfile]) {
         self.profiles = profiles
         lastUsed = nil
@@ -160,10 +140,7 @@ public final class ProfileController {
         profiles.removeAll { $0.id == id }
     }
 
-    // MARK: - Matching
-
-    /// Whether the screens that are on, their resolutions, mirroring and the Mac-wide settings it
-    /// sets are what `profile` saved. Brightness and arrangement aren't compared.
+    /// Brightness and arrangement aren't compared.
     public func isActive(_ profile: DisplayProfile) -> Bool {
         let enabled = screens.screens.filter { $0.display.isEnabled && !$0.display.identity.isPlaceholder }
         guard Set(enabled.map(\.display.identity)) == Set(profile.enabledScreens.map(\.identity)),
@@ -178,13 +155,10 @@ public final class ProfileController {
         } && (utilities.map { profile.system.matches($0.state) } ?? true)
     }
 
-    /// How far a screen's brightness can be from the profile's and still count as the same.
     static let brightnessTolerance = 0.05
 
-    /// The one profile shown as current, or nil when the setup has drifted from all of them.
-    /// A profile matches when its screens, resolutions and brightness do, except brightness on
-    /// screens that set it automatically. When several match, it's the one applied or saved
-    /// last, or else the one whose brightness is closest.
+    /// Brightness on screens that set it automatically is ignored. When several match, the one applied
+    /// or saved last wins, or else the one whose brightness is closest.
     public var currentProfile: DisplayProfile? {
         let matching = profiles.filter { isActive($0) && brightnessDistance($0) != nil }
         guard matching.count > 1 else { return matching.first }
@@ -192,8 +166,6 @@ public final class ProfileController {
         return matching.min { (brightnessDistance($0) ?? 0) < (brightnessDistance($1) ?? 0) }
     }
 
-    /// The total brightness difference from the profile, or nil when a screen is off by more
-    /// than the tolerance.
     private func brightnessDistance(_ profile: DisplayProfile) -> Double? {
         var total = 0.0
         for saved in profile.enabledScreens {
@@ -207,16 +179,10 @@ public final class ProfileController {
         return total
     }
 
-    /// Whether `profile` was saved for exactly the screens connected now, on or off.
     public func fitsConnectedScreens(_ profile: DisplayProfile) -> Bool {
         profile.identities == connectedIdentities()
     }
 
-    // MARK: - Applying
-
-    /// Turns on the screens the profile wants on, sets their resolutions, turns off the others,
-    /// then restores mirroring or the arrangement, and brightness. Screens in the profile that
-    /// aren't connected are skipped.
     public func apply(_ profile: DisplayProfile) async {
         Telemetry.shared.record(.profileApply)
         await perform(profile)
@@ -286,9 +252,8 @@ public final class ProfileController {
         lastError = errors.isEmpty ? nil : errors.joined(separator: " ")
     }
 
-    /// Applies the automatic profile made for exactly the connected screens. Call after the
-    /// screens change; it only acts when the set of connected screens is different from the last
-    /// call, so applying a profile doesn't trigger another one.
+    /// Only acts when the set of connected screens differs from the last call, so applying a profile
+    /// doesn't trigger another one.
     public func autoApplyIfNeeded() async {
         guard applying == nil else { return }
         let connected = connectedIdentities()
@@ -304,8 +269,6 @@ public final class ProfileController {
         await perform(profile)
     }
 
-    // MARK: - Helpers
-
     private func connected(_ identity: DisplayIdentity) -> ScreenController.Screen? {
         screens.screens.first { $0.display.identity == identity }
     }
@@ -319,8 +282,6 @@ public final class ProfileController {
         await screens.displaysChanged()
     }
 
-    /// Mirrors onto the profile's main screen, or stops mirroring and moves the screens back to
-    /// their saved positions. Returns the error message, if any.
     private func arrange(_ profile: DisplayProfile) -> String? {
         let enabled = screens.screens.filter(\.display.isEnabled)
         let ids = enabled.map(\.id)

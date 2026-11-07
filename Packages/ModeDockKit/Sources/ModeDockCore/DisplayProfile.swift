@@ -2,15 +2,12 @@ import CoreGraphics
 import DisplayKit
 import Foundation
 
-/// A saved screen setup: which screens are on, their resolutions, arrangement and brightness.
 public struct DisplayProfile: Codable, Identifiable, Hashable, Sendable {
     public var id: UUID
     public var name: String
-    /// Applied by itself when exactly this set of screens is connected.
     public var autoApply: Bool
     public var mirroring: Bool
     public var screens: [ProfileScreen]
-    /// Mac-wide settings the profile also sets; each is left alone unless the user picks one.
     public var system: ProfileSystemSettings
 
     public init(
@@ -40,7 +37,6 @@ public struct DisplayProfile: Codable, Identifiable, Hashable, Sendable {
     public var identities: Set<DisplayIdentity> { Set(screens.map(\.identity)) }
 }
 
-/// The Mac-wide settings a profile can set. nil leaves that setting as it is.
 public struct ProfileSystemSettings: Codable, Hashable, Sendable {
     public var darkMode: Bool?
     public var nightShift: Bool?
@@ -66,7 +62,6 @@ public struct ProfileSystemSettings: Codable, Hashable, Sendable {
             }
         }
 
-        /// Where UtilityState keeps this setting's current value.
         public var stateKeyPath: KeyPath<UtilityState, Bool?> { state }
 
         var state: KeyPath<UtilityState, Bool?> {
@@ -86,8 +81,7 @@ public struct ProfileSystemSettings: Codable, Hashable, Sendable {
 
     public var isEmpty: Bool { Setting.allCases.allSatisfy { self[$0] == nil } }
 
-    /// Whether `state` already has every setting this sets. Settings the Mac doesn't have are
-    /// skipped.
+    /// Settings the Mac doesn't have are skipped.
     func matches(_ state: UtilityState) -> Bool {
         Setting.allCases.allSatisfy { setting in
             guard let wanted = self[setting], let current = state[keyPath: setting.state] else { return true }
@@ -96,17 +90,14 @@ public struct ProfileSystemSettings: Codable, Hashable, Sendable {
     }
 }
 
-/// One screen in a profile, matched to a connected screen by its EDID identity.
 public struct ProfileScreen: Codable, Hashable, Sendable {
     public var identity: DisplayIdentity
-    /// The screen's name when the profile was saved, for showing in lists.
     public var name: String
     public var isEnabled: Bool
     /// `DisplayMode.key`, e.g. "1920x1080@2x@60"; nil for screens that are off.
     public var modeKey: String?
     public var originX: Double?
     public var originY: Double?
-    /// 0...1.
     public var brightness: Double?
 
     public init(
