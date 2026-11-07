@@ -1,57 +1,132 @@
 // Receives ModeDock's anonymous usage reports and stores one row per report in D1, with the
 // country Cloudflare looked up for the request. The IP address and headers are never read.
+// A daily cron turns the last 30 days into public aggregate stats, served at /v1/stats.
 
 const MAX_BODY = 64 * 1024;
 const UUID = /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/;
 const KEY = /^[A-Za-z0-9._-]{1,64}$/;
 // Cloudflare uses XX for unknown and T1 for Tor; neither is a country.
 const COUNTRY = /^(?!XX$|T1$)[A-Z]{2}$/;
+const STATS_DAYS = 30;
+// No number in the public stats describes fewer installs than this, so nobody can be singled out.
+const MIN_INSTALLS = 5;
 
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
+    if (pathname === "/v1/stats") {
+      if (request.method !== "GET") return new Response(null, { status: 405, headers: { Allow: "GET" } });
+      return serveStats(env);
+    }
     if (pathname !== "/v1/reports") return new Response(null, { status: 404 });
     if (request.method !== "POST") return new Response(null, { status: 405, headers: { Allow: "POST" } });
+    return receive(request, env);
+  },
 
-    const body = await request.text();
-    if (body.length === 0 || body.length > MAX_BODY) return new Response(null, { status: 413 });
-
-    let report;
-    try {
-      report = parse(JSON.parse(body));
-    } catch {
-      return new Response(null, { status: 400 });
-    }
-
-    // A resend from the same install replaces its earlier copy; another install can't.
-    await env.DB.prepare(
-      `INSERT INTO reports (report, install, day, schema, app_version, os_version, language, architecture, country, counts, setup)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
-       ON CONFLICT (report) DO UPDATE SET
-         day = excluded.day, schema = excluded.schema, app_version = excluded.app_version,
-         os_version = excluded.os_version, language = excluded.language,
-         architecture = excluded.architecture, country = excluded.country, counts = excluded.counts,
-         setup = excluded.setup
-       WHERE reports.install = excluded.install`,
-    )
-      .bind(
-        report.report,
-        report.install,
-        new Date().toISOString().slice(0, 10),
-        report.schema,
-        report.context.appVersion,
-        report.context.osVersion,
-        report.context.language,
-        report.context.architecture,
-        country(request),
-        JSON.stringify(report.counts),
-        report.setup === undefined ? null : JSON.stringify(report.setup),
-      )
-      .run();
-
-    return new Response(null, { status: 204 });
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(updateStats(env));
   },
 };
+
+async function receive(request, env) {
+  const body = await request.text();
+  if (body.length === 0 || body.length > MAX_BODY) return new Response(null, { status: 413 });
+
+  let report;
+  try {
+    report = parse(JSON.parse(body));
+  } catch {
+    return new Response(null, { status: 400 });
+  }
+
+  // A resend from the same install replaces its earlier copy; another install can't.
+  await env.DB.prepare(
+    `INSERT INTO reports (report, install, day, schema, app_version, os_version, language, architecture, country, counts, setup)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
+     ON CONFLICT (report) DO UPDATE SET
+       day = excluded.day, schema = excluded.schema, app_version = excluded.app_version,
+       os_version = excluded.os_version, language = excluded.language,
+       architecture = excluded.architecture, country = excluded.country, counts = excluded.counts,
+       setup = excluded.setup
+     WHERE reports.install = excluded.install`,
+  )
+    .bind(
+      report.report,
+      report.install,
+      new Date().toISOString().slice(0, 10),
+      report.schema,
+      report.context.appVersion,
+      report.context.osVersion,
+      report.context.language,
+      report.context.architecture,
+      country(request),
+      JSON.stringify(report.counts),
+      report.setup === undefined ? null : JSON.stringify(report.setup),
+    )
+    .run();
+
+  return new Response(null, { status: 204 });
+}
+
+const PUBLIC = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=3600" };
+
+async function serveStats(env) {
+  const read = () => env.DB.prepare("SELECT body FROM stats WHERE id = 1").first();
+  let row = await read();
+  // Before the first cron run (right after a deploy), compute them once instead of a 404.
+  if (!row) {
+    await updateStats(env);
+    row = await read();
+  }
+  return new Response(row.body, { headers: { ...PUBLIC, "Content-Type": "application/json" } });
+}
+
+// Aggregates over the last STATS_DAYS days. Every group counts distinct installs and is left
+/// out below MIN_INSTALLS; no install id or single report ever leaves the database.
+async function updateStats(env) {
+  const since = new Date(Date.now() - STATS_DAYS * 86_400_000).toISOString().slice(0, 10);
+  const total = await env.DB.prepare("SELECT COUNT(DISTINCT install) AS n FROM reports WHERE day >= ?1")
+    .bind(since)
+    .first("n");
+
+  const stats = { updated: new Date().toISOString(), days: STATS_DAYS, minimum: MIN_INSTALLS, installs: null };
+  if (total >= MIN_INSTALLS) {
+    const group = async (column) => {
+      const { results } = await env.DB.prepare(
+        `SELECT ${column} AS name, COUNT(DISTINCT install) AS installs FROM reports
+         WHERE day >= ?1 AND ${column} IS NOT NULL GROUP BY ${column}
+         HAVING installs >= ?2 ORDER BY installs DESC LIMIT 20`,
+      )
+        .bind(since, MIN_INSTALLS)
+        .all();
+      return results;
+    };
+    const { results: features } = await env.DB.prepare(
+      `SELECT c.key AS name, COUNT(DISTINCT r.install) AS installs, SUM(c.value) AS uses
+       FROM reports r, json_each(r.counts) c
+       WHERE r.day >= ?1 AND c.value > 0 AND c.key NOT LIKE 'app.%' AND c.key NOT LIKE 'error.%' AND c.key NOT LIKE 'source.%'
+       GROUP BY c.key HAVING installs >= ?2 ORDER BY installs DESC, uses DESC LIMIT 25`,
+    )
+      .bind(since, MIN_INSTALLS)
+      .all();
+    Object.assign(stats, {
+      installs: total,
+      versions: await group("app_version"),
+      macos: await group("os_version"),
+      architectures: await group("architecture"),
+      languages: await group("language"),
+      countries: await group("country"),
+      features,
+    });
+  }
+
+  await env.DB.prepare(
+    `INSERT INTO stats (id, body, updated) VALUES (1, ?1, ?2)
+     ON CONFLICT (id) DO UPDATE SET body = excluded.body, updated = excluded.updated`,
+  )
+    .bind(JSON.stringify(stats), stats.updated)
+    .run();
+}
 
 // Returns the report with UUIDs lowercased, or throws if anything is off.
 function parse(value) {
