@@ -1,19 +1,29 @@
 # ModeDock
 
-A free, open-source macOS menu-bar utility for everyday display and system controls: turn screens off and on, switch display modes and profiles, adjust brightness, manage power, and take screenshots.
+A free, open-source menu-bar app for macOS 14 or later. It turns screens off and on, switches
+resolutions, sets brightness on every monitor, applies display profiles, keeps the Mac awake
+and takes screenshots.
 
-Requires macOS 14 Sonoma or later. Work in progress.
+Website: [modedock.app](https://modedock.app)
 
-## Building
-
-You need Xcode 16 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`).
+## Install
 
 ```sh
-xcodegen generate          # creates ModeDock.xcodeproj (not committed)
+brew install --cask ilijamt/tap/modedock
+```
+
+Or download it from [Releases](https://github.com/ilijamt/modedock/releases).
+
+## Build
+
+You need Xcode 16 or later and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+
+```sh
+xcodegen generate          # creates ModeDock.xcodeproj, which isn't committed
 open ModeDock.xcodeproj
 ```
 
-Run the tests and the linter:
+Tests and lint:
 
 ```sh
 swift test --package-path Packages/ModeDockKit
@@ -22,9 +32,11 @@ swift format lint --strict --recursive ModeDock Packages
 
 ## Layout
 
-- `ModeDock/` is the app target: the menu-bar UI and the Settings window.
-- `Packages/ModeDockKit/` holds the logic, split into modules with unit tests.
-- `project.yml` is the XcodeGen spec.
+- `ModeDock/`: the app, with the menu-bar panel and the Settings window.
+- `Packages/ModeDockKit/`: the logic and its tests.
+- `server/telemetry/`: the Cloudflare Worker that receives the opt-in usage data.
+- `web/`: the website.
+- `scripts/`: string catalog sync.
 
 ## License
 

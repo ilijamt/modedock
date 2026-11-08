@@ -1,6 +1,4 @@
-// Receives ModeDock's anonymous usage reports and stores one row per report in D1, with the
-// country Cloudflare looked up for the request. The IP address and headers are never read.
-// A daily cron turns the last 30 days into public aggregate stats, served at /v1/stats.
+// Never reads the request's IP address or headers.
 
 const MAX_BODY = 64 * 1024;
 const UUID = /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$/;
@@ -73,7 +71,7 @@ const PUBLIC = { "Access-Control-Allow-Origin": "*", "Cache-Control": "public, m
 async function serveStats(env) {
   const read = () => env.DB.prepare("SELECT body FROM stats WHERE id = 1").first();
   let row = await read();
-  // Before the first cron run (right after a deploy), compute them once instead of a 404.
+  // Right after a deploy the cron hasn't run yet.
   if (!row) {
     await updateStats(env);
     row = await read();
@@ -81,8 +79,6 @@ async function serveStats(env) {
   return new Response(row.body, { headers: { ...PUBLIC, "Content-Type": "application/json" } });
 }
 
-// Aggregates over the last STATS_DAYS days. Every group counts distinct installs and is left
-/// out below MIN_INSTALLS; no install id or single report ever leaves the database.
 async function updateStats(env) {
   const since = new Date(Date.now() - STATS_DAYS * 86_400_000).toISOString().slice(0, 10);
   const total = await env.DB.prepare("SELECT COUNT(DISTINCT install) AS n FROM reports WHERE day >= ?1")
@@ -128,7 +124,6 @@ async function updateStats(env) {
     .run();
 }
 
-// Returns the report with UUIDs lowercased, or throws if anything is off.
 function parse(value) {
   check(isObject(value) && value.schema === 1);
   check(typeof value.install === "string" && UUID.test(value.install));
@@ -146,7 +141,6 @@ function parse(value) {
     check(KEY.test(key) && Number.isInteger(count) && count >= 0 && count <= 1_000_000);
   }
 
-  // Setup is a flat object of numbers, booleans, short strings and lists of short strings.
   const setup = value.setup;
   if (setup !== undefined) {
     check(isObject(setup) && Object.keys(setup).length <= 100);
@@ -165,7 +159,6 @@ function parse(value) {
   };
 }
 
-// Only the country Cloudflare looked up for the request; the IP itself is never read.
 function country(request) {
   const code = request.cf?.country;
   return typeof code === "string" && COUNTRY.test(code) ? code : null;

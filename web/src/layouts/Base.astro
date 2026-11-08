@@ -1,0 +1,157 @@
+---
+import "../styles/global.css";
+import ThemeSwitch from "../components/ThemeSwitch.astro";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const current = (path: string) => (Astro.url.pathname.replace(/\/$/, "") === path ? "page" : undefined);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/img/icon.png" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL("/img/icon.png", Astro.site)} />
+    <meta name="theme-color" content="#fbfbfd" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#101013" media="(prefers-color-scheme: dark)" />
+    <script is:inline>
+      // Before the first paint, so the page doesn't flash the other theme.
+      try {
+        const theme = localStorage.getItem("theme");
+        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap bar">
+        <a class="brand" href="/">
+          <img src="/img/icon.png" alt="" width="28" height="28" />
+          <span>ModeDock</span>
+        </a>
+        <nav aria-label="Main">
+          <a href="/#features">Features</a>
+          <a href="/privacy" aria-current={current("/privacy")}>Privacy</a>
+          <a href="https://github.com/ilijamt/modedock">GitHub</a>
+        </nav>
+        <ThemeSwitch />
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap foot">
+        <p>ModeDock is free and open source under the <a href="https://github.com/ilijamt/modedock/blob/main/LICENSE">MIT License</a>.</p>
+        <nav aria-label="Footer">
+          <a href="https://github.com/ilijamt/modedock">GitHub</a>
+          <a href="https://github.com/ilijamt/modedock/releases">Releases</a>
+          <a href="/privacy">Privacy</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 3.5rem;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--text);
+    font-weight: 650;
+    text-decoration: none;
+    letter-spacing: -0.01em;
+  }
+  .brand img {
+    border-radius: 7px;
+  }
+  .bar nav {
+    margin-left: auto;
+    display: flex;
+    gap: clamp(0.9rem, 3vw, 1.75rem);
+    font-size: 0.95rem;
+  }
+  .bar nav a,
+  .foot nav a {
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .bar nav a:hover,
+  .foot nav a:hover,
+  .bar nav a[aria-current="page"] {
+    color: var(--text);
+  }
+  .bar nav a[aria-current="page"] {
+    font-weight: 600;
+  }
+  @media (max-width: 30rem) {
+    .brand span {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .bar {
+      gap: 0.75rem;
+    }
+    .bar nav {
+      gap: 0.85rem;
+      font-size: 0.9rem;
+    }
+  }
+  .site-footer {
+    border-top: 1px solid var(--line);
+    margin-top: clamp(4rem, 10vw, 7rem);
+    padding-block: 2rem 2.5rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 2rem;
+  }
+  .foot p {
+    flex: 1 1 20rem;
+  }
+  .foot nav {
+    display: flex;
+    gap: 1.25rem;
+  }
+</style>

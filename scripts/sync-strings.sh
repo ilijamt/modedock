@@ -1,6 +1,5 @@
 #!/bin/sh
-# Builds ModeDock and adds new strings to the String Catalogs, marking removed ones stale.
-# Xcode does this by itself when building in the IDE; this is for command-line builds.
+# Updates the String Catalogs on command-line builds. Xcode does this itself in the IDE.
 set -eu
 cd "$(dirname "$0")/.."
 xcodegen generate -q

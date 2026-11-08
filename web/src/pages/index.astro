@@ -1,0 +1,302 @@
+---
+import Base from "../layouts/Base.astro";
+import Install from "../components/Install.astro";
+import Shot from "../components/Shot.astro";
+import Stats from "../components/Stats.astro";
+
+const features = [
+  {
+    tab: "screens",
+    title: "Screens",
+    text: "Every screen in one place, built-in and external.",
+    points: [
+      "Turn a screen off and on, or put a monitor in standby",
+      "Change resolution and refresh rate, including ones macOS hides",
+      "Set brightness on external monitors too",
+      "Switch a monitor's input, the main screen and mirroring",
+    ],
+  },
+  {
+    tab: "profiles",
+    title: "Profiles",
+    text: "Save how your screens are set up and switch back in one click.",
+    points: [
+      "Which screens are on, their resolution and brightness",
+      "Dark Mode, Night Shift, True Tone and Hide Dock, if you want",
+      "Applied on its own when the same screens connect",
+      "A shortcut to step through them",
+    ],
+  },
+  {
+    tab: "power",
+    title: "Keep Awake",
+    text: "Keep your Mac awake for a set time or until you turn it off.",
+    points: ["Let the screens sleep or keep them on", "Sleep the Mac or lock the screen", "See your battery"],
+  },
+  {
+    tab: "screenshots",
+    title: "Screenshots",
+    text: "Capture an area, a window, a screen or all screens. Save to a folder, the clipboard or both.",
+    points: ["All screens in one image", "HDR and the pointer, if you want them", "Use ⇧⌘3 and ⇧⌘4 for ModeDock"],
+  },
+  {
+    tab: "utilities",
+    title: "Quick switches",
+    text: "Settings that are normally a few clicks away.",
+    points: [
+      "Dark Mode, Night Shift, True Tone, Hide Dock",
+      "Desktop icons and hidden files in Finder",
+      "Empty the Trash, eject every disk",
+    ],
+  },
+];
+---
+
+<Base
+  title="ModeDock: screen controls in your Mac's menu bar"
+  description="ModeDock is a free, open-source menu-bar app for macOS. It controls your screens, brightness, display profiles, Keep Awake and screenshots."
+>
+  <section class="hero wrap">
+    <div class="intro">
+      <img class="icon" src="/img/icon.png" alt="" width="96" height="96" />
+      <h1>Every screen control in your menu bar.</h1>
+      <p class="sub">
+        Control your screens, brightness, display profiles, Keep Awake and screenshots from one menu-bar app.
+      </p>
+      <Install />
+      <p class="meta">Free and open source · macOS 14 or later · Open it with <kbd>⌃⌥⌘M</kbd></p>
+    </div>
+
+    <div class="preview">
+      <Shot tab="screens" alt="The ModeDock panel: each screen with its resolution, brightness and power button" eager width={440} />
+    </div>
+  </section>
+
+  <section class="features wrap" id="features" aria-labelledby="features-title">
+    <h2 id="features-title">What's in it</h2>
+    {
+      features.map((feature) => (
+        <article class={feature.tab === "screens" ? "feature text-only" : "feature"}>
+          <div class="copy">
+            <h3>{feature.title}</h3>
+            <p>{feature.text}</p>
+            <ul>
+              {feature.points.map((point) => (
+                <li>{point}</li>
+              ))}
+            </ul>
+          </div>
+          {feature.tab !== "screens" && (
+            <div class="picture">
+              <Shot tab={feature.tab} alt="" />
+            </div>
+          )}
+        </article>
+      ))
+    }
+
+    <div class="extras">
+      <div>
+        <h3>Shortcuts</h3>
+        <p>Set a shortcut for almost anything.</p>
+      </div>
+      <div>
+        <h3>Your layout</h3>
+        <p>Choose what the panel shows, and copy your setup to another Mac.</p>
+      </div>
+      <div>
+        <h3>Clean exit</h3>
+        <p>When you quit, every screen turns back on and any dimming is undone.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="promise wrap" aria-labelledby="promise-title">
+    <h2 id="promise-title" class="visually-hidden">Free, open and private</h2>
+    <dl>
+      <div>
+        <dt>Free</dt>
+        <dd>No subscription and no account.</dd>
+      </div>
+      <div>
+        <dt>Open source</dt>
+        <dd>MIT license. The code is on <a href="https://github.com/ilijamt/modedock">GitHub</a>.</dd>
+      </div>
+      <div>
+        <dt>Private</dt>
+        <dd>Nothing is sent unless you opt in. Then it's only anonymous counts. <a href="/privacy">Privacy</a></dd>
+      </div>
+    </dl>
+  </section>
+
+  <Stats />
+
+  <section class="close wrap" aria-labelledby="close-title">
+    <img src="/img/icon.png" alt="" width="64" height="64" />
+    <h2 id="close-title">Get ModeDock</h2>
+    <Install />
+  </section>
+</Base>
+
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5rem);
+    padding-block: clamp(3rem, 8vw, 6rem) clamp(3rem, 6vw, 4rem);
+  }
+  .icon {
+    border-radius: 22px;
+    box-shadow: var(--shadow);
+  }
+  h1 {
+    margin-top: 1.5rem;
+    font-size: clamp(2.4rem, 4.6vw, 3.5rem);
+    font-weight: 750;
+    letter-spacing: -0.035em;
+    max-width: 14ch;
+  }
+  .sub {
+    margin-top: 1.25rem;
+    margin-bottom: 2rem;
+    max-width: 36rem;
+    font-size: clamp(1.1rem, 1.6vw, 1.25rem);
+    color: var(--muted);
+  }
+  .meta {
+    margin-top: 1.1rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  kbd {
+    padding: 0.05rem 0.35rem;
+    border-radius: 5px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .preview {
+    display: grid;
+    justify-items: center;
+  }
+
+  .features {
+    padding-top: clamp(4rem, 9vw, 6.5rem);
+  }
+  .features > h2,
+  .close h2 {
+    font-size: clamp(1.75rem, 3.6vw, 2.5rem);
+  }
+  .feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 5rem);
+    padding-block: clamp(2.5rem, 5vw, 3.5rem);
+    border-bottom: 1px solid var(--line);
+  }
+  .feature:nth-of-type(odd) .picture {
+    order: -1;
+  }
+  .feature.text-only {
+    display: block;
+  }
+  .feature.text-only ul {
+    max-width: none;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    column-gap: 3rem;
+  }
+  .feature h3 {
+    font-size: clamp(1.4rem, 2.4vw, 1.75rem);
+  }
+  .feature p {
+    margin-top: 0.6rem;
+    max-width: 34rem;
+    color: var(--muted);
+  }
+  .feature ul {
+    margin: 1.1rem 0 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.4rem;
+    max-width: 34rem;
+  }
+  .feature li::marker {
+    color: var(--accent);
+  }
+  .extras {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 2rem;
+    padding-top: clamp(2.5rem, 5vw, 3.5rem);
+  }
+  .extras h3 {
+    font-size: 1.1rem;
+  }
+  .extras p {
+    margin-top: 0.4rem;
+    color: var(--muted);
+  }
+
+  .promise {
+    margin-top: clamp(4rem, 9vw, 6rem);
+  }
+  .promise dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+  .promise dl > div {
+    padding: 1.5rem 1.6rem;
+  }
+  .promise dl > div + div {
+    border-left: 1px solid var(--line);
+  }
+  dt {
+    font: 700 1.35rem/1.2 var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  dd {
+    margin: 0.4rem 0 0;
+    color: var(--muted);
+  }
+
+  .close {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 1.25rem;
+    text-align: center;
+    padding-top: clamp(4.5rem, 10vw, 7rem);
+  }
+  .close :global(.install) {
+    justify-content: center;
+  }
+  .close img {
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+  }
+
+  @media (max-width: 52rem) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .feature {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+    }
+    .feature .copy {
+      justify-self: stretch;
+    }
+    .feature:nth-of-type(odd) .picture {
+      order: 0;
+    }
+    .promise dl > div + div {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+  }
+</style>

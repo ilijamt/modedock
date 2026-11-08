@@ -1,0 +1,22 @@
+---
+interface Props {
+  tab: string;
+  alt: string;
+  eager?: boolean;
+  width?: number;
+}
+
+const { tab, alt, eager = false, width = 320 } = Astro.props;
+const loading = eager ? "eager" : "lazy";
+---
+
+<img class="shot only-light" src={`/img/panel-${tab}-light.png`} alt={alt} width={width} loading={loading} decoding="async" style={`width: ${width}px`} />
+<img class="shot only-dark" src={`/img/panel-${tab}-dark.png`} alt={alt} width={width} loading={loading} decoding="async" style={`width: ${width}px`} />
+
+<style>
+  .shot {
+    max-width: 100%;
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+</style>

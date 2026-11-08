@@ -1,13 +1,11 @@
-# Deploys the script and the D1 schema. The Worker, the database, telemetry.modedock.app and
-# the rate limit are created by Terraform (homelab/terraform/matoski/modedock_app.tf), so no
-# routes here: wrangler and Terraform would fight over them.
+# Terraform owns the Worker, database, hostname and rate limit, so no routes here.
 name = "modedock-telemetry"
 main = "src/index.js"
 compatibility_date = "2026-11-01"
 workers_dev = false
 preview_urls = false
 
-# Off so request details, and with them IP addresses, never reach Workers logs.
+# Off so IP addresses never reach the logs.
 [observability]
 enabled = false
 
@@ -18,6 +16,5 @@ database_name = "modedock-telemetry"
 database_id = "18a9f12b-a2dd-4bbd-b1c8-5c0bf2bdd149"
 migrations_dir = "migrations"
 
-# Recomputes the public stats once a day.
 [triggers]
 crons = ["17 3 * * *"]
