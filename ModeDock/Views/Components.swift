@@ -2,7 +2,6 @@ import AppKit
 import SwiftUI
 
 extension EnvironmentValues {
-    /// Use the system glass material (macOS 26) instead of hand-drawn fills.
     @Entry var useGlass = false
 }
 
@@ -31,7 +30,6 @@ extension View {
     }
 }
 
-/// A rounded, translucent tile like the ones in Control Center.
 struct Card<Content: View>: View {
     /// The glass reacts to presses. Off for cards that are one big button: pressing those while
     /// the panel resized crashed SwiftUI's glass on macOS 26.
@@ -46,7 +44,6 @@ struct Card<Content: View>: View {
     }
 }
 
-/// Round on/off button: filled with the accent colour when on.
 struct CircleToggle: View {
     let systemImage: String
     let isOn: Bool
@@ -66,13 +63,10 @@ struct CircleToggle: View {
     }
 }
 
-/// A compact tile with an icon beside a short label. A switch (`isOn` set) shows its state in the
-/// icon's circle, like Control Center; a one-off action (`isOn` nil) has a plain icon.
 struct ActionTile: View {
     let title: String
     let systemImage: String
     var isOn: Bool?
-    /// Shown at the right edge, such as the tile's keyboard shortcut.
     var detail: String?
     var detailIsPlaceholder = false
     let action: () -> Void
@@ -119,7 +113,6 @@ struct ActionTile: View {
     }
 }
 
-/// Tiles in equal columns, for sections with more than fit on one row.
 struct TileGrid<Content: View>: View {
     var columns = 2
     @ViewBuilder var content: Content
@@ -131,7 +124,6 @@ struct TileGrid<Content: View>: View {
     }
 }
 
-/// A small capsule button for picking one of a few options, tinted when chosen.
 struct Chip: View {
     let title: String
     let isOn: Bool
@@ -152,7 +144,6 @@ struct Chip: View {
     }
 }
 
-/// A controller's last error under a section; nothing when there is none.
 struct ErrorLabel: View {
     let message: String?
 
@@ -170,7 +161,6 @@ struct ErrorLabel: View {
     }
 }
 
-/// A section with a clickable header that collapses its content.
 struct CollapsibleSection<Content: View>: View {
     let title: String
     let isExpanded: Bool
@@ -200,7 +190,6 @@ struct CollapsibleSection<Content: View>: View {
     }
 }
 
-/// The translucent background used by menu-bar popovers.
 struct VisualEffectBackground: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()

@@ -1,8 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// A borderless panel styled like a menu-bar popover. Non-activating, so it doesn't steal
-/// focus from the frontmost app.
+/// Non-activating, so it doesn't steal focus from the frontmost app.
 class FloatingPanel: NSPanel {
     init(level: NSWindow.Level) {
         super.init(
@@ -24,7 +23,6 @@ class FloatingPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }
 
-    /// Shows `view` on the popover material with rounded corners.
     func setContent(_ view: some View, cornerRadius: CGFloat) {
         let root =
             view

@@ -3,7 +3,6 @@ import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
 
-/// Screens shown as grouped rows with standard controls, like the Settings window.
 struct RowsScreensSection: View {
     let controller: ScreenController
     let modes: DisplayModeController
@@ -36,7 +35,6 @@ struct RowsScreensSection: View {
         .controlSize(.small)
     }
 
-    /// The optional rows under the screens, in order, without the hidden ones.
     private var actions: [PanelItem] {
         [PanelItem.mirror, .sleepScreens, .allOn].filter { item in
             guard !hidden.contains(item) else { return false }
@@ -226,7 +224,6 @@ private struct ScreenRows: View {
     }
 }
 
-/// A rounded group of rows, like a grouped Form section.
 struct RowGroup<Content: View>: View {
     @ViewBuilder var content: Content
 

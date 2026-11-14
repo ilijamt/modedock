@@ -2,8 +2,6 @@ import AppKit
 import ModeDockCore
 import SwiftUI
 
-/// Asks for a Keep Awake duration that isn't one of the presets: typed ("1h30", "90m") or as a
-/// time of day to stay awake until.
 @MainActor
 final class CustomKeepAwakeWindow {
     static let shared = CustomKeepAwakeWindow()
@@ -29,7 +27,6 @@ final class CustomKeepAwakeWindow {
     }
 }
 
-/// The Menu style's window around the custom duration editor; the other styles show it inline.
 private struct CustomKeepAwakeView: View {
     let power: PowerController
     let onClose: () -> Void
@@ -48,12 +45,10 @@ private struct CustomKeepAwakeView: View {
     }
 }
 
-/// A custom Keep Awake duration: typed ("1h30", "90m") or a time of day to stay awake until.
 struct CustomKeepAwakeEditor: View {
     enum Mode: Hashable { case duration, until }
 
     let power: PowerController
-    /// Called after starting, and on Esc.
     let onDone: () -> Void
 
     @State private var mode = Mode.duration

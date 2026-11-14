@@ -8,7 +8,6 @@ extension Display {
 }
 
 extension DisplayMode {
-    /// "1920 × 1080 · 60 Hz", without the rate when the display doesn't report one.
     var summary: String {
         let size = "\(width) × \(height)"
         return refreshRate > 0 ? "\(size) · \(refreshRateText)" : size
@@ -32,12 +31,10 @@ extension DisplayModeController.ScreenModes {
         option.modes.contains { $0.id == current?.id }
     }
 
-    /// The 1x copy of a size that also exists in HiDPI.
     func isLowResolution(_ option: ResolutionOption) -> Bool {
         !option.isHiDPI && options.contains { $0.isHiDPI && $0.width == option.width && $0.height == option.height }
     }
 
-    /// "1920 × 1080 (low resolution) · Native", for menus and pop-up buttons.
     func label(for option: ResolutionOption) -> String {
         var text = "\(option.width) × \(option.height)"
         if isLowResolution(option) { text += " (low resolution)" }
@@ -46,7 +43,6 @@ extension DisplayModeController.ScreenModes {
     }
 }
 
-/// The resolution list shown inside the panel under a screen's card.
 struct ResolutionList: View {
     let display: CGDirectDisplayID
     let screenModes: DisplayModeController.ScreenModes
@@ -146,7 +142,6 @@ struct ResolutionList: View {
     }
 
     private func tag(_ text: String) -> some View {
-        // Tags give way first when a row is short of space.
         Text(text)
             .font(.caption2)
             .foregroundStyle(.secondary)
@@ -160,7 +155,6 @@ struct ResolutionList: View {
     }
 }
 
-/// "Keep this resolution?" inside the panel, with the countdown to the automatic revert.
 struct PendingResolutionStrip: View {
     let change: DisplayModeController.PendingChange
     let modes: DisplayModeController
@@ -182,7 +176,6 @@ struct PendingResolutionStrip: View {
     }
 }
 
-/// "Going back to 1920 × 1080 in 12 s.", counting down to the automatic revert.
 struct RevertCountdown: View {
     let change: DisplayModeController.PendingChange
 

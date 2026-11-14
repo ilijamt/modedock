@@ -1,7 +1,6 @@
 import DisplayKit
 import SwiftUI
 
-/// The feature areas shown in the panel, each a collapsible section that can be hidden and reordered.
 enum MenuSection: String, CaseIterable, Identifiable {
     case screens, profiles, power, utilities, screenshots
 
@@ -17,7 +16,6 @@ enum MenuSection: String, CaseIterable, Identifiable {
         }
     }
 
-    /// For the tab bar, where five titles share the panel's width.
     var tabTitle: String {
         switch self {
         // Its own key, so languages with a long word for Utilities can use a shorter one here.
@@ -37,7 +35,6 @@ enum MenuSection: String, CaseIterable, Identifiable {
     }
 }
 
-/// Optional parts of a section, each of which can be hidden in Settings → Menu.
 enum PanelItem: String, CaseIterable, Identifiable {
     case brightness, sleepScreens, mirror, allOn
     case saveProfile
@@ -99,7 +96,6 @@ enum PanelItem: String, CaseIterable, Identifiable {
     }
 }
 
-/// Section order, visibility and collapsed state, stored in user defaults as comma-separated ids.
 struct MenuLayout {
     var order: [MenuSection]
     var hidden: Set<MenuSection>
@@ -116,7 +112,6 @@ struct MenuLayout {
     var visible: [MenuSection] { order.filter { !hidden.contains($0) } }
 }
 
-/// Lists of ids as user defaults store them: "screens,power". Unknown ids are skipped.
 enum CommaSeparated {
     static func encode<Value: RawRepresentable<String>>(_ values: some Sequence<Value>) -> String {
         values.map(\.rawValue).joined(separator: ",")
@@ -128,7 +123,6 @@ enum CommaSeparated {
 }
 
 extension Set {
-    /// Inserts `member` when `contains` is true, removes it otherwise.
     mutating func set(_ member: Element, contains: Bool) {
         if contains { insert(member) } else { remove(member) }
     }
@@ -146,43 +140,32 @@ enum SettingsKey {
     static let ddcWriteIntervalDefault = 50
     /// Minutes, 0 for "until turned off": what Keep Awake uses when it's switched on.
     static let keepAwakeDuration = "keepAwakeDuration"
-    /// The last custom Keep Awake duration, in minutes.
     static let keepAwakeCustomMinutes = "keepAwakeCustomMinutes"
-    /// Keep Awake also stops the screens from sleeping.
     static let keepScreensOn = "keepScreensOn"
     /// "folder" or "clipboard".
     static let screenshotDestination = "screenshotDestination"
     /// A folder path; empty for the folder macOS saves screenshots to.
     static let screenshotFolder = "screenshotFolder"
     static let screenshotFormat = "screenshotFormat"
-    /// Capture HDR content with its extended range.
     static let screenshotHDR = "screenshotHDR"
     static let screenshotPointer = "screenshotPointer"
-    /// Experimental: also draw the pointer into Area and Window captures.
     static let screenshotPointerEverywhere = "screenshotPointerEverywhere"
     static let screenshotSound = "screenshotSound"
     static let screenshotShadow = "screenshotShadow"
-    /// Show a preview card after a capture.
     static let screenshotNotice = "screenshotNotice"
-    /// Close the panel before capturing, so it isn't in the screenshot.
     static let screenshotHidesPanel = "screenshotHidesPanel"
-    /// The preview card shows the picture, not just an icon.
     static let screenshotNoticePicture = "screenshotNoticePicture"
-    /// All Screens saves one image of every screen instead of a file each.
     static let screenshotCombineScreens = "screenshotCombineScreens"
     /// Seconds before a screen capture.
     static let screenshotDelay = "screenshotDelay"
     /// "connected" or "all": which profiles the Next Profile shortcut cycles through.
     static let profileCycleScope = "profileCycleScope"
-    /// The keyboard's brightness keys change every screen.
     static let brightnessKeysAllScreens = "brightnessKeysAllScreens"
     static let ddcWriteIntervalSteps = [10, 20, 30, 50, 75, 100, 150, 200, 300]
 
-    /// Every preference shown in Settings, for "Reset Settings": the same lists as export and import.
     static var all: [String] { ConfigGroup.allCases.flatMap(\.settingKeys) }
 }
 
-/// How the menu-bar panel looks. Chosen in Settings → Menu.
 enum PanelStyle: String, CaseIterable, Identifiable {
     case cards, rows, menu
 
@@ -211,7 +194,6 @@ enum PanelStyle: String, CaseIterable, Identifiable {
     }
 }
 
-/// Whether the panel lists every section or shows one at a time under a tab bar.
 enum PanelLayout: String, CaseIterable, Identifiable {
     case list, tabs
 
@@ -235,7 +217,6 @@ enum PanelLayout: String, CaseIterable, Identifiable {
     static let selectedTabKey = "panelSelectedTab"
 }
 
-/// ModeDock's own light or dark appearance, independent of the system setting.
 enum AppAppearance: String, CaseIterable, Identifiable {
     case system, light, dark
 
@@ -255,7 +236,6 @@ enum AppAppearance: String, CaseIterable, Identifiable {
         UserDefaults.standard.string(forKey: key).flatMap(AppAppearance.init(rawValue:)) ?? .system
     }
 
-    /// Applies to every ModeDock window and menu.
     @MainActor
     static func apply() {
         NSApp.appearance =

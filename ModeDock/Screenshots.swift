@@ -76,7 +76,6 @@ extension ScreenshotMode {
     }
 }
 
-/// The Settings → Capture preferences, as the options a capture takes.
 enum ScreenshotSettings {
     // The values of SettingsKey.screenshotDestination.
     static let folder = "folder"
@@ -100,7 +99,6 @@ enum ScreenshotSettings {
         UserDefaults.standard.string(forKey: SettingsKey.screenshotDestination) ?? folder
     }
 
-    /// The chosen folder, or macOS's own screenshot location when none was chosen.
     static func folderURL(default defaultFolder: URL) -> URL {
         let path = UserDefaults.standard.string(forKey: SettingsKey.screenshotFolder) ?? ""
         return path.isEmpty ? defaultFolder : URL(fileURLWithPath: path, isDirectory: true)
@@ -143,11 +141,9 @@ enum ScreenshotSettings {
     }
 }
 
-/// Starts captures from the panel, the menu and the shortcuts, and shows the result.
 @MainActor
 final class ScreenshotCoordinator {
     let controller: ScreenshotController
-    /// Closes the panel, so it isn't in the screenshot.
     var closePanel: () -> Void = {}
     private let notice = ScreenshotNoticeWindow()
 
@@ -172,7 +168,6 @@ final class ScreenshotCoordinator {
         let display = NSScreen.underMouse?.displayID
         let options = ScreenshotSettings.options(defaultFolder: controller.defaultFolder)
         Task {
-            // Give the panel or menu time to leave the screen.
             if hidesPanel { try? await Task.sleep(for: .milliseconds(300)) }
             let result = await controller.capture(mode, display: display, options: options)
             pointerStamp.end()
@@ -213,7 +208,6 @@ enum ScreenshotNotice: Equatable {
     }
 }
 
-/// A small card near the bottom-right corner after a capture; it goes away on its own.
 @MainActor
 final class ScreenshotNoticeWindow {
     private var panel: FloatingPanel?
@@ -350,7 +344,6 @@ private struct NoticeView: View {
         }
     }
 
-    /// Turns off Settings → Capture → "Show a preview after capturing". Errors still show.
     private var dontShowAgain: some View {
         Button("Don't Show Again") {
             UserDefaults.standard.set(false, forKey: SettingsKey.screenshotNotice)
@@ -393,10 +386,8 @@ struct ScreenRecordingButtons: View {
     }
 }
 
-/// A small preview of the saved image, or the file's icon when it can't be read (PDF).
 private struct Thumbnail: View {
     let source: CGImageSource?
-    /// Shown when there's no picture, such as a PDF.
     var url: URL?
 
     init(url: URL?) {
@@ -433,13 +424,11 @@ private struct Thumbnail: View {
     }
 }
 
-/// Hands macOS's ⇧⌘3 and ⇧⌘4 screenshot shortcuts (and their ⌃ clipboard versions) to ModeDock,
-/// and back. macOS keeps them in com.apple.symbolichotkeys; a missing entry means "on".
+/// macOS keeps its screenshot shortcuts in com.apple.symbolichotkeys; a missing entry means "on".
 @MainActor
 enum SystemScreenshotKeys {
     private static let domain = "com.apple.symbolichotkeys" as CFString
     private static let key = "AppleSymbolicHotKeys" as CFString
-    /// ⇧⌘ and ⌃⇧⌘ in the modifier format these entries use.
     private static let shiftCommand = 1_179_648
     private static let controlShiftCommand = 1_441_792
     /// Hot key ID → (character, key code, modifiers), as macOS writes them.
@@ -454,7 +443,6 @@ enum SystemScreenshotKeys {
         CFPreferencesCopyValue(key, domain, kCFPreferencesCurrentUser, kCFPreferencesAnyHost) as? [String: Any] ?? [:]
     }
 
-    /// Whether macOS's own shortcuts are off, so ModeDock can use the keys.
     static var areTakenOver: Bool {
         let keys = hotKeys
         return entries.keys.allSatisfy { ((keys[$0] as? [String: Any])?["enabled"] as? Bool) == false }

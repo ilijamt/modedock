@@ -2,8 +2,7 @@ import AppKit
 import ApplicationServices
 import DisplayKit
 
-/// Takes over the keyboard's brightness keys so they change every screen, including monitors
-/// macOS can't dim. Needs the Accessibility permission to see and swallow the keys.
+/// Needs the Accessibility permission to see and swallow the keys.
 @MainActor
 final class BrightnessKeys {
     /// NX_KEYTYPE_BRIGHTNESS_UP and NX_KEYTYPE_BRIGHTNESS_DOWN in system-defined events.
@@ -18,7 +17,6 @@ final class BrightnessKeys {
     private static let downKeyCode: Int64 = 145
     private static let log = AppLog("BrightnessKeys")
 
-    /// Called on each press and key repeat, with +1 for up and -1 for down.
     var onPress: (Int) -> Void = { _ in }
 
     private var tap: CFMachPort?
@@ -38,7 +36,6 @@ final class BrightnessKeys {
         }
     }
 
-    /// Shows the system prompt that leads to Privacy & Security → Accessibility.
     static func requestAccess() {
         // The value of kAXTrustedCheckOptionPrompt, which Swift 6 won't read from a global var.
         let options = ["AXTrustedCheckOptionPrompt": true] as CFDictionary
@@ -106,7 +103,6 @@ final class BrightnessKeys {
         source = nil
     }
 
-    /// Whether the event was a brightness key, which is then kept from macOS.
     private func handle(_ type: CGEventType, _ event: CGEvent) -> Bool {
         // macOS turns a slow tap off; turn it straight back on.
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {

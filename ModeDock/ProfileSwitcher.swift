@@ -2,7 +2,6 @@ import AppKit
 import ModeDockCore
 import SwiftUI
 
-/// Which profiles the Next Profile shortcut goes through.
 enum ProfileCycleScope: String, CaseIterable, Identifiable {
     case connected, all
 
@@ -20,8 +19,6 @@ enum ProfileCycleScope: String, CaseIterable, Identifiable {
     }
 }
 
-/// The Next Profile shortcut: a window listing the profiles it cycles through. Each press moves
-/// to the next one, and the highlighted profile is applied once the presses stop.
 @MainActor
 final class ProfileSwitcher {
     /// Long enough to press again, short enough to feel like the press did it.
@@ -66,7 +63,6 @@ final class ProfileSwitcher {
         scheduleApply()
     }
 
-    /// Fills the list and shows the window, with the profile after the current one selected.
     private func open() -> Bool {
         Telemetry.shared.record(.profileSwitcher)
         modes.refresh(
@@ -87,7 +83,6 @@ final class ProfileSwitcher {
         model.selected = current.map { ($0 + 1) % candidates.count } ?? 0
         model.applying = false
 
-        // Sized once; the rows don't change while it's open.
         let content = NSHostingView(
             rootView: ProfileSwitcherView(model: model, scope: scope)
                 .background(VisualEffectBackground())

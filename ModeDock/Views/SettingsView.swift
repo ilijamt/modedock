@@ -3,7 +3,6 @@ import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
 
-/// The Settings tabs, in order. Each becomes a toolbar item in the Settings window.
 enum SettingsTab: String, CaseIterable {
     case general, menu, displays, profiles, screenshots, shortcuts, advanced, about
 
@@ -97,7 +96,6 @@ private struct GeneralSettingsView: View {
     }
 }
 
-/// Export and import, resetting, debug logging and diagnostics: things most people rarely need.
 private struct AdvancedSettingsView: View {
     let screens: ScreenController
     let modes: DisplayModeController
@@ -139,8 +137,6 @@ private struct AdvancedSettingsView: View {
 }
 
 extension View {
-    /// A control with a label in the left column, for controls whose own label is their text
-    /// (checkboxes) or that have none.
     func labeledSettingsRow(_ label: LocalizedStringKey) -> some View {
         LabeledContent {
             self
@@ -221,7 +217,6 @@ private struct MenuSettingsView: View {
         .onDrop(of: [.text], delegate: EndDragDelegate(dragging: $dragging))
     }
 
-    /// Checkbox, drag handle, icon and name, and the arrow that shows the section's items.
     private func sectionRow(_ section: MenuSection) -> some View {
         let items = PanelItem.allCases.filter { $0.section == section }
         let shown = items.filter { !PanelItem.hidden(in: hiddenItems).contains($0) }.count
@@ -239,7 +234,6 @@ private struct MenuSettingsView: View {
             }
             .contentShape(Rectangle())
             .onHover { inside in
-                // The open hand says "you can grab this", as in other reorderable lists.
                 if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
             }
             .help("Drag to change the order")
@@ -288,7 +282,6 @@ private struct MenuSettingsView: View {
         }
     }
 
-    /// Puts `section` where `target` is, shifting the others.
     private func move(_ section: MenuSection, to target: MenuSection) {
         var order = layout.order
         guard section != target, let from = order.firstIndex(of: section),
@@ -451,7 +444,6 @@ private struct ShortcutSettingsView: View {
                     ShortcutRecorder("Turn all screens on:", name: .turnAllScreensOn)
                     let named = screens.screens.filter { !$0.display.identity.isPlaceholder }
                     ForEach(Array(named.enumerated()), id: \.element.id) { index, screen in
-                        // One label for the group, with each screen's name beside its shortcut.
                         ShortcutRecorder(
                             index == 0 ? "Turn on or off:" : "", name: .toggleScreen(screen.display.identity),
                             detail: screen.display.name)
@@ -489,7 +481,6 @@ private struct ShortcutSettingsView: View {
     }
 }
 
-/// "Brightness keys change every screen", with the Accessibility permission it needs.
 private struct BrightnessKeysToggle: View {
     @AppStorage(SettingsKey.brightnessKeysAllScreens) private var enabled = false
     @State private var trusted = BrightnessKeys.isTrusted
@@ -502,7 +493,6 @@ private struct BrightnessKeysToggle: View {
                 if on, !BrightnessKeys.isTrusted { BrightnessKeys.requestAccess() }
             }
             .task {
-                // Notice when access is granted in System Settings.
                 while !Task.isCancelled {
                     trusted = BrightnessKeys.isTrusted
                     try? await Task.sleep(for: .seconds(2))
@@ -519,7 +509,6 @@ private struct BrightnessKeysToggle: View {
     }
 }
 
-/// "Use ⇧⌘3 and ⇧⌘4 for ModeDock", which turns the macOS screenshot shortcuts off or back on.
 private struct SystemScreenshotKeysToggle: View {
     @State private var takenOver = SystemScreenshotKeys.areTakenOver
 
@@ -544,7 +533,6 @@ private struct SystemScreenshotKeysToggle: View {
     }
 }
 
-/// ModeDock's language, with a restart button once it differs from the one running.
 private struct LanguagePicker: View {
     @AppStorage(AppLanguage.key) private var language = AppLanguage.system
 
@@ -563,7 +551,6 @@ private struct LanguagePicker: View {
     }
 }
 
-/// Export and import of the whole configuration, or parts of it.
 private struct ConfigurationSection: View {
     let profiles: ProfileController
     @State private var sheet: TransferSheet?
@@ -658,7 +645,6 @@ private struct ConfigurationSection: View {
     }
 }
 
-/// Checkboxes for the parts of the configuration to export or import.
 private struct ConfigGroupPicker: View {
     let title: String
     let action: String
@@ -702,7 +688,6 @@ private struct ConfigGroupPicker: View {
     }
 }
 
-/// Opt-in anonymous usage statistics, with the exact data that would be sent.
 private struct UsageDataSection: View {
     let screens: ScreenController
     let profiles: ProfileController
@@ -754,7 +739,6 @@ private struct UsageDataSection: View {
     }
 }
 
-/// The report exactly as it would be sent.
 private struct UsageDataView: View {
     let report: TelemetryReport?
     let onClose: () -> Void
@@ -792,7 +776,6 @@ private struct UsageDataView: View {
     }
 }
 
-/// Debug logging for bug reports: the switch, and the file it writes.
 private struct DebugLogSection: View {
     @AppStorage(LogFile.enabledKey) private var enabled = false
     @State private var copied = false
@@ -825,11 +808,10 @@ private struct DebugLogSection: View {
     }
 }
 
-/// A shortcut recorder with a button that clears it. An empty recorder means no shortcut.
+/// An empty recorder means no shortcut.
 struct ShortcutRecorder: View {
     let title: String
     let name: KeyboardShortcuts.Name
-    /// Shown after the recorder, such as which screen the shortcut is for.
     var detail: String?
 
     init(_ title: LocalizedStringResource, name: KeyboardShortcuts.Name, detail: String? = nil) {
@@ -1022,7 +1004,6 @@ private struct ScreenshotSettingsView: View {
     }
 }
 
-/// Profiles as a list with the selected one's settings beside it, like other Mac settings lists.
 private struct ProfileSettingsView: View {
     let profiles: ProfileController
     let screens: ScreenController
@@ -1086,7 +1067,6 @@ private struct ProfileSettingsView: View {
         }
     }
 
-    /// The profiles, in the panel's order, with + and − underneath.
     private var list: some View {
         VStack(spacing: 0) {
             List(selection: $selection) {
@@ -1138,14 +1118,12 @@ private struct ProfileSettingsView: View {
         }
     }
 
-    /// What the profile does, at a glance; Edit… changes it.
     private func details(_ profile: DisplayProfile) -> some View {
         Form {
             LabeledContent("Name:") {
                 Text(verbatim: profile.name).fontWeight(.semibold)
             }
             LabeledContent("Screens:") {
-                // One screen per line pair: the full name, then what the profile sets for it.
                 VStack(alignment: .leading, spacing: 6) {
                     ForEach(Array(profile.screens.enumerated()), id: \.offset) { _, screen in
                         VStack(alignment: .leading, spacing: 1) {
@@ -1204,7 +1182,6 @@ private struct ProfileSettingsView: View {
 
 }
 
-/// Everything about one profile, with room for each part.
 private struct ProfileEditor: View {
     let id: DisplayProfile.ID
     let profiles: ProfileController
@@ -1337,7 +1314,6 @@ private struct ProfileEditor: View {
         .fixedSize()
     }
 
-    /// Each screen's state, resolution and brightness. The arrangement isn't edited here.
     private func screenSettings(_ profile: DisplayProfile) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             ForEach(Array(profile.screens.enumerated()), id: \.offset) { index, screen in
@@ -1430,7 +1406,6 @@ private struct ProfileEditor: View {
         }
     }
 
-    /// The settings this Mac has; True Tone, for one, needs a display that supports it.
     private var availableSettings: [ProfileSystemSettings.Setting] {
         let state = profiles.utilities?.state
         return ProfileSystemSettings.Setting.allCases.filter { setting in
@@ -1460,9 +1435,6 @@ private struct AboutView: View {
     }
 }
 
-/// Covers the gaps between rows and the rest of the window: keeps the move cursor there and ends
-/// the drag on drop, so the dragged row doesn't stay faded.
-/// An on/off chip for one item of a section, tinted when the item is shown.
 private struct ItemChip: View {
     let title: String
     @Binding var isOn: Bool
@@ -1484,7 +1456,6 @@ private struct ItemChip: View {
     }
 }
 
-/// Lays out views left to right, wrapping onto new lines when the width runs out.
 private struct FlowLayout: Layout {
     var spacing: CGFloat = 6
 
@@ -1548,8 +1519,6 @@ private struct EndDragDelegate<Item: Equatable>: DropDelegate {
     }
 }
 
-/// Reorders rows while dragging, as the pointer passes over them, and shows the move cursor
-/// rather than the copy one.
 private struct ReorderDropDelegate<Item: Equatable>: DropDelegate {
     let target: Item
     @Binding var dragging: Item?

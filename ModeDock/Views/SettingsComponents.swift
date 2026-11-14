@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// One Settings page in the classic Mac layout: labels right-aligned on the left, controls
-/// lined up on the right, and no scrolling.
 struct SettingsPage<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -32,7 +30,6 @@ struct SettingsPage<Content: View>: View {
     static var leading: CGFloat { 56 }
 }
 
-/// A short explanation under a control, in the controls' column.
 struct SettingsNote: View {
     let text: LocalizedStringKey
     var width: CGFloat = 340
@@ -53,14 +50,12 @@ struct SettingsNote: View {
     }
 }
 
-/// Space between groups of settings on a page, as in classic Mac settings windows.
 struct SettingsGap: View {
     var body: some View {
         Color.clear.frame(height: 10)
     }
 }
 
-/// Tabs within a Settings tab, shown as a segmented control at the top, like iTerm2's.
 struct SettingsSubTabs<Tab: Hashable & Identifiable, Content: View>: View {
     let tabs: [Tab]
     let title: (Tab) -> String

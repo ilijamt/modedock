@@ -2,7 +2,6 @@ import AppKit
 import ModeDockCore
 import SwiftUI
 
-/// The "Keep this resolution?" prompt, centered on the screen that changed.
 @MainActor
 final class ModeConfirmationWindow {
     private let modes: DisplayModeController

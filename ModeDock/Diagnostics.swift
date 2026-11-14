@@ -40,7 +40,6 @@ enum Diagnostics {
 }
 
 extension Bundle {
-    /// "0.1.0 (1)": the marketing version and the build number.
     var versionString: String {
         let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build = infoDictionary?["CFBundleVersion"] as? String ?? "?"

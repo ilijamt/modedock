@@ -2,7 +2,6 @@ import KeyboardShortcuts
 import ModeDockCore
 import SwiftUI
 
-/// The Profiles section in the Cards style: a card per profile, tap to switch to it.
 struct ProfilesSection: View {
     let profiles: ProfileController
     let screens: ScreenController
@@ -39,7 +38,6 @@ struct ProfilesSection: View {
     }
 }
 
-/// One profile in a card: name, summary and whether it's the current setup.
 private struct ProfileButton: View {
     let profile: DisplayProfile
     let profiles: ProfileController
@@ -86,7 +84,6 @@ private struct ProfileButton: View {
     }
 }
 
-/// The Profiles section in the Rows style.
 struct RowsProfilesSection: View {
     let profiles: ProfileController
     let screens: ScreenController
@@ -172,7 +169,6 @@ struct ProfileNameEditor: View {
     let actionTitle: String
     var caption: String?
     let onSave: (String) -> Void
-    /// Called after saving, and on Esc.
     let onDone: () -> Void
 
     @State private var name = ""
@@ -215,16 +211,13 @@ struct ProfileNameEditor: View {
     }
 }
 
-/// What's open below a section's profiles.
 enum ProfileEdit: Equatable {
     case saving
-    /// The Update, Rename and Delete buttons.
     case actions(DisplayProfile.ID)
     case renaming(DisplayProfile.ID)
     case deleting(DisplayProfile.ID)
 }
 
-/// A profile's right-click menu in the panel.
 private struct ProfileMenu: View {
     let profile: DisplayProfile
     let profiles: ProfileController
@@ -245,7 +238,6 @@ private struct ProfileMenu: View {
     }
 }
 
-/// The ⋯ button on a profile that shows its Update, Rename and Delete buttons.
 private struct ProfileMoreButton: View {
     let id: DisplayProfile.ID
     @Binding var edit: ProfileEdit?
@@ -265,7 +257,6 @@ private struct ProfileMoreButton: View {
     }
 }
 
-/// Update, Rename and Delete for one profile.
 private struct ProfileActionStrip: View {
     let profile: DisplayProfile
     let profiles: ProfileController
@@ -300,8 +291,7 @@ private struct ProfileActionStrip: View {
     }
 }
 
-/// Below a section's profiles: naming the current setup, renaming a profile, or confirming a
-/// delete. Inside the panel, since a dialog would need ModeDock to become the active app.
+/// Inside the panel, since a dialog would need ModeDock to become the active app.
 private struct ProfileEditors: View {
     let profiles: ProfileController
     let screens: ScreenController
@@ -389,7 +379,6 @@ private struct ProfileEditors: View {
     }
 }
 
-/// Up and down arrows that change a profile's place in the list.
 struct ProfileOrderButtons: View {
     let profile: DisplayProfile
     let profiles: ProfileController

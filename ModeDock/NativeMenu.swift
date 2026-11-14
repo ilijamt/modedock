@@ -3,7 +3,6 @@ import DisplayKit
 import KeyboardShortcuts
 import ModeDockCore
 
-/// The "Native menu" panel style: a regular NSMenu, rebuilt each time it opens.
 @MainActor
 final class NativeMenu {
     private let screens: ScreenController
@@ -121,7 +120,6 @@ final class NativeMenu {
         addError(profiles.lastError, to: menu)
     }
 
-    /// The menu has closed by now, so a regular alert asks for the name.
     private static func saveProfile(_ profiles: ProfileController, screens: ScreenController) {
         let suggested = profiles.suggestedName(screens: screens)
         let alert = NSAlert()
@@ -193,8 +191,7 @@ final class NativeMenu {
         addError(utilities.lastError, to: menu)
     }
 
-    /// The menu has closed by now, so a regular alert is used; ModeDock is activated so it shows
-    /// in front.
+    /// ModeDock is activated so the alert shows in front.
     private static func confirmEmptyTrash(_ utilities: UtilitiesController) {
         let alert = NSAlert()
         alert.messageText = String(localized: "Empty the Trash?")
@@ -230,7 +227,6 @@ final class NativeMenu {
         addError(controller.lastError, to: menu)
     }
 
-    /// The menu has closed by now, so a regular alert explains the permission first.
     private static func askForScreenRecording(_ controller: ScreenshotController) {
         let alert = NSAlert()
         alert.messageText = String(localized: "Allow Screen Recording?")
@@ -330,7 +326,6 @@ final class NativeMenu {
         return keepAwake
     }
 
-    /// The right-click menu of the status item.
     func buildContextMenu() -> NSMenu {
         let menu = NSMenu()
         menu.appearance = NSApp.appearance
@@ -432,7 +427,6 @@ final class NativeMenu {
     }
 }
 
-/// A labelled slider row, like the volume slider in the Sound menu.
 private final class BrightnessMenuView: NSView {
     private let display: Display
     private let brightness: BrightnessController
@@ -452,7 +446,6 @@ private final class BrightnessMenuView: NSView {
         slider.toolTip = String(localized: "Brightness of \(display.name)")
         self.slider = slider
 
-        // Sun icons on both ends, like the display slider in Control Center.
         var views: [NSView] = [Self.icon("sun.min"), slider, Self.icon("sun.max")]
         if let auto = level.autoBrightness {
             // A checkbox: the "on" look of a push button is too faint to read in a menu.
@@ -469,7 +462,6 @@ private final class BrightnessMenuView: NSView {
         row.spacing = 6
         row.translatesAutoresizingMaskIntoConstraints = false
         addSubview(row)
-        // Lines up with the screen name above it, after the icon.
         NSLayoutConstraint.activate([
             row.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 44),
             row.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
@@ -510,7 +502,6 @@ private final class BrightnessMenuView: NSView {
 
     @objc private func changed(_ sender: NSSlider) {
         brightness.set(sender.doubleValue, for: display.id)
-        // Once per drag, when the mouse comes up.
         if NSApp.currentEvent?.type == .leftMouseUp { Telemetry.shared.record(.screenBrightness) }
     }
 
@@ -519,7 +510,6 @@ private final class BrightnessMenuView: NSView {
     }
 }
 
-/// A menu item that runs a closure.
 private final class ActionItem: NSMenuItem {
     private let handler: () -> Void
 

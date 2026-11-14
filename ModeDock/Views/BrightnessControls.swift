@@ -2,7 +2,6 @@ import DisplayKit
 import ModeDockCore
 import SwiftUI
 
-/// A screen's brightness slider, with an Auto toggle when the screen has a light sensor.
 struct BrightnessSlider: View {
     let display: Display
     let level: BrightnessController.ScreenBrightness
@@ -16,7 +15,6 @@ struct BrightnessSlider: View {
                 value: Binding(get: { level.value }, set: { brightness.set($0, for: display.id) }),
                 in: level.minimum...1
             ) { editing in
-                // Once per drag, when it ends.
                 if !editing { Telemetry.shared.record(.screenBrightness) }
             }
             Image(systemName: "sun.max").foregroundStyle(.secondary)
@@ -37,7 +35,6 @@ struct BrightnessSlider: View {
     }
 }
 
-/// Small "Auto" capsule, filled when automatic brightness is on.
 private struct AutoChip: View {
     let isOn: Bool
     let action: () -> Void

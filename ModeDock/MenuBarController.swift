@@ -7,11 +7,10 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let panel: MenuPanel
     private let nativeMenu: NativeMenu
-    /// Called each time the panel or menu opens, to pick up changes made elsewhere.
     private let onShow: () -> Void
     /// The panel grows downward when its content changes, so its top edge stays put.
     private var topLeft: NSPoint?
-    /// Called when the panel closes, for example to move a pending prompt into its own window.
+    /// Lets a pending prompt move into its own window.
     var onClose: (() -> Void)?
 
     var isPanelVisible: Bool { panel.isVisible }
@@ -66,7 +65,6 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         }
     }
 
-    /// Under the status item when it's on the mouse's screen; otherwise at the mouse pointer.
     private func showMenu() {
         let menu = nativeMenu.build()
         if let button = statusItem.button, let itemFrame = button.window?.frame,
@@ -84,7 +82,6 @@ final class MenuBarController: NSObject, NSWindowDelegate {
         statusItem.button?.highlight(true)
     }
 
-    /// Moves the open panel back under the status item, after the screens changed size.
     func reposition() {
         guard panel.isVisible else { return }
         place()
@@ -141,7 +138,6 @@ final class MenuBarController: NSObject, NSWindowDelegate {
     }
 }
 
-/// The panel under the status item; Esc closes it.
 private final class MenuPanel: FloatingPanel {
     init() {
         super.init(level: .popUpMenu)

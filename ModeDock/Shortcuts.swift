@@ -23,7 +23,6 @@ extension AppLog {
     static let shortcuts = AppLog("shortcuts")
 }
 
-/// What the app-wide shortcuts do, with a bubble on screen when the result isn't visible.
 @MainActor
 final class ShortcutActions {
     /// macOS moves brightness in sixteenths with the brightness keys.
@@ -179,8 +178,6 @@ final class ShortcutActions {
     }
 }
 
-/// A small bubble near the bottom of the screen under the pointer, like the system volume and
-/// brightness bubbles. It ignores the mouse and fades after a moment.
 @MainActor
 final class ShortcutHUD {
     private let panel: FloatingPanel = {

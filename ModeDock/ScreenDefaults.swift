@@ -3,8 +3,6 @@ import Foundation
 import KeyboardShortcuts
 import ModeDockCore
 
-/// "Reset to Defaults": the default resolution and refresh rate, no software dimming, and
-/// automatic brightness on where the screen has a light sensor.
 @MainActor
 enum ScreenDefaults {
     static func reset(_ display: CGDirectDisplayID, modes: DisplayModeController, brightness: BrightnessController) {
@@ -26,9 +24,7 @@ enum ScreenDefaults {
         return modes.screens[display]?.isAtDefault ?? true && !dimmed && level?.autoBrightness != false
     }
 
-    /// Resets every ModeDock setting: appearance, panel style, menu sections, display options,
-    /// shortcuts and remembered resolutions. Screens aren't touched, and launch at login is a
-    /// system login item, so it's left as it is.
+    /// Screens and the launch-at-login item are left as they are.
     static func resetSettings(modes: DisplayModeController) {
         for key in SettingsKey.all { UserDefaults.standard.removeObject(forKey: key) }
         KeyboardShortcuts.reset(.togglePanel, .turnAllScreensOn, .captureArea, .captureWindow, .captureScreen)

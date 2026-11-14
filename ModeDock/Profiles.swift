@@ -6,16 +6,13 @@ import Observation
 import SwiftUI
 
 extension KeyboardShortcuts.Name {
-    /// Applies the profile.
     static func profile(_ id: DisplayProfile.ID) -> Self { Self("profile-\(id.uuidString)") }
 
-    /// Turns the screen on or off.
     static func toggleScreen(_ identity: DisplayIdentity) -> Self {
         Self("toggleScreen-\(identity.vendor)-\(identity.model)-\(identity.serial)")
     }
 }
 
-/// Marks the profile that applies by itself when its screens are connected.
 struct AutoTag: View {
     var body: some View {
         Text("Auto")
@@ -40,7 +37,6 @@ extension ProfileSystemSettings.Setting {
 }
 
 extension ProfileSystemSettings {
-    /// "Dark Mode Off · True Tone On", or nil when the profile sets none of them.
     var summary: String? {
         let parts = Setting.allCases.compactMap { setting -> String? in
             guard let on = self[setting] else { return nil }
@@ -51,7 +47,7 @@ extension ProfileSystemSettings {
 }
 
 extension DisplayProfile {
-    /// "2 screens · Mirrored · Automatic". Without "Automatic" where an Auto tag shows it.
+    /// Omits "Automatic" where an Auto tag already shows it.
     func summary(includingAutomatic: Bool = true) -> String {
         let count = enabledScreens.count
         var parts = [String(localized: "\(count) screens")]
@@ -63,10 +59,8 @@ extension DisplayProfile {
 
     var summary: String { summary() }
 
-    /// Whether the summary says more than the number of screens, apart from being automatic.
     var hasExtras: Bool { mirroring || !system.isEmpty }
 
-    /// "Built-in Display, LS28 (off)".
     var screenList: String {
         screens.map { $0.isEnabled ? $0.name : String(localized: "\($0.name) (off)") }.joined(separator: ", ")
     }
@@ -75,7 +69,6 @@ extension DisplayProfile {
 }
 
 extension ProfileScreen {
-    /// "1920 × 1080 · 60 Hz" from the saved mode key ("1920x1080@2x@60"); nil when there's none.
     var resolution: String? {
         let parts = modeKey?.split(separator: "@") ?? []
         let size = parts.first?.split(separator: "x") ?? []
@@ -85,12 +78,10 @@ extension ProfileScreen {
         return text
     }
 
-    /// "1920×1080 · 60Hz".
     var compactResolution: String? {
         resolution?.replacingOccurrences(of: " × ", with: "×").replacingOccurrences(of: " Hz", with: "Hz")
     }
 
-    /// "1920 × 1080 · 60 Hz · 70%", or "1920 × 1080 · 60 Hz · 70% brightness" for tooltips.
     var details: String {
         guard isEnabled else { return String(localized: "Off") }
         var parts = [resolution].compactMap { $0 }
@@ -101,7 +92,6 @@ extension ProfileScreen {
     }
 }
 
-/// One compact line per screen in a profile: its name, then resolution, refresh rate and brightness.
 struct ProfileScreenLines: View {
     let profile: DisplayProfile
 
@@ -146,7 +136,6 @@ extension ProfileController {
         return (2...).lazy.map { "\(base) \($0)" }.first { !names.contains($0) } ?? base
     }
 
-    /// Deletes the profile together with its shortcut.
     func deleteWithShortcut(_ id: DisplayProfile.ID) {
         // The handler goes first: it finds the hotkey to unregister through the shortcut.
         KeyboardShortcuts.removeHandler(for: .profile(id))
@@ -155,8 +144,6 @@ extension ProfileController {
     }
 }
 
-/// Keeps a shortcut handler for every profile and every known screen, added and removed as
-/// profiles are saved or deleted and screens come and go.
 @MainActor
 final class DynamicShortcuts {
     private let profiles: ProfileController

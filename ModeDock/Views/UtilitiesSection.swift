@@ -1,7 +1,6 @@
 import ModeDockCore
 import SwiftUI
 
-/// One on/off utility, described once and drawn by every panel style.
 struct UtilityToggle: Identifiable {
     let item: PanelItem
     let systemImage: String
@@ -11,7 +10,6 @@ struct UtilityToggle: Identifiable {
     var id: PanelItem { item }
     var title: String { item.title }
 
-    /// The toggles this Mac supports, in panel order, without the hidden ones.
     @MainActor
     static func visible(_ utilities: UtilitiesController, hidden: Set<PanelItem>) -> [UtilityToggle] {
         let state = utilities.state
@@ -61,7 +59,6 @@ extension UtilitiesController {
     }
 }
 
-/// The Utilities section in the Cards style: a grid of tiles.
 struct UtilitiesSection: View {
     let utilities: UtilitiesController
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
@@ -102,7 +99,7 @@ struct UtilitiesSection: View {
     }
 }
 
-/// "Empty the Trash?" inside the panel; a dialog would need ModeDock to become the active app.
+/// Inside the panel, since a dialog would need ModeDock to become the active app.
 private struct TrashConfirmation: View {
     let utilities: UtilitiesController
     let onDone: () -> Void
@@ -124,7 +121,6 @@ private struct TrashConfirmation: View {
     }
 }
 
-/// The Utilities section in the Rows style.
 struct RowsUtilitiesSection: View {
     let utilities: UtilitiesController
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden

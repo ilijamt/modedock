@@ -3,9 +3,8 @@ import DisplayKit
 import ImageIO
 import ModeDockCore
 
-/// Experimental: draws the pointer into Area and Window captures, which screencapture leaves it
-/// out of. It notes where the pointer was when the capture started, works out what was
-/// captured from the clicks during the selection, and draws the cursor there when it's inside.
+/// Experimental: screencapture leaves the pointer out of Area and Window
+/// captures, so it is drawn in afterwards.
 @MainActor
 final class PointerStamp {
     private var start: NSPoint?
@@ -21,7 +20,6 @@ final class PointerStamp {
             && defaults.bool(forKey: SettingsKey.screenshotPointerEverywhere)
     }
 
-    /// Call just before an interactive capture starts.
     func begin() {
         end()
         start = NSEvent.mouseLocation
@@ -49,7 +47,6 @@ final class PointerStamp {
         watcher = nil
     }
 
-    /// Draws the pointer into the one captured file, when it was inside what was captured.
     func apply(_ mode: ScreenshotMode, _ files: [URL]) {
         defer { start = nil }
         let captured = capturedRect(mode)
@@ -61,7 +58,7 @@ final class PointerStamp {
         Self.draw(cursor, at: start, capturedRect: captured, mode: mode, into: files[0])
     }
 
-    /// What was captured, in global screen points with the origin at the bottom left.
+    /// In global screen points, origin at the bottom left.
     private func capturedRect(_ mode: ScreenshotMode) -> CGRect? {
         switch mode {
         case .area:
@@ -76,7 +73,6 @@ final class PointerStamp {
         }
     }
 
-    /// The frontmost window under `point` that a window capture could have picked.
     private static func window(at point: NSPoint) -> CGRect? {
         let top = NSScreen.screens.first?.frame.maxY ?? 0
         let cgPoint = CGPoint(x: point.x, y: top - point.y)
@@ -84,7 +80,7 @@ final class PointerStamp {
             CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
             as? [[String: Any]] ?? []
         let skipped: Set<String> = ["Dock", "Window Server", "screencaptureui"]
-        // The menu bar and its status items; panels and pop-ups above them can still be picked.
+        // Panels and pop-ups above the menu bar and status items can still be picked.
         let barLayers: Set<Int> = [
             Int(CGWindowLevelForKey(.mainMenuWindow)), Int(CGWindowLevelForKey(.statusWindow)),
         ]

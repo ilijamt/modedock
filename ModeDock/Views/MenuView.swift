@@ -67,7 +67,6 @@ struct MenuView: View {
             .scrollBounceBehavior(.basedOnSize)
             .modifier(NoScrollEdgeEffect())
             .frame(maxHeight: maxScrollHeight)
-            // Sized to the content until it reaches the cap, then it scrolls.
             .fixedSize(horizontal: false, vertical: true)
         }
         .frame(width: 320)
@@ -78,12 +77,10 @@ struct MenuView: View {
 
     private var isTabbed: Bool { (PanelLayout(rawValue: panelLayout) ?? .tabs) == .tabs }
 
-    /// The chosen tab, or the first section when that one has been hidden.
     private var selectedTab: MenuSection? {
         MenuSection(rawValue: selectedTabID).flatMap { layout.visible.contains($0) ? $0 : nil } ?? layout.visible.first
     }
 
-    /// The screen's height less the header, tab bar and a margin, so the panel never runs off the screen.
     private var maxScrollHeight: CGFloat {
         let screen = (NSScreen.underMouse ?? NSScreen.main)?.visibleFrame.height ?? 800
         return max(200, screen - (isTabbed ? 120 : 80))
@@ -184,7 +181,6 @@ private struct NoScrollEdgeEffect: ViewModifier {
     }
 }
 
-/// The icon bar of the Tabs layout, one button per visible section.
 private struct PanelTabBar: View {
     let sections: [MenuSection]
     let selected: MenuSection?
@@ -197,25 +193,28 @@ private struct PanelTabBar: View {
                 Button {
                     onSelect(section)
                 } label: {
-                    // Selected is white on the accent, like the panel's chips that are on. A tinted
-                    // label on a grey highlight was unreadable in dark mode.
+                    // Selected sits on a solid tile in the window colour with a hairline, like the
+                    // Settings toolbar: the accent on the panel's translucent glass was too faint.
                     VStack(spacing: 3) {
                         Image(systemName: section.systemImage)
                             .font(.system(size: 13, weight: .medium))
                             .frame(height: 18)
                         Text(section.tabTitle)
-                            .font(.caption2.weight(isSelected ? .semibold : .regular))
+                            .font(.caption2)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                             .padding(.horizontal, 4)
                     }
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.secondary))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
-                    .background(
-                        isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.clear),
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    )
+                    .background {
+                        if isSelected {
+                            let tile = RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            tile.fill(Color(nsColor: .windowBackgroundColor))
+                                .overlay(tile.strokeBorder(.primary.opacity(0.12)))
+                        }
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -273,7 +272,6 @@ private struct ScreensSection: View {
     }
 }
 
-/// Reloads display modes and brightness whenever the screens or the "show all" setting change.
 struct ModeRefresher: ViewModifier {
     let controller: ScreenController
     let modes: DisplayModeController

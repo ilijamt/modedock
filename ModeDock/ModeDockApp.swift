@@ -18,7 +18,6 @@ struct ModeDockApp: App {
 extension AppLog {
     static let app = AppLog("app")
 
-    /// "ModeDock 0.1 (12), macOS 26.1", for the top of a log.
     static var versionLine: String {
         "ModeDock \(Bundle.main.versionString), macOS \(ProcessInfo.processInfo.operatingSystemVersionString)"
     }
@@ -29,7 +28,6 @@ extension KeyboardShortcuts.Name {
     static let turnAllScreensOn = Self(
         "turnAllScreensOn", default: .init(.o, modifiers: [.control, .option, .command]))
 
-    /// The current shortcut as shown in menus ("⌃⌥⌘O"), or nil when the user cleared it.
     @MainActor var shortcutText: String? { KeyboardShortcuts.getShortcut(for: self)?.description }
 }
 
@@ -113,7 +111,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         screenshots.closePanel = { [weak self] in self?.menuBar?.close() }
         menuBar?.onClose = { [weak self] in
-            // Never leave a change waiting for confirmation without a visible prompt.
             if let change = self?.modes.pending { self?.confirmation.show(for: change) }
         }
         displayObserver = DisplayObserver { [weak self] in
@@ -183,7 +180,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Never leave a screen off, in standby or dimmed after quitting.
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         brightness.resetSoftwareDimming()
         Task {

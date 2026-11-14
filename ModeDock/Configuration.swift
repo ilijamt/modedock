@@ -3,8 +3,6 @@ import Foundation
 import KeyboardShortcuts
 import ModeDockCore
 
-/// The parts of the configuration that can be exported and imported on their own, matching the
-/// Settings tabs.
 enum ConfigGroup: String, CaseIterable, Identifiable, Codable, CodingKeyRepresentable {
     case general, menu, displays, capture, shortcuts, profiles
 
@@ -32,7 +30,6 @@ enum ConfigGroup: String, CaseIterable, Identifiable, Codable, CodingKeyRepresen
         }
     }
 
-    /// The user defaults this group covers.
     var settingKeys: [String] {
         switch self {
         case .general:
@@ -77,7 +74,6 @@ enum ConfigGroup: String, CaseIterable, Identifiable, Codable, CodingKeyRepresen
     private static let profileShortcutPrefix = "profile-"
 }
 
-/// A user default as it's written to the file.
 enum SettingValue: Codable, Equatable {
     case bool(Bool), int(Int), double(Double), string(String)
 

@@ -1,17 +1,13 @@
 import ModeDockCore
 import SwiftUI
 
-/// Keep Awake preferences shared by every panel style.
 @MainActor
 enum KeepAwakeSettings {
-    /// What Keep Awake uses when it's switched on: the last duration picked, nil for "until
-    /// turned off". Stored as minutes, 0 for "until turned off".
     static var minutes: Int? {
         get { positiveInt(forKey: SettingsKey.keepAwakeDuration) }
         set { UserDefaults.standard.set(newValue ?? 0, forKey: SettingsKey.keepAwakeDuration) }
     }
 
-    /// Prefills the custom duration field.
     static var lastCustomMinutes: Int? {
         get { positiveInt(forKey: SettingsKey.keepAwakeCustomMinutes) }
         set { UserDefaults.standard.set(newValue ?? 0, forKey: SettingsKey.keepAwakeCustomMinutes) }
@@ -35,13 +31,10 @@ enum KeepAwakeSettings {
         if power.isKeepingAwake { power.stopKeepAwake() } else { start(minutes: minutes, power: power) }
     }
 
-    /// Whether `minutes` is one of the menu presets; anything else shows as "Custom".
     static func isPreset(_ minutes: Int?) -> Bool {
         PowerController.presets.contains { $0 == minutes }
     }
 
-    /// "Custom (1 h 30 min)" for a duration that isn't a preset; nil for a preset. 0 is
-    /// "until turned off", like nil.
     static func customLabel(_ minutes: Int?) -> String? {
         guard let minutes, minutes > 0, !isPreset(minutes) else { return nil }
         return String(localized: "Custom (\(PowerController.title(minutes: minutes)))")
@@ -82,7 +75,6 @@ extension BatteryStatus {
     }
 }
 
-/// Reads the battery when the section appears and every 30 seconds while it's visible.
 private struct BatteryRefresher: ViewModifier {
     let power: PowerController
 
@@ -96,7 +88,6 @@ private struct BatteryRefresher: ViewModifier {
     }
 }
 
-/// The Power section in the Cards style.
 struct PowerSection: View {
     let power: PowerController
     @State private var editingCustom = false
@@ -187,7 +178,6 @@ struct PowerSection: View {
     }
 }
 
-/// Shows whether Keep Awake is on and for how long, and picks the duration.
 private struct KeepAwakeMenu: View {
     let power: PowerController
     let onCustom: () -> Void
@@ -241,7 +231,6 @@ private struct KeepAwakeMenu: View {
     }
 }
 
-/// The Power section in the Rows style.
 struct RowsPowerSection: View {
     let power: PowerController
     @State private var editingCustom = false
@@ -348,12 +337,10 @@ struct RowsPowerSection: View {
 
     private static let customTag = -1
 
-    /// The running duration, or the one the power button would use. 0 is "until turned off".
     private var current: Int? {
         power.isKeepingAwake ? power.keepAwake?.minutes ?? 0 : KeepAwakeSettings.minutes ?? 0
     }
 
-    /// Picking a duration while Keep Awake is on restarts it with the new one.
     private var duration: Binding<Int> {
         Binding(
             get: { current ?? 0 },

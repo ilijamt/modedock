@@ -2,7 +2,6 @@ import ModeDockCore
 import SwiftUI
 
 extension ScreenshotCoordinator {
-    /// The capture buttons to show: All Screens only with more than one screen.
     func visibleModes(hidden: Set<PanelItem>) -> [ScreenshotMode] {
         ScreenshotMode.allCases.filter {
             !hidden.contains($0.item) && ($0 != .allScreens || controller.screenCount > 1)
@@ -12,7 +11,6 @@ extension ScreenshotCoordinator {
     var canCapture: Bool { controller.hasPermission && !controller.isCapturing }
 }
 
-/// The Screenshots section in the Cards style: a row of tiles.
 struct ScreenshotsSection: View {
     let screenshots: ScreenshotCoordinator
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
@@ -44,7 +42,6 @@ struct ScreenshotsSection: View {
     }
 }
 
-/// The Screenshots section in the Rows style.
 struct RowsScreenshotsSection: View {
     let screenshots: ScreenshotCoordinator
     @AppStorage(SettingsKey.hiddenItems) private var hiddenItems = PanelItem.defaultHidden
@@ -149,7 +146,6 @@ struct ScreenshotOptionsStrip: View {
             HStack(spacing: 4) {
                 Text("Timer").font(.callout)
                 Spacer(minLength: 4)
-                // One choice, so a segmented control rather than the chips used for on/off options.
                 Picker("Timer", selection: $delay) {
                     ForEach(ScreenshotSettings.delays, id: \.self) { seconds in
                         Text(seconds == 0 ? String(localized: "Off") : String(localized: "\(seconds)s")).tag(seconds)

@@ -16,7 +16,6 @@ extension MonitorInputController {
         String(localized: "ModeDock can't switch back. Use the monitor's buttons or the other device.")
 }
 
-/// The monitor's inputs under its resolution list, in the Cards style.
 struct InputChips: View {
     let display: CGDirectDisplayID
     let inputs: MonitorInputController.Inputs
@@ -60,7 +59,6 @@ struct InputChips: View {
     }
 }
 
-/// "Switch to HDMI 2?" with the warning that ModeDock can't switch back.
 struct InputSwitchConfirmation: View {
     let name: String
     let onSwitch: () -> Void

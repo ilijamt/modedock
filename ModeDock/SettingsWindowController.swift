@@ -2,8 +2,6 @@ import AppKit
 import ModeDockCore
 import SwiftUI
 
-/// The Settings window, with icon tabs in the toolbar like other Mac apps' settings. Each tab
-/// sizes the window to its content.
 @MainActor
 final class SettingsWindowController {
     private let launchAtLogin: LaunchAtLogin
@@ -50,7 +48,6 @@ final class SettingsWindowController {
             )
             .environment(launchAtLogin)
             let controller = NSHostingController(rootView: view)
-            // The tab controller sizes the window to the selected tab's preferred content size.
             controller.sizingOptions = [.preferredContentSize]
             controller.title = tab.title
             let item = NSTabViewItem(viewController: controller)

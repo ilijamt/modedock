@@ -8,7 +8,6 @@ extension View {
         modifier(HoverTipModifier(text: String(localized: text)))
     }
 
-    /// For text that's already localized, or isn't text to translate.
     func tip(verbatim text: String) -> some View {
         modifier(HoverTipModifier(text: text))
     }
@@ -27,7 +26,6 @@ private struct HoverTipModifier: ViewModifier {
     }
 }
 
-/// The one tooltip window, shown next to the pointer.
 @MainActor
 final class HoverTip {
     static let shared = HoverTip()
@@ -79,7 +77,6 @@ final class HoverTip {
         panel.contentView = content
         panel.setContentSize(size)
 
-        // Below and to the right of the pointer, kept on the screen.
         let mouse = NSEvent.mouseLocation
         var origin = NSPoint(x: mouse.x + 12, y: mouse.y - 24 - size.height)
         if let frame = (NSScreen.underMouse ?? NSScreen.main)?.visibleFrame {
