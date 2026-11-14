@@ -197,21 +197,23 @@ private struct PanelTabBar: View {
                 Button {
                     onSelect(section)
                 } label: {
+                    // Selected is white on the accent, like the panel's chips that are on. A tinted
+                    // label on a grey highlight was unreadable in dark mode.
                     VStack(spacing: 3) {
                         Image(systemName: section.systemImage)
                             .font(.system(size: 13, weight: .medium))
                             .frame(height: 18)
                         Text(section.tabTitle)
-                            .font(.caption2)
+                            .font(.caption2.weight(isSelected ? .semibold : .regular))
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                             .padding(.horizontal, 4)
                     }
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 5)
                     .background(
-                        isSelected ? AnyShapeStyle(.primary.opacity(0.1)) : AnyShapeStyle(.clear),
+                        isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.clear),
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                     )
                     .contentShape(Rectangle())
