@@ -172,7 +172,7 @@ public struct HTTPTelemetrySender: TelemetrySender {
 public final class Telemetry {
     public static let shared = Telemetry()
 
-    public static let endpoint: URL? = nil
+    public static let endpoint: URL? = URL(string: "https://telemetry.modedock.app/v1/reports")
 
     /// About three a day: often enough to see when in the day features are used, but no closer
     /// to when the Mac is on.
