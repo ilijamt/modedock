@@ -3,6 +3,11 @@ api_token_env: CROWDIN_PERSONAL_TOKEN
 base_path: .
 preserve_hierarchy: true
 
+# Used by the GitHub integration when it commits to l10n_main.
+commit_message: "chore(i18n): update %language% translations"
+append_commit_message: false
+pull_request_title: "chore(i18n): update translations"
+
 # String Catalogs hold every language in one file.
 files:
 - source: /ModeDock/Localizable.xcstrings
