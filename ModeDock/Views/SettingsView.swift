@@ -45,7 +45,7 @@ enum SettingsTab: String, CaseIterable {
         case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
         case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles)
-        case .about: AboutView()
+        case .about: AboutView(screens: screens, modes: modes)
         }
     }
 }
@@ -1435,23 +1435,93 @@ private struct ProfileEditor: View {
 }
 
 private struct AboutView: View {
+    let screens: ScreenController
+    let modes: DisplayModeController
+    @State private var showsAcknowledgements = false
+
     var body: some View {
         VStack(spacing: 6) {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
                 .frame(width: 64, height: 64)
-            Text("ModeDock").font(.title2.bold())
-            Text(verbatim: "Version \(Bundle.main.versionString)").foregroundStyle(.secondary)
-            Text("Free and open source under the MIT License.")
-                .font(.caption)
+            Text(verbatim: "ModeDock").font(.title2.bold())
+            Text("Menu-bar controls for your screens.")
                 .foregroundStyle(.secondary)
-            if let url = URL(string: "https://github.com/ilijamt/modedock") {
-                Link("github.com/ilijamt/modedock", destination: url)
-                    .font(.caption)
+                .multilineTextAlignment(.center)
+            HStack(spacing: 8) {
+                Text(verbatim: "Version \(Bundle.main.versionString)")
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+                Button("Check for Updates…") { Updater.shared.checkForUpdates() }
+                    .controlSize(.small)
+                    .disabled(!Updater.shared.canCheck)
+            }
+            .padding(.top, 4)
+            FlowLayout(spacing: 16) {
+                AboutLink("Website", "https://modedock.app")
+                AboutLink("Source", "https://github.com/ilijamt/modedock")
+                if let url = issueURL { Link("Report an Issue", destination: url) }
+                AboutLink("Translate", "https://crowdin.com/project/modedock")
+                AboutLink("Privacy", "https://modedock.app/privacy")
+            }
+            .padding(.top, 12)
+            Button("Acknowledgements") { showsAcknowledgements = true }
+                .buttonStyle(.link)
+                .font(.caption)
+                .padding(.top, 12)
+            if let copyright = Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String {
+                Text(verbatim: copyright).font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(32)
         .frame(width: SettingsPage<EmptyView>.width)
+        .sheet(isPresented: $showsAcknowledgements) { AcknowledgementsView() }
+    }
+
+    // Prefills the diagnostics so reports say which Mac and screens they're about.
+    private var issueURL: URL? {
+        var components = URLComponents(string: "https://github.com/ilijamt/modedock/issues/new")
+        let report = Diagnostics.report(screens: screens, modes: modes)
+        components?.queryItems = [
+            URLQueryItem(name: "body", value: "What happened?\n\n\n\nDiagnostics:\n```\n\(report)\n```\n")
+        ]
+        return components?.url
+    }
+}
+
+private struct AboutLink: View {
+    let title: LocalizedStringKey
+    let url: URL?
+
+    init(_ title: LocalizedStringKey, _ address: String) {
+        self.title = title
+        url = URL(string: address)
+    }
+
+    var body: some View {
+        if let url { Link(title, destination: url) }
+    }
+}
+
+private struct AcknowledgementsView: View {
+    @Environment(\.dismiss) private var dismiss
+    private let text =
+        Bundle.main.url(forResource: "Acknowledgements", withExtension: "txt")
+        .flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 12) {
+            ScrollView {
+                Text(verbatim: text)
+                    .font(.system(size: 10, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Button("Done") { dismiss() }
+                .keyboardShortcut(.defaultAction)
+        }
+        .padding(20)
+        .frame(width: 560, height: 420)
     }
 }
 
