@@ -47,6 +47,12 @@ Schakel Deel anonieme gebruiksstatistieken uit in Instellingen → Algemeen. Mod
 
 Wil je al verstuurde rapporten laten verwijderen, open dan een issue op [GitHub](https://github.com/ilijamt/modedock/issues) met het installatie-ID uit Toon gegevens…, voordat je het delen uitzet.
 
+## Controleren op updates
+
+Ongeveer één keer per dag vraagt ModeDock aan GitHub, waar de releases staan, of er een nieuwe
+versie is. Daarbij wordt alleen de versie van de app meegestuurd. Je zet het uit via Instellingen → Algemeen →
+Updates.
+
 ## De code
 
 De app en de server zijn allebei open source: zie [Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) en [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry).

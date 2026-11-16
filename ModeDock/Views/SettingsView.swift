@@ -90,6 +90,10 @@ private struct GeneralSettingsView: View {
 
             SettingsGap()
 
+            UpdatesSection()
+
+            SettingsGap()
+
             UsageDataSection(screens: screens, profiles: profiles, power: power)
         }
         .onAppear { launchAtLogin.refresh() }
@@ -685,6 +689,22 @@ private struct ConfigGroupPicker: View {
         .padding(20)
         .frame(width: 420)
         .onAppear { chosen = Set(available) }
+    }
+}
+
+private struct UpdatesSection: View {
+    @State private var checks = Updater.shared.checksAutomatically
+    @State private var installs = Updater.shared.installsAutomatically
+
+    var body: some View {
+        Toggle("Check for updates automatically", isOn: $checks)
+            .labeledSettingsRow("Updates:")
+            .onChange(of: checks) { _, on in Updater.shared.checksAutomatically = on }
+        Toggle("Download and install automatically", isOn: $installs)
+            .disabled(!checks)
+            .onChange(of: installs) { _, on in Updater.shared.installsAutomatically = on }
+        Button("Check Now") { Updater.shared.checkForUpdates() }
+            .disabled(!Updater.shared.canCheck)
     }
 }
 

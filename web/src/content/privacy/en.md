@@ -47,6 +47,11 @@ Uncheck Share anonymous usage statistics in Settings → General. ModeDock stops
 
 To delete reports already sent, open an issue on [GitHub](https://github.com/ilijamt/modedock/issues) with the install ID shown in Show Data…, before you turn sharing off.
 
+## Update checks
+
+About once a day ModeDock asks GitHub, where its releases are, whether there's a new version. The
+request only carries the app's version. Turn it off in Settings → General → Updates.
+
 ## The code
 
 The app and the server are both open source: see [Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) and [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry).

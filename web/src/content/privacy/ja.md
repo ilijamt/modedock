@@ -47,6 +47,10 @@ ModeDock は何も送信せずに動作します。同意した場合のみ、�
 
 すでに送信したレポートを削除したい場合は、共有をオフにする前に、「データを表示…」に表示されるインストール ID を添えて [GitHub](https://github.com/ilijamt/modedock/issues) で issue を作成してください。
 
+## アップデートの確認
+
+ModeDock は 1 日に 1 回ほど、リリースを置いている GitHub に新しいバージョンがあるか問い合わせます。送信されるのはアプリのバージョンだけです。「設定」→「一般」→「アップデート」でオフにできます。
+
 ## コード
 
 アプリとサーバーはどちらもオープンソースです：[Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) と [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry) をご覧ください。

@@ -1689,6 +1689,54 @@
         }
       }
     },
+    "Check Now": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今すぐ確認"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nu controleren"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートを確認…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleren op updates…"
+          }
+        }
+      }
+    },
+    "Check for updates automatically": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデートを自動的に確認"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch controleren op updates"
+          }
+        }
+      }
+    },
     "Choose": {
       "localizations": {
         "ja": {
@@ -2299,6 +2347,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gereed"
+          }
+        }
+      }
+    },
+    "Download and install automatically": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動的にダウンロードしてインストール"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisch downloaden en installeren"
           }
         }
       }
@@ -6651,6 +6715,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Werk dit profiel bij, wijzig de naam of verwijder het"
+          }
+        }
+      }
+    },
+    "Updates:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アップデート:"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Updates:"
           }
         }
       }

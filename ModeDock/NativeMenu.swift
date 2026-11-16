@@ -341,6 +341,9 @@ final class NativeMenu {
         let settings = ActionItem(String(localized: "Settings…"), action: onOpenSettings)
         settings.keyEquivalent = ","
         menu.addItem(settings)
+        let update = ActionItem(String(localized: "Check for Updates…")) { Updater.shared.checkForUpdates() }
+        update.isEnabled = Updater.shared.canCheck
+        menu.addItem(update)
         let quit = ActionItem(String(localized: "Quit ModeDock")) { NSApp.terminate(nil) }
         quit.keyEquivalent = "q"
         menu.addItem(quit)

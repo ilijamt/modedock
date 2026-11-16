@@ -137,6 +137,8 @@ struct MenuView: View {
 
             Menu {
                 Button("Settings…", action: onOpenSettings)
+                Button("Check for Updates…") { Updater.shared.checkForUpdates() }
+                    .disabled(!Updater.shared.canCheck)
                 Button("Copy Diagnostics") { Diagnostics.copy(screens: screens, modes: modes) }
                 Divider()
                 Button("Quit ModeDock") { NSApp.terminate(nil) }
