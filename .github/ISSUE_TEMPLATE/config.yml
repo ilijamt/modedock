@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/ilijamt/modedock/security/advisories/new
+    about: Please report vulnerabilities privately.
+  - name: Help with translations
+    url: https://crowdin.com/project/modedock
+    about: Translations of the app and the website are managed on Crowdin.
