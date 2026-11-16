@@ -1,0 +1,23 @@
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+base_path: .
+preserve_hierarchy: true
+
+# String Catalogs hold every language in one file.
+files:
+- source: /ModeDock/Localizable.xcstrings
+  translation: /ModeDock/Localizable.xcstrings
+  multilingual: 1
+- source: /Packages/ModeDockKit/Sources/DisplayKit/Localizable.xcstrings
+  translation: /Packages/ModeDockKit/Sources/DisplayKit/Localizable.xcstrings
+  multilingual: 1
+- source: /Packages/ModeDockKit/Sources/ModeDockCore/Localizable.xcstrings
+  translation: /Packages/ModeDockKit/Sources/ModeDockCore/Localizable.xcstrings
+  multilingual: 1
+
+# The website keeps one file per language next to the English source, named with Apple's
+# codes (de, pt-BR, zh-Hans) like the app's catalogs.
+- source: /web/src/i18n/en.json
+  translation: /web/src/i18n/%osx_locale%.json
+- source: /web/src/content/privacy/en.md
+  translation: /web/src/content/privacy/%osx_locale%.md
