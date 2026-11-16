@@ -120,6 +120,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             },
             onOpenSettings: { [weak self] in self?.settingsWindow.show() }
         )
+        // `-settingsTab` launches are for screenshots.
+        if UserDefaults.standard.string(forKey: "settingsTab") != nil { settingsWindow.show() }
         screenshots.closePanel = { [weak self] in self?.menuBar?.close() }
         menuBar?.onClose = { [weak self] in
             if let change = self?.modes.pending { self?.confirmation.show(for: change) }
