@@ -23,25 +23,33 @@ const t = ui[Astro.props.lang as Lang].theme;
 </div>
 
 <script>
-  const root = document.documentElement;
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!;
   const buttons = document.querySelectorAll<HTMLButtonElement>("[data-theme-choice]");
 
-  function show(choice: string) {
+  function apply(choice: string) {
+    meta.content = choice === "light" || choice === "dark" ? choice : "light dark";
     for (const button of buttons) button.setAttribute("aria-checked", String(button.dataset.themeChoice === choice));
   }
 
   function choose(choice: string) {
-    if (choice === "auto") delete root.dataset.theme;
-    else root.dataset.theme = choice;
+    apply(choice);
     try {
       if (choice === "auto") localStorage.removeItem("theme");
       else localStorage.setItem("theme", choice);
     } catch {}
-    show(choice);
   }
 
-  show(root.dataset.theme ?? "auto");
-  for (const button of buttons) button.addEventListener("click", () => choose(button.dataset.themeChoice ?? "auto"));
+  if (!CSS.supports("color", "light-dark(#000, #fff)")) {
+    // The colors can't be pinned in this browser; it follows the system.
+    document.querySelector<HTMLElement>(".theme")!.hidden = true;
+  } else {
+    apply(meta.content === "light" || meta.content === "dark" ? meta.content : "auto");
+    for (const button of buttons) button.addEventListener("click", () => choose(button.dataset.themeChoice ?? "auto"));
+    // Keep other open tabs in step.
+    addEventListener("storage", (event) => {
+      if (event.key === "theme" || event.key === null) apply(event.newValue ?? "auto");
+    });
+  }
 </script>
 
 <style>
