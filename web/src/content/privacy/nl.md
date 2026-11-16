@@ -53,8 +53,20 @@ Ongeveer één keer per dag vraagt ModeDock aan GitHub, waar de releases staan, 
 versie is. Daarbij wordt alleen de versie van de app meegestuurd. Je zet het uit via Instellingen → Algemeen →
 Updates.
 
+## Toestemmingen
+
+ModeDock heeft voor drie functies toestemming van macOS nodig, en vraagt erom de eerste keer dat je zo'n functie gebruikt.
+
+- Toegankelijkheid zorgt dat de helderheidstoetsen alle schermen wijzigen. ModeDock vraagt er alleen om als je dat aanzet in Instellingen → Beeldschermen.
+- Schermopname is voor schermafbeeldingen. macOS noemt het Scherm- en systeemaudio-opname, maar ModeDock neemt geen audio op, en je schermafbeeldingen blijven op je Mac.
+- Automatisering laat Leeg prullenmand de Finder vragen de prullenmand te legen.
+
+Vanaf versie 0.1.1 zie je in Instellingen → Toestemmingen wat ModeDock mag, met knoppen om de rest toe te staan.
+
+<figure><picture style="display: contents"><source srcset="/img/permissions-light.avif" type="image/avif"><img class="only-light" src="/img/permissions-light.png" width="600" height="295" alt="De instellingen voor toestemmingen van ModeDock, met Toegankelijkheid, Schermopname en Automatisering toegestaan" loading="lazy" decoding="async"></picture><picture style="display: contents"><source srcset="/img/permissions-dark.avif" type="image/avif"><img class="only-dark" src="/img/permissions-dark.png" width="600" height="295" alt="De instellingen voor toestemmingen van ModeDock, met Toegankelijkheid, Schermopname en Automatisering toegestaan" loading="lazy" decoding="async"></picture></figure>
+
 ## De code
 
 De app en de server zijn allebei open source: zie [Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) en [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry).
 
-Laatst bijgewerkt op 15 november 2026.
+Laatst bijgewerkt op 16 november 2026.

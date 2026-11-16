@@ -47,6 +47,15 @@ const { Content } = await render(entry);
   .doc :global(li::marker) {
     color: var(--accent);
   }
+  .doc :global(figure) {
+    margin: 1.5rem 0 0;
+  }
+  .doc :global(figure img) {
+    width: 100%;
+    height: auto;
+    /* The capture keeps the window's rounded corners, so the shadow follows its shape. */
+    filter: drop-shadow(0 10px 28px rgb(0 0 0 / 0.16));
+  }
   .doc :global(code) {
     padding: 0.05rem 0.35rem;
     border-radius: 5px;

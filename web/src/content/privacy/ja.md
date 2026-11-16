@@ -51,8 +51,20 @@ ModeDock は何も送信せずに動作します。同意した場合のみ、�
 
 ModeDock は 1 日に 1 回ほど、リリースを置いている GitHub に新しいバージョンがあるか問い合わせます。送信されるのはアプリのバージョンだけです。「設定」→「一般」→「アップデート」でオフにできます。
 
+## 権限
+
+ModeDock は 3 つの機能で macOS の許可が必要です。それぞれ初めて使うときに確認します。
+
+- アクセシビリティ：輝度キーですべてのディスプレイを変更するために使います。設定 → ディスプレイでこの機能をオンにした場合にだけ確認します。
+- 画面収録：スクリーンショットに使います。macOS では「画面収録とシステムオーディオ録音」と表示されますが、ModeDock が音声を録音することはなく、スクリーンショットは Mac から出ません。
+- オートメーション：「ゴミ箱を空にする」で Finder にゴミ箱を空にするよう依頼するために使います。
+
+バージョン 0.1.1 以降、設定 → 権限で ModeDock に許可されている内容を確認でき、まだのものはボタンから許可できます。
+
+<figure><picture style="display: contents"><source srcset="/img/permissions-light.avif" type="image/avif"><img class="only-light" src="/img/permissions-light.png" width="600" height="295" alt="ModeDock の権限設定。アクセシビリティ、画面収録、オートメーションが許可されている" loading="lazy" decoding="async"></picture><picture style="display: contents"><source srcset="/img/permissions-dark.avif" type="image/avif"><img class="only-dark" src="/img/permissions-dark.png" width="600" height="295" alt="ModeDock の権限設定。アクセシビリティ、画面収録、オートメーションが許可されている" loading="lazy" decoding="async"></picture></figure>
+
 ## コード
 
 アプリとサーバーはどちらもオープンソースです：[Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) と [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry) をご覧ください。
 
-最終更新日：2026 年 11 月 15 日
+最終更新日：2026 年 11 月 16 日

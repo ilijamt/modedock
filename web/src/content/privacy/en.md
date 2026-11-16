@@ -52,8 +52,20 @@ To delete reports already sent, open an issue on [GitHub](https://github.com/ili
 About once a day ModeDock asks GitHub, where its releases are, whether there's a new version. The
 request only carries the app's version. Turn it off in Settings → General → Updates.
 
+## Permissions
+
+ModeDock needs macOS permission for three features, and asks the first time you use each one.
+
+- Accessibility lets the brightness keys change every screen. ModeDock only asks for it if you turn that on in Settings → Displays.
+- Screen Recording is for screenshots. macOS calls it Screen & System Audio Recording, but ModeDock doesn't record audio, and your screenshots stay on your Mac.
+- Automation lets Empty Trash ask Finder to empty the Trash.
+
+From version 0.1.1, Settings → Permissions shows what ModeDock is allowed to do, with buttons to allow the rest.
+
+<figure><picture style="display: contents"><source srcset="/img/permissions-light.avif" type="image/avif"><img class="only-light" src="/img/permissions-light.png" width="600" height="295" alt="ModeDock's Permissions settings with Accessibility, Screen Recording and Automation allowed" loading="lazy" decoding="async"></picture><picture style="display: contents"><source srcset="/img/permissions-dark.avif" type="image/avif"><img class="only-dark" src="/img/permissions-dark.png" width="600" height="295" alt="ModeDock's Permissions settings with Accessibility, Screen Recording and Automation allowed" loading="lazy" decoding="async"></picture></figure>
+
 ## The code
 
 The app and the server are both open source: see [Telemetry.swift](https://github.com/ilijamt/modedock/blob/main/Packages/ModeDockKit/Sources/ModeDockCore/Telemetry.swift) and [server/telemetry](https://github.com/ilijamt/modedock/tree/main/server/telemetry).
 
-Last updated 15 November 2026.
+Last updated 16 November 2026.
