@@ -8,10 +8,12 @@ interface Props {
 
 const { tab, alt, eager = false, width = 320 } = Astro.props;
 const loading = eager ? "eager" : "lazy";
+// Only one of the pair is visible, but HTML can't tell which before CSS runs, so both get the boost.
+const fetchpriority = eager ? "high" : undefined;
 ---
 
-<img class="shot only-light" src={`/img/panel-${tab}-light.png`} alt={alt} width={width} loading={loading} decoding="async" style={`width: ${width}px`} />
-<img class="shot only-dark" src={`/img/panel-${tab}-dark.png`} alt={alt} width={width} loading={loading} decoding="async" style={`width: ${width}px`} />
+<img class="shot only-light" src={`/img/panel-${tab}-light.png`} alt={alt} width={width} loading={loading} fetchpriority={fetchpriority} decoding="async" style={`width: ${width}px`} />
+<img class="shot only-dark" src={`/img/panel-${tab}-dark.png`} alt={alt} width={width} loading={loading} fetchpriority={fetchpriority} decoding="async" style={`width: ${width}px`} />
 
 <style>
   .shot {
