@@ -9,7 +9,7 @@ ModeDock werkt zonder iets te versturen. Als je instemt, verstuurt het anonieme 
 
 ## Uit tot je ja zegt
 
-Bij de eerste start vraagt ModeDock: *Anonieme gebruiksgegevens delen?* Er wordt niets verstuurd tenzij je Delen kiest. Je kunt dit altijd wijzigen in Instellingen → Algemeen.
+Bij de eerste start vraagt ModeDock: _Anonieme gebruiksgegevens delen?_ Er wordt niets verstuurd tenzij je Delen kiest. Je kunt dit altijd wijzigen in Instellingen → Algemeen.
 
 ## Wat wordt verstuurd
 
