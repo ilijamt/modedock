@@ -59,7 +59,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
+    /// Both builds would grab the brightness keys and shortcuts.
+    private func quitOtherBuild() {
+        guard let mine = Bundle.main.bundleIdentifier else { return }
+        let other = mine.hasSuffix(".dev") ? String(mine.dropLast(4)) : mine + ".dev"
+        for app in NSRunningApplication.runningApplications(withBundleIdentifier: other) {
+            AppLog.app.notice("Quitting \(other), which was already running")
+            app.terminate()
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        quitOtherBuild()
         Telemetry.shared.record(.appLaunch)
         AppLog.app.notice("Started. \(AppLog.versionLine)")
         // After the menu bar item is up, so the question doesn't come before the app.
