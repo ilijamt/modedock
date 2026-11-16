@@ -5,8 +5,8 @@ const lang = Astro.props.lang as Lang;
 const t = ui[lang].stats;
 ---
 
-<section class="stats wrap" id="stats" aria-labelledby="stats-title" data-lang={lang} data-strings={JSON.stringify(t)} hidden>
-  <h2 id="stats-title">{t.title}</h2>
+<section class="stats wrap" id="stats" data-lang={lang} data-strings={JSON.stringify(t)} hidden>
+  <h2>{t.title}</h2>
   <p class="lede"><Fragment set:html={t.lede} /> <a href={url(lang, "privacy")}>{t.how}</a></p>
 
   <div class="board" data-board>
@@ -31,18 +31,18 @@ const t = ui[lang].stats;
       <div class="panel">
         <h3>{t.mostUsed}</h3>
         <p class="hint">{t.hint}</p>
-        <ol class="sliders" data-list="features"></ol>
+        <ol class="sliders" data-list="features" role="list"></ol>
       </div>
 
       <div class="side">
         <div class="panel">
           <h3>{t.macos}</h3>
           <div class="stack" data-stack role="img"></div>
-          <ul class="legend" data-legend></ul>
+          <ul class="legend" data-legend role="list"></ul>
         </div>
         <div class="panel">
           <h3>{t.countriesTitle}</h3>
-          <ol class="sliders compact" data-list="countries"></ol>
+          <ol class="sliders compact" data-list="countries" role="list"></ol>
         </div>
       </div>
     </div>

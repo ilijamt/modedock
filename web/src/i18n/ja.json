@@ -5,7 +5,8 @@
     "features": "機能",
     "privacy": "プライバシー",
     "releases": "リリース",
-    "language": "言語"
+    "language": "言語",
+    "skip": "本文へスキップ"
   },
   "footer": "ModeDock は <a href=\"https://github.com/ilijamt/modedock/blob/main/LICENSE\">MIT ライセンス</a>のもとで公開されている無料のオープンソースソフトウェアです。",
   "theme": {

@@ -10,14 +10,15 @@ const { lang, alternates } = Astro.props;
 ---
 
 <div class="language">
-  <button type="button" class="trigger" popovertarget="language-menu" aria-label={ui[lang].nav.language} title={ui[lang].nav.language}>
+  <button type="button" class="trigger" popovertarget="language-menu" title={ui[lang].nav.language}>
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="8" cy="8" r="6.2" />
       <path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8Z" />
     </svg>
-    <span>{lang.toUpperCase()}</span>
+    <span class="visually-hidden">{ui[lang].nav.language}</span>
+    <span class="code">{lang.toUpperCase()}</span>
   </button>
-  <ul id="language-menu" popover="auto">
+  <ul id="language-menu" popover="auto" role="list">
     {
       (Object.keys(languages) as Lang[]).map((code) => (
         <li>
@@ -70,7 +71,7 @@ const { lang, alternates } = Astro.props;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    height: calc(1.6rem + 6px);
+    min-block-size: calc(1.6rem + 6px);
     padding: 0 0.55rem;
     border-radius: 9px;
     border: 1px solid var(--line);
@@ -134,7 +135,7 @@ const { lang, alternates } = Astro.props;
     font-weight: 600;
   }
   @media (max-width: 30rem) {
-    .trigger span {
+    .trigger .code {
       display: none;
     }
   }

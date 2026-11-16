@@ -4,31 +4,35 @@ import { ui, type Lang } from "../i18n/ui";
 const t = ui[Astro.props.lang as Lang].theme;
 ---
 
-<div class="theme" role="radiogroup" aria-label={t.label}>
-  <button type="button" role="radio" data-theme-choice="auto" title={t.autoTitle}>
+<fieldset class="theme">
+  <legend class="visually-hidden">{t.label}</legend>
+  <label title={t.autoTitle}>
+    <input type="radio" name="theme" value="auto" checked />
     <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" /><path d="M8 2a6 6 0 0 1 0 12Z" class="fill" /></svg>
     <span class="visually-hidden">{t.auto}</span>
-  </button>
-  <button type="button" role="radio" data-theme-choice="light" title={t.light}>
+  </label>
+  <label title={t.light}>
+    <input type="radio" name="theme" value="light" />
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="8" cy="8" r="3" />
       <path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3.05 3.05l1.13 1.13M11.82 11.82l1.13 1.13M3.05 12.95l1.13-1.13M11.82 4.18l1.13-1.13" />
     </svg>
     <span class="visually-hidden">{t.light}</span>
-  </button>
-  <button type="button" role="radio" data-theme-choice="dark" title={t.dark}>
-    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1Z" /></svg>
+  </label>
+  <label title={t.dark}>
+    <input type="radio" name="theme" value="dark" />
+    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.8 5.8 0 0 1 6.4 2.5a5.8 5.8 0 1 0 7.1 7.1Z" class="fill" /></svg>
     <span class="visually-hidden">{t.dark}</span>
-  </button>
-</div>
+  </label>
+</fieldset>
 
 <script>
   const meta = document.querySelector<HTMLMetaElement>('meta[name="color-scheme"]')!;
-  const buttons = document.querySelectorAll<HTMLButtonElement>("[data-theme-choice]");
+  const inputs = document.querySelectorAll<HTMLInputElement>('.theme input[name="theme"]');
 
   function apply(choice: string) {
     meta.content = choice === "light" || choice === "dark" ? choice : "light dark";
-    for (const button of buttons) button.setAttribute("aria-checked", String(button.dataset.themeChoice === choice));
+    for (const input of inputs) input.checked = input.value === choice;
   }
 
   function choose(choice: string) {
@@ -44,7 +48,7 @@ const t = ui[Astro.props.lang as Lang].theme;
     document.querySelector<HTMLElement>(".theme")!.hidden = true;
   } else {
     apply(meta.content === "light" || meta.content === "dark" ? meta.content : "auto");
-    for (const button of buttons) button.addEventListener("click", () => choose(button.dataset.themeChoice ?? "auto"));
+    for (const input of inputs) input.addEventListener("change", () => choose(input.value));
     // Keep other open tabs in step.
     addEventListener("storage", (event) => {
       if (event.key === "theme" || event.key === null) apply(event.newValue ?? "auto");
@@ -55,28 +59,38 @@ const t = ui[Astro.props.lang as Lang].theme;
 <style>
   .theme {
     display: inline-flex;
+    margin: 0;
+    min-inline-size: 0;
     padding: 2px;
     border-radius: 9px;
     background: var(--surface);
     border: 1px solid var(--line);
   }
-  button {
+  label {
+    position: relative;
     display: grid;
     place-items: center;
     width: 1.85rem;
-    height: 1.6rem;
+    min-block-size: 1.6rem;
     color: var(--muted);
-    background: none;
-    border: 0;
     border-radius: 7px;
     cursor: pointer;
   }
-  button:hover {
+  /* The radio itself covers the whole label, so it takes the clicks and shows the focus ring. */
+  input {
+    appearance: none;
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border-radius: inherit;
+    cursor: inherit;
+  }
+  label:hover {
     color: var(--text);
   }
-  button[aria-checked="true"] {
+  label:has(:checked) {
     background: var(--bg);
-    color: var(--text);
+    color: var(--accent);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
   }
   svg {
@@ -88,8 +102,14 @@ const t = ui[Astro.props.lang as Lang].theme;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  svg .fill,
-  button[data-theme-choice="dark"] svg path {
+  svg .fill {
     fill: currentColor;
+  }
+  /* High Contrast mode drops the background and shadow that mark the choice. */
+  @media (forced-colors: active) {
+    label:has(:checked) {
+      outline: 2px solid Highlight;
+      outline-offset: -2px;
+    }
   }
 </style>

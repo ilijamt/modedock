@@ -27,15 +27,15 @@ const privacy = url(lang, "privacy");
     </div>
   </section>
 
-  <section class="features wrap" id="features" aria-labelledby="features-title">
-    <h2 id="features-title">{t.featuresTitle}</h2>
+  <section class="features wrap" id="features">
+    <h2>{t.featuresTitle}</h2>
     {
       Object.entries(t.features).map(([tab, feature]) => (
         <article class={tab === "screens" ? "feature text-only" : "feature"}>
           <div class="copy">
             <h3>{feature.title}</h3>
             <p>{feature.text}</p>
-            <ul>
+            <ul role="list">
               {feature.points.map((point) => (
                 <li>{point}</li>
               ))}
@@ -62,8 +62,8 @@ const privacy = url(lang, "privacy");
     </div>
   </section>
 
-  <section class="promise wrap" aria-labelledby="promise-title">
-    <h2 id="promise-title" class="visually-hidden">{t.promiseTitle}</h2>
+  <section class="promise wrap">
+    <h2 class="visually-hidden">{t.promiseTitle}</h2>
     <dl>
       {
         Object.values(t.promise).map((item) => (
@@ -78,9 +78,9 @@ const privacy = url(lang, "privacy");
 
   <Stats lang={lang} />
 
-  <section class="close wrap" aria-labelledby="close-title">
+  <section class="close wrap">
     <img src="/img/icon.png" alt="" width="64" height="64" />
-    <h2 id="close-title">{t.closeTitle}</h2>
+    <h2>{t.closeTitle}</h2>
     <Install lang={lang} id="brew-close" />
   </section>
 </Base>

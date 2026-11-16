@@ -5,7 +5,8 @@
     "features": "Functies",
     "privacy": "Privacy",
     "releases": "Releases",
-    "language": "Taal"
+    "language": "Taal",
+    "skip": "Naar de inhoud"
   },
   "footer": "ModeDock is gratis en open source onder de <a href=\"https://github.com/ilijamt/modedock/blob/main/LICENSE\">MIT-licentie</a>.",
   "theme": {

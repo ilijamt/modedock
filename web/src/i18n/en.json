@@ -5,7 +5,8 @@
     "features": "Features",
     "privacy": "Privacy",
     "releases": "Releases",
-    "language": "Language"
+    "language": "Language",
+    "skip": "Skip to content"
   },
   "footer": "ModeDock is free and open source under the <a href=\"https://github.com/ilijamt/modedock/blob/main/LICENSE\">MIT License</a>.",
   "theme": {
