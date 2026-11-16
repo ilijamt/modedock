@@ -19,8 +19,7 @@
     "download": "macOS 版をダウンロード",
     "copy": "コピー",
     "copied": "コピー済み",
-    "fallback": "選択してください",
-    "copyLabel": "Homebrew コマンドをコピー"
+    "fallback": "選択してください"
   },
   "stats": {
     "title": "ModeDock の利用状況",

@@ -1,40 +1,59 @@
 ---
 import { ui, type Lang } from "../i18n/ui";
 
-const t = ui[Astro.props.lang as Lang].install;
+interface Props {
+  lang: Lang;
+  /** Must be unique on the page: the copy button is described by the command with this id. */
+  id?: string;
+}
+
+const { lang, id = "brew" } = Astro.props;
+const t = ui[lang].install;
 const brew = "brew install --cask ilijamt/tap/modedock";
 ---
 
 <div class="install">
   <a class="download" href="https://github.com/ilijamt/modedock/releases/latest">{t.download}</a>
   <div class="brew">
-    <code><span class="prompt" aria-hidden="true">$</span> {brew}</code>
-    <button
-      type="button"
-      class="copy"
-      data-copy={brew}
-      data-copied={t.copied}
-      data-fallback={t.fallback}
-      aria-label={t.copyLabel}>{t.copy}</button
-    >
+    <code id={id}><span class="prompt" aria-hidden="true">$</span> {brew}</code>
+    <button type="button" class="copy" data-copy={brew} data-copied={t.copied} data-fallback={t.fallback} aria-describedby={id}>
+      {t.copy}
+    </button>
+    <span class="visually-hidden" role="status"></span>
   </div>
 </div>
 
 <script>
+  const timers = new WeakMap<HTMLButtonElement, ReturnType<typeof setTimeout>>();
+  // VoiceOver skips a message identical to the last one, even after the region was emptied.
+  let lastMessage = "";
+
   for (const button of document.querySelectorAll<HTMLButtonElement>("button[data-copy]")) {
-    const label = button.textContent ?? "";
+    const label = button.textContent?.trim() ?? "";
+    const status = button.nextElementSibling as HTMLElement;
     button.addEventListener("click", async () => {
+      clearTimeout(timers.get(button));
+      let ok = true;
       try {
         await navigator.clipboard.writeText(button.dataset.copy ?? "");
-        button.textContent = button.dataset.copied ?? "";
-        button.classList.add("done");
       } catch {
-        button.textContent = button.dataset.fallback ?? "";
+        ok = false;
       }
-      setTimeout(() => {
-        button.textContent = label;
-        button.classList.remove("done");
-      }, 1600);
+      const text = (ok ? button.dataset.copied : button.dataset.fallback) ?? "";
+      button.textContent = text;
+      button.classList.toggle("done", ok);
+      let message = text;
+      if (message === lastMessage) message += "\u00A0";
+      lastMessage = message;
+      status.textContent = message;
+      timers.set(
+        button,
+        setTimeout(() => {
+          button.textContent = label;
+          button.classList.remove("done");
+          status.textContent = "";
+        }, 1600),
+      );
     });
   }
 </script>

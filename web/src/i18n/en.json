@@ -19,8 +19,7 @@
     "download": "Download for macOS",
     "copy": "Copy",
     "copied": "Copied",
-    "fallback": "Select it",
-    "copyLabel": "Copy the Homebrew command"
+    "fallback": "Select it"
   },
   "stats": {
     "title": "ModeDock in use",
