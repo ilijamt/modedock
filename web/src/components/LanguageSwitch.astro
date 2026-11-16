@@ -9,15 +9,15 @@ interface Props {
 const { lang, alternates } = Astro.props;
 ---
 
-<details class="language">
-  <summary aria-label={ui[lang].nav.language} title={ui[lang].nav.language}>
+<div class="language">
+  <button type="button" class="trigger" popovertarget="language-menu" aria-label={ui[lang].nav.language} title={ui[lang].nav.language}>
     <svg viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="8" cy="8" r="6.2" />
       <path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8Z" />
     </svg>
     <span>{lang.toUpperCase()}</span>
-  </summary>
-  <ul>
+  </button>
+  <ul id="language-menu" popover="auto">
     {
       (Object.keys(languages) as Lang[]).map((code) => (
         <li>
@@ -28,10 +28,12 @@ const { lang, alternates } = Astro.props;
       ))
     }
   </ul>
-</details>
+</div>
 
 <script>
-  const menu = document.querySelector<HTMLDetailsElement>("details.language")!;
+  const trigger = document.querySelector<HTMLButtonElement>(".language .trigger")!;
+  const menu = document.getElementById("language-menu")!;
+
   for (const link of menu.querySelectorAll<HTMLAnchorElement>("a[data-lang]")) {
     link.addEventListener("click", () => {
       try {
@@ -39,22 +41,32 @@ const { lang, alternates } = Astro.props;
       } catch {}
     });
   }
-  document.addEventListener("click", (event) => {
-    if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+
+  // Popovers close on outside clicks and Escape, but not when Tab moves focus past the last language.
+  menu.addEventListener("focusout", (event) => {
+    const to = event.relatedTarget as Node | null;
+    if (to && to !== trigger && !menu.contains(to)) menu.hidePopover();
   });
-  menu.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") {
-      menu.open = false;
-      menu.querySelector("summary")?.focus();
-    }
-  });
+
+  // Without anchor positioning the popover would open centred on the page, so pin it under the button.
+  if (!CSS.supports("position-area", "block-end")) {
+    const place = () => {
+      const box = trigger.getBoundingClientRect();
+      menu.style.top = `${box.bottom + 6}px`;
+      menu.style.right = `${document.documentElement.clientWidth - box.right}px`;
+    };
+    // beforetoggle, not toggle: toggle fires after the menu is already painted in the wrong place.
+    menu.addEventListener("beforetoggle", (event) => {
+      if ((event as ToggleEvent).newState === "open") place();
+    });
+    addEventListener("resize", () => {
+      if (menu.matches(":popover-open")) place();
+    });
+  }
 </script>
 
 <style>
-  .language {
-    position: relative;
-  }
-  summary {
+  .trigger {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -64,17 +76,13 @@ const { lang, alternates } = Astro.props;
     border: 1px solid var(--line);
     background: var(--surface);
     color: var(--muted);
+    font: inherit;
     font-size: 0.8rem;
     font-weight: 600;
     cursor: pointer;
-    list-style: none;
-    user-select: none;
   }
-  summary::-webkit-details-marker {
-    display: none;
-  }
-  summary:hover,
-  .language[open] summary {
+  .trigger:hover,
+  .language:has(:popover-open) .trigger {
     color: var(--text);
   }
   svg {
@@ -85,17 +93,30 @@ const { lang, alternates } = Astro.props;
     stroke-width: 1.3;
   }
   ul {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 0.4rem);
-    min-width: 9rem;
+    position: fixed;
+    inset: auto;
     margin: 0;
+    min-width: 9rem;
     padding: 0.3rem;
     list-style: none;
     border-radius: 11px;
     border: 1px solid var(--line);
     background: var(--bg);
+    color: var(--text);
     box-shadow: var(--shadow);
+  }
+  @supports (position-area: block-end) {
+    ul {
+      position-area: block-end span-inline-start;
+      position-try-fallbacks: flip-inline;
+      margin-top: 6px;
+    }
+  }
+  /* Browsers without popovers keep the list closed; the links still exist in every page's hreflang alternates. */
+  @supports not selector(:popover-open) {
+    ul {
+      display: none;
+    }
   }
   a {
     display: block;
@@ -113,7 +134,7 @@ const { lang, alternates } = Astro.props;
     font-weight: 600;
   }
   @media (max-width: 30rem) {
-    summary span {
+    .trigger span {
       display: none;
     }
   }
