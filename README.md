@@ -43,7 +43,7 @@ swift format lint --strict --recursive ModeDock Packages
 - `Packages/ModeDockKit/`: the logic and its tests.
 - `server/telemetry/`: the Cloudflare Worker that receives the opt-in usage data.
 - `web/`: the website.
-- `scripts/`: string catalog sync.
+- `scripts/`: string catalog sync and the release script.
 
 ## License
 
