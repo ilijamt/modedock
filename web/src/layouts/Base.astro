@@ -10,9 +10,11 @@ interface Props {
   path?: string;
   title: string;
   description: string;
+  /** For the 404 page: no canonical or alternates, no language redirect, not indexed. */
+  notFound?: boolean;
 }
 
-const { lang, path = "", title, description } = Astro.props;
+const { lang, path = "", title, description, notFound = false } = Astro.props;
 const t = ui[lang];
 const canonical = new URL(url(lang, path), Astro.site);
 const alternates = Object.fromEntries(langs.map((code) => [code, url(code, path)]));
@@ -27,9 +29,17 @@ const repo = "https://github.com/ilijamt/modedock";
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
-    {langs.map((code) => <link rel="alternate" hreflang={code} href={new URL(alternates[code], Astro.site)} />)}
-    <link rel="alternate" hreflang="x-default" href={new URL(alternates[defaultLang], Astro.site)} />
+    {
+      notFound ? (
+        <meta name="robots" content="noindex" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical} />
+          {langs.map((code) => <link rel="alternate" hreflang={code} href={new URL(alternates[code], Astro.site)} />)}
+          <link rel="alternate" hreflang="x-default" href={new URL(alternates[defaultLang], Astro.site)} />
+        </>
+      )
+    }
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/img/icon.png" />
     <meta property="og:title" content={title} />
@@ -48,7 +58,7 @@ const repo = "https://github.com/ilijamt/modedock";
           document.querySelector('meta[name="color-scheme"]').content = theme;
       } catch {}
     </script>
-    <script is:inline define:vars={{ alternates, defaultLang }}>
+    <script is:inline define:vars={{ alternates, defaultLang, notFound }}>
       // A saved choice wins. Otherwise the unprefixed (English) pages follow the browser's
       // languages; a /ja/ or /nl/ link is kept as is.
       const here = document.documentElement.lang;
@@ -56,7 +66,7 @@ const repo = "https://github.com/ilijamt/modedock";
       try {
         want = localStorage.getItem("lang");
       } catch {}
-      if (!(want in alternates) && here === defaultLang) {
+      if (!(want in alternates) && here === defaultLang && !notFound) {
         // Exact tag first (pt-BR), then the same base language (pt-PT → pt-BR, zh-TW → zh-Hant).
         const codes = Object.keys(alternates);
         const base = (tag) => tag.toLowerCase().split("-")[0];

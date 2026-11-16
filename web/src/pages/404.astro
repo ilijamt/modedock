@@ -1,0 +1,29 @@
+---
+import Base from "../layouts/Base.astro";
+import { defaultLang, url } from "../i18n/ui";
+
+// English only: new strings in en.json would hold back every language until it is translated.
+---
+
+<Base lang={defaultLang} title="Page not found · ModeDock" description="This page doesn't exist." notFound>
+  <section class="missing wrap">
+    <h1>Page not found</h1>
+    <p>This page doesn't exist. It may have moved, or the link is wrong.</p>
+    <p><a href={url(defaultLang)}>Go to the home page</a></p>
+  </section>
+</Base>
+
+<style>
+  .missing {
+    max-width: 38rem;
+    padding-top: clamp(3rem, 7vw, 5rem);
+  }
+  h1 {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    letter-spacing: -0.03em;
+  }
+  p {
+    margin-top: 1rem;
+    color: var(--muted);
+  }
+</style>
