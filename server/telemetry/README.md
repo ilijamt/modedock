@@ -34,12 +34,12 @@ sent it. Anything malformed gets a 4xx.
 
 ## Public stats
 
-`GET /v1/stats` serves totals for the last 30 days to the website. A daily cron at 03:17 UTC
+`GET /v1/stats` serves totals for the last 30 days to the website. A cron at 17 minutes past each hour
 recomputes them. Groups under 5 installs are left out, so no single install shows.
 
 To run the cron locally:
 
 ```sh
 wrangler dev --local --test-scheduled
-curl "http://127.0.0.1:8787/__scheduled?cron=17+3+*+*+*"
+curl "http://127.0.0.1:8787/__scheduled?cron=17+*+*+*+*"
 ```
