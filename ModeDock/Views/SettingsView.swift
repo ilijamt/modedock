@@ -4,7 +4,7 @@ import ModeDockCore
 import SwiftUI
 
 enum SettingsTab: String, CaseIterable {
-    case general, menu, displays, profiles, screenshots, shortcuts, advanced, about
+    case general, menu, displays, profiles, screenshots, shortcuts, permissions, advanced, about
 
     var title: String {
         switch self {
@@ -14,6 +14,7 @@ enum SettingsTab: String, CaseIterable {
         case .profiles: String(localized: "Profiles")
         case .screenshots: String(localized: "Capture")
         case .shortcuts: String(localized: "Shortcuts")
+        case .permissions: String(localized: "Permissions")
         case .advanced: String(localized: "Advanced")
         case .about: String(localized: "About")
         }
@@ -27,6 +28,7 @@ enum SettingsTab: String, CaseIterable {
         case .profiles: "rectangle.3.group"
         case .screenshots: "camera.viewfinder"
         case .shortcuts: "command"
+        case .permissions: "lock.shield"
         case .advanced: "gearshape.2"
         case .about: "info.circle"
         }
@@ -44,6 +46,7 @@ enum SettingsTab: String, CaseIterable {
         case .profiles: ProfileSettingsView(profiles: profiles, screens: screens, modes: modes)
         case .screenshots: ScreenshotSettingsView(screenshots: screenshots)
         case .shortcuts: ShortcutSettingsView(screens: screens)
+        case .permissions: PermissionsSettingsView(screenshots: screenshots)
         case .advanced: AdvancedSettingsView(screens: screens, modes: modes, profiles: profiles)
         case .about: AboutView(screens: screens, modes: modes)
         }
@@ -136,6 +139,89 @@ private struct AdvancedSettingsView: View {
             Button("Reset Settings", role: .destructive) { ScreenDefaults.resetSettings(modes: modes) }
         } message: {
             Text("Every setting and shortcut goes back to its default. Profiles are kept.")
+        }
+    }
+}
+
+private struct PermissionsSettingsView: View {
+    let screenshots: ScreenshotController
+    @State private var accessibility = BrightnessKeys.isTrusted
+    @State private var automation = PermissionStatus.notAsked
+
+    var body: some View {
+        SettingsPage {
+            LabeledContent("Accessibility:") {
+                HStack {
+                    PermissionLabel(status: accessibility ? .allowed : .denied)
+                    if !accessibility {
+                        Group {
+                            Button("Allow…") { BrightnessKeys.requestAccess() }
+                            Button("Open Settings") { BrightnessKeys.openPrivacySettings() }
+                        }
+                        .controlSize(.small)
+                    }
+                }
+            }
+            SettingsNote("The brightness keys need this to change every screen.")
+
+            SettingsGap()
+
+            LabeledContent("Screen Recording:") {
+                HStack {
+                    PermissionLabel(status: screenshots.hasPermission ? .allowed : .denied)
+                    if !screenshots.hasPermission { ScreenRecordingButtons(controller: screenshots) }
+                }
+            }
+            SettingsNote(
+                "Screenshots need this. macOS calls it Screen & System Audio Recording, but ModeDock doesn't record audio. You may need to reopen ModeDock after allowing it."
+            )
+
+            SettingsGap()
+
+            LabeledContent("Automation:") {
+                HStack {
+                    PermissionLabel(status: automation)
+                    Group {
+                        switch automation {
+                        case .allowed: EmptyView()
+                        case .notAsked: Button("Allow…") { askFinder() }
+                        case .denied: Button("Open Settings") { FinderAutomation.openPrivacySettings() }
+                        }
+                    }
+                    .controlSize(.small)
+                }
+            }
+            SettingsNote("Empty Trash needs this to ask Finder.")
+        }
+        // System Settings doesn't tell apps when a permission changes.
+        .task {
+            while !Task.isCancelled {
+                accessibility = BrightnessKeys.isTrusted
+                screenshots.refreshPermission()
+                automation = await Task.detached { FinderAutomation.status() }.value
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    private func askFinder() {
+        Task {
+            automation = await Task.detached { FinderAutomation.status(askIfNeeded: true) }.value
+        }
+    }
+}
+
+private struct PermissionLabel: View {
+    let status: PermissionStatus
+
+    var body: some View {
+        switch status {
+        case .allowed:
+            Label("Allowed", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+        case .denied:
+            Label("Not allowed", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+        case .notAsked:
+            Label("Not asked yet", systemImage: "circle.dashed").foregroundStyle(.secondary)
         }
     }
 }

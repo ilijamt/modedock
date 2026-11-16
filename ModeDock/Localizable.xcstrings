@@ -553,6 +553,22 @@
         }
       }
     },
+    "Accessibility:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アクセシビリティ："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toegankelijkheid:"
+          }
+        }
+      }
+    },
     "Acknowledgements": {
       "localizations": {
         "ja": {
@@ -841,6 +857,22 @@
         }
       }
     },
+    "Allowed": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "許可済み"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toegestaan"
+          }
+        }
+      }
+    },
     "Allow…": {
       "localizations": {
         "ja": {
@@ -1125,6 +1157,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Automatisch:"
+          }
+        }
+      }
+    },
+    "Automation:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オートメーション："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatisering:"
           }
         }
       }
@@ -2607,6 +2655,22 @@
         }
       }
     },
+    "Empty Trash needs this to ask Finder.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「ゴミ箱を空にする」でFinderに依頼するために必要です。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leeg prullenmand heeft dit nodig om de Finder te vragen."
+          }
+        }
+      }
+    },
     "Empty Trash…": {
       "localizations": {
         "ja": {
@@ -4079,6 +4143,38 @@
         }
       }
     },
+    "Not allowed": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未許可"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niet toegestaan"
+          }
+        }
+      }
+    },
+    "Not asked yet": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだ確認していません"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nog niet gevraagd"
+          }
+        }
+      }
+    },
     "Not charging": {
       "localizations": {
         "ja": {
@@ -4395,6 +4491,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Toestemming:"
+          }
+        }
+      }
+    },
+    "Permissions": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "権限"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toestemmingen"
           }
         }
       }
@@ -5311,6 +5423,22 @@
         }
       }
     },
+    "Screen Recording:": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面収録："
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schermopname:"
+          }
+        }
+      }
+    },
     "Screens": {
       "localizations": {
         "ja": {
@@ -5419,6 +5547,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Schermafbeeldingen"
+          }
+        }
+      }
+    },
+    "Screenshots need this. macOS calls it Screen & System Audio Recording, but ModeDock doesn't record audio. You may need to reopen ModeDock after allowing it.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スクリーンショットに必要です。macOSでは「画面収録とシステムオーディオ録音」と表示されますが、ModeDockが音声を録音することはありません。許可したあと、ModeDockを再度開く必要がある場合があります。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodig voor schermafbeeldingen. macOS noemt dit Scherm- en systeemaudio-opname, maar ModeDock neemt geen audio op. Nadat je het hebt toegestaan, moet je ModeDock mogelijk opnieuw openen."
           }
         }
       }
@@ -6267,6 +6411,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "De opstelling blijft zoals bewaard. Werk bij vanuit huidige neemt hem over van je schermen zoals ze nu zijn."
+          }
+        }
+      }
+    },
+    "The brightness keys need this to change every screen.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輝度キーですべてのディスプレイを変更するために必要です。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nodig om met de helderheidstoetsen alle schermen te wijzigen."
           }
         }
       }
