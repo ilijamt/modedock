@@ -24,9 +24,9 @@ extension AppLog {
 }
 
 extension KeyboardShortcuts.Name {
-    static let togglePanel = Self("togglePanel", default: .init(.m, modifiers: [.control, .option, .command]))
+    static let togglePanel = Self("togglePanel", initial: .init(.m, modifiers: [.control, .option, .command]))
     static let turnAllScreensOn = Self(
-        "turnAllScreensOn", default: .init(.o, modifiers: [.control, .option, .command]))
+        "turnAllScreensOn", initial: .init(.o, modifiers: [.control, .option, .command]))
 
     @MainActor var shortcutText: String? { KeyboardShortcuts.getShortcut(for: self)?.description }
 }
