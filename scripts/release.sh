@@ -68,7 +68,7 @@ EOF
 xcodebuild -exportArchive -archivePath "$out/ModeDock.xcarchive" -exportOptionsPlist "$out/export.plist" \
     -exportPath "$out" -quiet
 codesign --verify --deep --strict "$app"
-[[ $(codesign -dv "$app" 2>&1) == *"Authority=Developer ID Application"* ]] ||
+[[ $(codesign -dvv "$app" 2>&1) == *"Authority=Developer ID Application"* ]] ||
     fail "the app isn't signed with Developer ID"
 
 step "Notarizing the app"
