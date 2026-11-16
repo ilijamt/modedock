@@ -785,9 +785,10 @@ private struct UpdatesSection: View {
     var body: some View {
         Toggle("Check for updates automatically", isOn: $checks)
             .labeledSettingsRow("Updates:")
+            .disabled(!Updater.isConfigured)
             .onChange(of: checks) { _, on in Updater.shared.checksAutomatically = on }
         Toggle("Download and install automatically", isOn: $installs)
-            .disabled(!checks)
+            .disabled(!checks || !Updater.isConfigured)
             .onChange(of: installs) { _, on in Updater.shared.installsAutomatically = on }
         Button("Check Now") { Updater.shared.checkForUpdates() }
             .disabled(!Updater.shared.canCheck)

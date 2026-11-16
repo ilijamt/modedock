@@ -12,10 +12,15 @@ final class Updater {
             startingUpdater: Self.isConfigured, updaterDelegate: nil, userDriverDelegate: nil)
     }
 
-    // Builds without the release key can't verify updates, so they don't look for any.
+    // Builds without the release key can't verify updates, so they don't look for any. Debug
+    // builds don't either: an update would replace them with the release.
     static var isConfigured: Bool {
-        let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String
-        return !(key ?? "").isEmpty
+        #if DEBUG
+            return false
+        #else
+            let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String
+            return !(key ?? "").isEmpty
+        #endif
     }
 
     var canCheck: Bool { Self.isConfigured && controller.updater.canCheckForUpdates }
