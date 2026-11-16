@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 
-// A language is published once this share of its strings is translated.
-export const MIN_TRANSLATED = 0.8;
+// Only fully translated languages are published; Crowdin also skips incomplete files on export.
+export const MIN_TRANSLATED = 1;
 
 const leaves = (value, path = "") =>
   typeof value === "object" && value !== null
