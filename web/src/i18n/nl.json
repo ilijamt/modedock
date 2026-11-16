@@ -1,0 +1,168 @@
+{
+  "nav": {
+    "main": "Hoofdmenu",
+    "footer": "Voettekst",
+    "features": "Functies",
+    "privacy": "Privacy",
+    "releases": "Releases",
+    "language": "Taal"
+  },
+  "footer": "ModeDock is gratis en open source onder de <a href=\"https://github.com/ilijamt/modedock/blob/main/LICENSE\">MIT-licentie</a>.",
+  "theme": {
+    "label": "Weergave",
+    "auto": "Automatisch",
+    "autoTitle": "Automatisch: volg het systeem",
+    "light": "Licht",
+    "dark": "Donker"
+  },
+  "install": {
+    "download": "Download voor macOS",
+    "copy": "Kopieer",
+    "copied": "Gekopieerd",
+    "fallback": "Selecteer het",
+    "copyLabel": "Kopieer het Homebrew-commando"
+  },
+  "stats": {
+    "title": "ModeDock in gebruik",
+    "lede": "Van mensen die anonieme gebruiksgegevens delen, over de afgelopen <span data-days>30</span> dagen. Groepen met minder dan <span data-minimum>5</span> installaties zijn weggelaten.",
+    "how": "Hoe dit werkt",
+    "installs": "actieve installaties",
+    "countries": "landen",
+    "features": "functies op 25%+ van de installaties",
+    "mostUsed": "Meest gebruikt",
+    "hint": "Aandeel installaties dat het gebruikt",
+    "macos": "macOS",
+    "countriesTitle": "Landen",
+    "other": "Overig",
+    "headline": "{name} is favoriet en wordt gebruikt op {percent}% van de installaties.",
+    "share": "{name}: {count} van {total} installaties",
+    "group": "{name}: {count} installaties",
+    "labels": {
+      "panel.open": "Paneel geopend",
+      "settings.open": "Instellingen geopend",
+      "screen.toggle": "Scherm uit of aan",
+      "screen.standby": "Monitor in stand-by",
+      "screen.brightness": "Helderheid gewijzigd",
+      "screen.brightnessKeys": "Helderheidstoetsen",
+      "screen.resolution": "Resolutie gewijzigd",
+      "screen.mirroring": "Synchrone weergave",
+      "screen.main": "Hoofdscherm gewijzigd",
+      "screen.sleep": "Schermen laten sluimeren",
+      "screen.allOn": "Alle schermen aan",
+      "screen.input": "Monitoringang gewisseld",
+      "profile.save": "Profiel bewaard",
+      "profile.apply": "Profiel toegepast",
+      "profile.autoApply": "Automatisch profiel",
+      "profile.switcher": "Profielwisselaar",
+      "power.keepAwake": "Wakker houden",
+      "power.sleep": "Mac laten sluimeren",
+      "power.lock": "Scherm vergrendeld",
+      "utility.darkMode": "Donkere modus",
+      "utility.nightShift": "Night Shift",
+      "utility.trueTone": "True Tone",
+      "utility.dockAutoHide": "Verberg Dock",
+      "utility.desktopIcons": "Bureaubladsymbolen",
+      "utility.hiddenFiles": "Verborgen bestanden",
+      "utility.emptyTrash": "Prullenmand geleegd",
+      "utility.eject": "Schijven uitgeworpen",
+      "capture.area": "Gebied opgenomen",
+      "capture.window": "Venster opgenomen",
+      "capture.screen": "Scherm opgenomen",
+      "capture.allScreens": "Alle schermen opgenomen",
+      "config.export": "Instellingen geëxporteerd",
+      "config.import": "Instellingen geïmporteerd"
+    }
+  },
+  "home": {
+    "title": "ModeDock: schermbediening in de menubalk van je Mac",
+    "description": "ModeDock is een gratis, open-source menubalk-app voor macOS. Het bedient je schermen, helderheid, schermprofielen, Wakker houden en schermafbeeldingen.",
+    "heading": "Al je schermbediening in de menubalk.",
+    "sub": "Bedien je schermen, helderheid, schermprofielen, Wakker houden en schermafbeeldingen vanuit één menubalk-app.",
+    "meta": "Gratis en open source · macOS 14 of nieuwer · Open met <kbd>⌃⌥⌘M</kbd>",
+    "heroAlt": "Het ModeDock-paneel: elk scherm met zijn resolutie, helderheid en aan/uit-knop",
+    "featuresTitle": "Wat zit erin",
+    "features": {
+      "screens": {
+        "title": "Schermen",
+        "text": "Al je schermen op één plek, ingebouwd en extern.",
+        "points": [
+          "Zet een scherm uit en aan, of zet een monitor in stand-by",
+          "Wijzig resolutie en verversingsfrequentie, ook die macOS verbergt",
+          "Stel ook de helderheid van externe monitors in",
+          "Wissel de ingang van een monitor, het hoofdscherm en synchrone weergave"
+        ]
+      },
+      "profiles": {
+        "title": "Profielen",
+        "text": "Bewaar hoe je schermen zijn ingesteld en zet ze met één klik terug.",
+        "points": [
+          "Welke schermen aan staan, hun resolutie en helderheid",
+          "Desgewenst Donkere modus, Night Shift, True Tone en Verberg Dock",
+          "Vanzelf toegepast als dezelfde schermen worden aangesloten",
+          "Een sneltoets om ze door te lopen"
+        ]
+      },
+      "power": {
+        "title": "Wakker houden",
+        "text": "Houd je Mac wakker voor een bepaalde tijd of tot je het uitzet.",
+        "points": [
+          "Laat de schermen sluimeren of houd ze aan",
+          "Laat de Mac sluimeren of vergrendel het scherm",
+          "Bekijk je batterij"
+        ]
+      },
+      "screenshots": {
+        "title": "Schermafbeeldingen",
+        "text": "Neem een gebied, een venster, een scherm of alle schermen op. Bewaar in een map, op het klembord of allebei.",
+        "points": [
+          "Alle schermen in één afbeelding",
+          "Desgewenst HDR en de aanwijzer",
+          "Gebruik ⇧⌘3 en ⇧⌘4 voor ModeDock"
+        ]
+      },
+      "utilities": {
+        "title": "Snelle schakelaars",
+        "text": "Instellingen die normaal een paar klikken verderop zitten.",
+        "points": [
+          "Donkere modus, Night Shift, True Tone, Verberg Dock",
+          "Bureaubladsymbolen en verborgen bestanden in Finder",
+          "Leeg de prullenmand, werp alle schijven uit"
+        ]
+      }
+    },
+    "extras": {
+      "shortcuts": {
+        "title": "Sneltoetsen",
+        "text": "Stel voor bijna alles een sneltoets in."
+      },
+      "layout": {
+        "title": "Jouw indeling",
+        "text": "Kies wat het paneel toont en kopieer je instellingen naar een andere Mac."
+      },
+      "exit": {
+        "title": "Netjes afsluiten",
+        "text": "Als je stopt, gaat elk scherm weer aan en wordt elke dimming ongedaan gemaakt."
+      }
+    },
+    "promiseTitle": "Gratis, open en privé",
+    "promise": {
+      "free": {
+        "title": "Gratis",
+        "text": "Geen abonnement en geen account."
+      },
+      "open": {
+        "title": "Open source",
+        "text": "MIT-licentie. De code staat op <a href=\"https://github.com/ilijamt/modedock\">GitHub</a>."
+      },
+      "private": {
+        "title": "Privé",
+        "text": "Er wordt niets verstuurd tenzij je ermee instemt. Dan alleen anonieme tellingen. <a href=\"{privacy}\">Privacy</a>"
+      }
+    },
+    "closeTitle": "Download ModeDock"
+  },
+  "privacy": {
+    "title": "Privacy · ModeDock",
+    "description": "Wat de optionele, anonieme gebruiksgegevens van ModeDock bevatten, wat nooit wordt verzameld en hoe je het uitzet."
+  }
+}

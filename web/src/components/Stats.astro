@@ -1,9 +1,13 @@
-<section class="stats wrap" id="stats" aria-labelledby="stats-title" hidden>
-  <h2 id="stats-title">ModeDock in use</h2>
-  <p class="lede">
-    From people who share anonymous usage data, over the last <span data-days>30</span> days. Groups under{" "}
-    <span data-minimum>5</span> installs are left out. <a href="/privacy">How this works</a>
-  </p>
+---
+import { ui, url, type Lang } from "../i18n/ui";
+
+const lang = Astro.props.lang as Lang;
+const t = ui[lang].stats;
+---
+
+<section class="stats wrap" id="stats" aria-labelledby="stats-title" data-lang={lang} data-strings={JSON.stringify(t)} hidden>
+  <h2 id="stats-title">{t.title}</h2>
+  <p class="lede"><Fragment set:html={t.lede} /> <a href={url(lang, "privacy")}>{t.how}</a></p>
 
   <div class="board" data-board>
     <p class="headline" data-headline></p>
@@ -11,33 +15,33 @@
     <div class="figures">
       <div class="figure">
         <p class="number" data-count="installs">0</p>
-        <p class="caption">active installs</p>
+        <p class="caption">{t.installs}</p>
       </div>
       <div class="figure">
         <p class="number" data-count="countries">0</p>
-        <p class="caption">countries</p>
+        <p class="caption">{t.countries}</p>
       </div>
       <div class="figure">
         <p class="number" data-count="features">0</p>
-        <p class="caption">features on 25%+ of installs</p>
+        <p class="caption">{t.features}</p>
       </div>
     </div>
 
     <div class="panels">
       <div class="panel">
-        <h3>Most used</h3>
-        <p class="hint">Share of installs using it</p>
+        <h3>{t.mostUsed}</h3>
+        <p class="hint">{t.hint}</p>
         <ol class="sliders" data-list="features"></ol>
       </div>
 
       <div class="side">
         <div class="panel">
-          <h3>macOS</h3>
+          <h3>{t.macos}</h3>
           <div class="stack" data-stack role="img"></div>
           <ul class="legend" data-legend></ul>
         </div>
         <div class="panel">
-          <h3>Countries</h3>
+          <h3>{t.countriesTitle}</h3>
           <ol class="sliders compact" data-list="countries"></ol>
         </div>
       </div>
@@ -57,46 +61,15 @@
   };
   type Row = { name: string; installs: number; share: number };
 
-  const LABELS: Record<string, string> = {
-    "panel.open": "Opened the panel",
-    "settings.open": "Opened Settings",
-    "screen.toggle": "Screen off or on",
-    "screen.standby": "Monitor standby",
-    "screen.brightness": "Changed brightness",
-    "screen.brightnessKeys": "Brightness keys",
-    "screen.resolution": "Changed resolution",
-    "screen.mirroring": "Mirroring",
-    "screen.main": "Changed the main screen",
-    "screen.sleep": "Slept the screens",
-    "screen.allOn": "All screens on",
-    "screen.input": "Switched monitor input",
-    "profile.save": "Saved a profile",
-    "profile.apply": "Applied a profile",
-    "profile.autoApply": "Automatic profile",
-    "profile.switcher": "Profile switcher",
-    "power.keepAwake": "Keep Awake",
-    "power.sleep": "Slept the Mac",
-    "power.lock": "Locked the screen",
-    "utility.darkMode": "Dark Mode",
-    "utility.nightShift": "Night Shift",
-    "utility.trueTone": "True Tone",
-    "utility.dockAutoHide": "Hide Dock",
-    "utility.desktopIcons": "Desktop icons",
-    "utility.hiddenFiles": "Hidden files",
-    "utility.emptyTrash": "Emptied the Trash",
-    "utility.eject": "Ejected disks",
-    "capture.area": "Captured an area",
-    "capture.window": "Captured a window",
-    "capture.screen": "Captured a screen",
-    "capture.allScreens": "Captured all screens",
-    "config.export": "Exported settings",
-    "config.import": "Imported settings",
-  };
 
   const section = document.getElementById("stats")!;
-  const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+  const lang = section.dataset.lang ?? "en";
+  const t = JSON.parse(section.dataset.strings ?? "{}") as Record<string, string> & { labels: Record<string, string> };
+  const fill = (text: string, values: Record<string, string | number>) =>
+    text.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? ""));
+  const countryNames = new Intl.DisplayNames([lang], { type: "region" });
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const format = (n: number) => n.toLocaleString("en");
+  const format = (n: number) => n.toLocaleString(lang);
 
   function rows(groups: Group[] | undefined, label: (name: string) => string | null, total: number): Row[] {
     return (groups ?? [])
@@ -109,7 +82,7 @@
     list.replaceChildren(
       ...items.map((row) => {
         const item = document.createElement("li");
-        item.title = `${row.name}: ${format(row.installs)} of ${format(total)} installs`;
+        item.title = fill(t.share, { name: row.name, count: format(row.installs), total: format(total) });
         item.style.setProperty("--share", `${(row.share * 100).toFixed(1)}%`);
         const name = document.createElement("span");
         name.className = "name";
@@ -132,7 +105,7 @@
     const other = total - sorted.reduce((sum, row) => sum + row.installs, 0);
     const parts = [
       ...sorted.map((row, index) => ({ ...row, step: index })),
-      ...(other > 0 ? [{ name: "Other", installs: other, share: other / total, step: -1 }] : []),
+      ...(other > 0 ? [{ name: t.other, installs: other, share: other / total, step: -1 }] : []),
     ];
     const steps = Math.max(sorted.length, 1);
     const tone = (step: number) =>
@@ -141,7 +114,7 @@
     bar.replaceChildren(
       ...parts.map((part) => {
         const segment = document.createElement("span");
-        segment.title = `${part.name}: ${format(part.installs)} installs`;
+        segment.title = fill(t.group, { name: part.name, count: format(part.installs) });
         segment.style.flexGrow = String(part.installs);
         segment.style.background = tone(part.step);
         return segment;
@@ -179,13 +152,13 @@
   }
 
   function show(stats: Stats, total: number) {
-    const features = rows(stats.features, (name) => LABELS[name] ?? null, total);
+    const features = rows(stats.features, (name) => t.labels[name] ?? null, total);
     const macos = rows(stats.macos, (name) => name, total);
     const countries = rows(stats.countries, (name) => countryNames.of(name) ?? name, total);
 
     const top = features[0];
     section.querySelector("[data-headline]")!.textContent = top
-      ? `${top.name} is the favourite, used on ${Math.round(top.share * 100)}% of installs.`
+      ? fill(t.headline, { name: top.name, percent: Math.round(top.share * 100) })
       : "";
 
     sliders(section.querySelector('[data-list="features"]')!, features.slice(0, 8), total);

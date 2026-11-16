@@ -1,0 +1,120 @@
+---
+import { languages, ui, type Lang } from "../i18n/ui";
+
+interface Props {
+  lang: Lang;
+  alternates: Record<string, string>;
+}
+
+const { lang, alternates } = Astro.props;
+---
+
+<details class="language">
+  <summary aria-label={ui[lang].nav.language} title={ui[lang].nav.language}>
+    <svg viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="8" cy="8" r="6.2" />
+      <path d="M1.8 8h12.4M8 1.8c1.7 1.8 2.5 3.9 2.5 6.2S9.7 12.4 8 14.2C6.3 12.4 5.5 10.3 5.5 8S6.3 3.6 8 1.8Z" />
+    </svg>
+    <span>{lang.toUpperCase()}</span>
+  </summary>
+  <ul>
+    {
+      (Object.keys(languages) as Lang[]).map((code) => (
+        <li>
+          <a href={alternates[code]} hreflang={code} lang={code} data-lang={code} aria-current={code === lang ? "true" : undefined}>
+            {languages[code]}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</details>
+
+<script>
+  const menu = document.querySelector<HTMLDetailsElement>("details.language")!;
+  for (const link of menu.querySelectorAll<HTMLAnchorElement>("a[data-lang]")) {
+    link.addEventListener("click", () => {
+      try {
+        localStorage.setItem("lang", link.dataset.lang ?? "");
+      } catch {}
+    });
+  }
+  document.addEventListener("click", (event) => {
+    if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
+  });
+  menu.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      menu.open = false;
+      menu.querySelector("summary")?.focus();
+    }
+  });
+</script>
+
+<style>
+  .language {
+    position: relative;
+  }
+  summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: calc(1.6rem + 6px);
+    padding: 0 0.55rem;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary:hover,
+  .language[open] summary {
+    color: var(--text);
+  }
+  svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.3;
+  }
+  ul {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    min-width: 9rem;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    border-radius: 11px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+  }
+  a {
+    display: block;
+    padding: 0.4rem 0.65rem;
+    border-radius: 7px;
+    color: var(--text);
+    font-size: 0.9rem;
+    text-decoration: none;
+  }
+  a:hover {
+    background: var(--surface);
+  }
+  a[aria-current="true"] {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  @media (max-width: 30rem) {
+    summary span {
+      display: none;
+    }
+  }
+</style>

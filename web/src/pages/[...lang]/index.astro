@@ -1,82 +1,37 @@
 ---
-import Base from "../layouts/Base.astro";
-import Install from "../components/Install.astro";
-import Shot from "../components/Shot.astro";
-import Stats from "../components/Stats.astro";
+import Base from "../../layouts/Base.astro";
+import Install from "../../components/Install.astro";
+import Shot from "../../components/Shot.astro";
+import Stats from "../../components/Stats.astro";
+import { langPaths, ui, url, type Lang } from "../../i18n/ui";
 
-const features = [
-  {
-    tab: "screens",
-    title: "Screens",
-    text: "Every screen in one place, built-in and external.",
-    points: [
-      "Turn a screen off and on, or put a monitor in standby",
-      "Change resolution and refresh rate, including ones macOS hides",
-      "Set brightness on external monitors too",
-      "Switch a monitor's input, the main screen and mirroring",
-    ],
-  },
-  {
-    tab: "profiles",
-    title: "Profiles",
-    text: "Save how your screens are set up and switch back in one click.",
-    points: [
-      "Which screens are on, their resolution and brightness",
-      "Dark Mode, Night Shift, True Tone and Hide Dock, if you want",
-      "Applied on its own when the same screens connect",
-      "A shortcut to step through them",
-    ],
-  },
-  {
-    tab: "power",
-    title: "Keep Awake",
-    text: "Keep your Mac awake for a set time or until you turn it off.",
-    points: ["Let the screens sleep or keep them on", "Sleep the Mac or lock the screen", "See your battery"],
-  },
-  {
-    tab: "screenshots",
-    title: "Screenshots",
-    text: "Capture an area, a window, a screen or all screens. Save to a folder, the clipboard or both.",
-    points: ["All screens in one image", "HDR and the pointer, if you want them", "Use ⇧⌘3 and ⇧⌘4 for ModeDock"],
-  },
-  {
-    tab: "utilities",
-    title: "Quick switches",
-    text: "Settings that are normally a few clicks away.",
-    points: [
-      "Dark Mode, Night Shift, True Tone, Hide Dock",
-      "Desktop icons and hidden files in Finder",
-      "Empty the Trash, eject every disk",
-    ],
-  },
-];
+export const getStaticPaths = langPaths;
+
+const { lang } = Astro.props as { lang: Lang };
+const t = ui[lang].home;
+const privacy = url(lang, "privacy");
 ---
 
-<Base
-  title="ModeDock: screen controls in your Mac's menu bar"
-  description="ModeDock is a free, open-source menu-bar app for macOS. It controls your screens, brightness, display profiles, Keep Awake and screenshots."
->
+<Base lang={lang} title={t.title} description={t.description}>
   <section class="hero wrap">
     <div class="intro">
       <img class="icon" src="/img/icon.png" alt="" width="96" height="96" />
-      <h1>Every screen control in your menu bar.</h1>
-      <p class="sub">
-        Control your screens, brightness, display profiles, Keep Awake and screenshots from one menu-bar app.
-      </p>
-      <Install />
-      <p class="meta">Free and open source · macOS 14 or later · Open it with <kbd>⌃⌥⌘M</kbd></p>
+      <h1>{t.heading}</h1>
+      <p class="sub">{t.sub}</p>
+      <Install lang={lang} />
+      <p class="meta" set:html={t.meta} />
     </div>
 
     <div class="preview">
-      <Shot tab="screens" alt="The ModeDock panel: each screen with its resolution, brightness and power button" eager width={440} />
+      <Shot tab="screens" alt={t.heroAlt} eager width={440} />
     </div>
   </section>
 
   <section class="features wrap" id="features" aria-labelledby="features-title">
-    <h2 id="features-title">What's in it</h2>
+    <h2 id="features-title">{t.featuresTitle}</h2>
     {
-      features.map((feature) => (
-        <article class={feature.tab === "screens" ? "feature text-only" : "feature"}>
+      Object.entries(t.features).map(([tab, feature]) => (
+        <article class={tab === "screens" ? "feature text-only" : "feature"}>
           <div class="copy">
             <h3>{feature.title}</h3>
             <p>{feature.text}</p>
@@ -86,9 +41,9 @@ const features = [
               ))}
             </ul>
           </div>
-          {feature.tab !== "screens" && (
+          {tab !== "screens" && (
             <div class="picture">
-              <Shot tab={feature.tab} alt="" />
+              <Shot tab={tab} alt="" />
             </div>
           )}
         </article>
@@ -96,45 +51,37 @@ const features = [
     }
 
     <div class="extras">
-      <div>
-        <h3>Shortcuts</h3>
-        <p>Set a shortcut for almost anything.</p>
-      </div>
-      <div>
-        <h3>Your layout</h3>
-        <p>Choose what the panel shows, and copy your setup to another Mac.</p>
-      </div>
-      <div>
-        <h3>Clean exit</h3>
-        <p>When you quit, every screen turns back on and any dimming is undone.</p>
-      </div>
+      {
+        Object.values(t.extras).map((extra) => (
+          <div>
+            <h3>{extra.title}</h3>
+            <p>{extra.text}</p>
+          </div>
+        ))
+      }
     </div>
   </section>
 
   <section class="promise wrap" aria-labelledby="promise-title">
-    <h2 id="promise-title" class="visually-hidden">Free, open and private</h2>
+    <h2 id="promise-title" class="visually-hidden">{t.promiseTitle}</h2>
     <dl>
-      <div>
-        <dt>Free</dt>
-        <dd>No subscription and no account.</dd>
-      </div>
-      <div>
-        <dt>Open source</dt>
-        <dd>MIT license. The code is on <a href="https://github.com/ilijamt/modedock">GitHub</a>.</dd>
-      </div>
-      <div>
-        <dt>Private</dt>
-        <dd>Nothing is sent unless you opt in. Then it's only anonymous counts. <a href="/privacy">Privacy</a></dd>
-      </div>
+      {
+        Object.values(t.promise).map((item) => (
+          <div>
+            <dt>{item.title}</dt>
+            <dd set:html={item.text.replace("{privacy}", privacy)} />
+          </div>
+        ))
+      }
     </dl>
   </section>
 
-  <Stats />
+  <Stats lang={lang} />
 
   <section class="close wrap" aria-labelledby="close-title">
     <img src="/img/icon.png" alt="" width="64" height="64" />
-    <h2 id="close-title">Get ModeDock</h2>
-    <Install />
+    <h2 id="close-title">{t.closeTitle}</h2>
+    <Install lang={lang} />
   </section>
 </Base>
 
@@ -157,6 +104,10 @@ const features = [
     font-weight: 750;
     letter-spacing: -0.035em;
     max-width: 14ch;
+  }
+  :global(:lang(ja)) h1 {
+    max-width: 22ch;
+    letter-spacing: 0;
   }
   .sub {
     margin-top: 1.25rem;

@@ -1,0 +1,168 @@
+{
+  "nav": {
+    "main": "Main",
+    "footer": "Footer",
+    "features": "Features",
+    "privacy": "Privacy",
+    "releases": "Releases",
+    "language": "Language"
+  },
+  "footer": "ModeDock is free and open source under the <a href=\"https://github.com/ilijamt/modedock/blob/main/LICENSE\">MIT License</a>.",
+  "theme": {
+    "label": "Appearance",
+    "auto": "Auto",
+    "autoTitle": "Auto: follow the system",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "install": {
+    "download": "Download for macOS",
+    "copy": "Copy",
+    "copied": "Copied",
+    "fallback": "Select it",
+    "copyLabel": "Copy the Homebrew command"
+  },
+  "stats": {
+    "title": "ModeDock in use",
+    "lede": "From people who share anonymous usage data, over the last <span data-days>30</span> days. Groups under <span data-minimum>5</span> installs are left out.",
+    "how": "How this works",
+    "installs": "active installs",
+    "countries": "countries",
+    "features": "features on 25%+ of installs",
+    "mostUsed": "Most used",
+    "hint": "Share of installs using it",
+    "macos": "macOS",
+    "countriesTitle": "Countries",
+    "other": "Other",
+    "headline": "{name} is the favourite, used on {percent}% of installs.",
+    "share": "{name}: {count} of {total} installs",
+    "group": "{name}: {count} installs",
+    "labels": {
+      "panel.open": "Opened the panel",
+      "settings.open": "Opened Settings",
+      "screen.toggle": "Screen off or on",
+      "screen.standby": "Monitor standby",
+      "screen.brightness": "Changed brightness",
+      "screen.brightnessKeys": "Brightness keys",
+      "screen.resolution": "Changed resolution",
+      "screen.mirroring": "Mirroring",
+      "screen.main": "Changed the main screen",
+      "screen.sleep": "Slept the screens",
+      "screen.allOn": "All screens on",
+      "screen.input": "Switched monitor input",
+      "profile.save": "Saved a profile",
+      "profile.apply": "Applied a profile",
+      "profile.autoApply": "Automatic profile",
+      "profile.switcher": "Profile switcher",
+      "power.keepAwake": "Keep Awake",
+      "power.sleep": "Slept the Mac",
+      "power.lock": "Locked the screen",
+      "utility.darkMode": "Dark Mode",
+      "utility.nightShift": "Night Shift",
+      "utility.trueTone": "True Tone",
+      "utility.dockAutoHide": "Hide Dock",
+      "utility.desktopIcons": "Desktop icons",
+      "utility.hiddenFiles": "Hidden files",
+      "utility.emptyTrash": "Emptied the Trash",
+      "utility.eject": "Ejected disks",
+      "capture.area": "Captured an area",
+      "capture.window": "Captured a window",
+      "capture.screen": "Captured a screen",
+      "capture.allScreens": "Captured all screens",
+      "config.export": "Exported settings",
+      "config.import": "Imported settings"
+    }
+  },
+  "home": {
+    "title": "ModeDock: screen controls in your Mac's menu bar",
+    "description": "ModeDock is a free, open-source menu-bar app for macOS. It controls your screens, brightness, display profiles, Keep Awake and screenshots.",
+    "heading": "Every screen control in your menu bar.",
+    "sub": "Control your screens, brightness, display profiles, Keep Awake and screenshots from one menu-bar app.",
+    "meta": "Free and open source · macOS 14 or later · Open it with <kbd>⌃⌥⌘M</kbd>",
+    "heroAlt": "The ModeDock panel: each screen with its resolution, brightness and power button",
+    "featuresTitle": "What's in it",
+    "features": {
+      "screens": {
+        "title": "Screens",
+        "text": "Every screen in one place, built-in and external.",
+        "points": [
+          "Turn a screen off and on, or put a monitor in standby",
+          "Change resolution and refresh rate, including ones macOS hides",
+          "Set brightness on external monitors too",
+          "Switch a monitor's input, the main screen and mirroring"
+        ]
+      },
+      "profiles": {
+        "title": "Profiles",
+        "text": "Save how your screens are set up and switch back in one click.",
+        "points": [
+          "Which screens are on, their resolution and brightness",
+          "Dark Mode, Night Shift, True Tone and Hide Dock, if you want",
+          "Applied on its own when the same screens connect",
+          "A shortcut to step through them"
+        ]
+      },
+      "power": {
+        "title": "Keep Awake",
+        "text": "Keep your Mac awake for a set time or until you turn it off.",
+        "points": [
+          "Let the screens sleep or keep them on",
+          "Sleep the Mac or lock the screen",
+          "See your battery"
+        ]
+      },
+      "screenshots": {
+        "title": "Screenshots",
+        "text": "Capture an area, a window, a screen or all screens. Save to a folder, the clipboard or both.",
+        "points": [
+          "All screens in one image",
+          "HDR and the pointer, if you want them",
+          "Use ⇧⌘3 and ⇧⌘4 for ModeDock"
+        ]
+      },
+      "utilities": {
+        "title": "Quick switches",
+        "text": "Settings that are normally a few clicks away.",
+        "points": [
+          "Dark Mode, Night Shift, True Tone, Hide Dock",
+          "Desktop icons and hidden files in Finder",
+          "Empty the Trash, eject every disk"
+        ]
+      }
+    },
+    "extras": {
+      "shortcuts": {
+        "title": "Shortcuts",
+        "text": "Set a shortcut for almost anything."
+      },
+      "layout": {
+        "title": "Your layout",
+        "text": "Choose what the panel shows, and copy your setup to another Mac."
+      },
+      "exit": {
+        "title": "Clean exit",
+        "text": "When you quit, every screen turns back on and any dimming is undone."
+      }
+    },
+    "promiseTitle": "Free, open and private",
+    "promise": {
+      "free": {
+        "title": "Free",
+        "text": "No subscription and no account."
+      },
+      "open": {
+        "title": "Open source",
+        "text": "MIT license. The code is on <a href=\"https://github.com/ilijamt/modedock\">GitHub</a>."
+      },
+      "private": {
+        "title": "Private",
+        "text": "Nothing is sent unless you opt in. Then it's only anonymous counts. <a href=\"{privacy}\">Privacy</a>"
+      }
+    },
+    "closeTitle": "Get ModeDock"
+  },
+  "privacy": {
+    "title": "Privacy · ModeDock",
+    "description": "What ModeDock's optional, anonymous usage data holds, what it never collects, and how to turn it off."
+  }
+}

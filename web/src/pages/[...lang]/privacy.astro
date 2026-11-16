@@ -1,0 +1,60 @@
+---
+import { getEntry, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { langPaths, type Lang } from "../../i18n/ui";
+
+export const getStaticPaths = langPaths;
+
+const { lang } = Astro.props as { lang: Lang };
+const entry = (await getEntry("privacy", lang)) ?? (await getEntry("privacy", "en"))!;
+const { Content } = await render(entry);
+---
+
+<Base lang={lang} path="privacy" title={entry.data.title} description={entry.data.description}>
+  <article class="doc wrap">
+    <Content />
+  </article>
+</Base>
+
+<style>
+  .doc {
+    max-width: 38rem;
+    padding-top: clamp(3rem, 7vw, 5rem);
+  }
+  .doc :global(h1) {
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    letter-spacing: -0.03em;
+  }
+  .doc :global(h1 + p) {
+    margin-top: 1rem;
+    font-size: 1.2rem;
+    color: var(--muted);
+  }
+  .doc :global(h2) {
+    margin-top: 2.75rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.35rem;
+  }
+  .doc :global(p + p) {
+    margin-top: 0.85rem;
+  }
+  .doc :global(ul) {
+    margin: 0.85rem 0;
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 0.6rem;
+  }
+  .doc :global(li::marker) {
+    color: var(--accent);
+  }
+  .doc :global(code) {
+    padding: 0.05rem 0.35rem;
+    border-radius: 5px;
+    background: var(--surface);
+  }
+  .doc :global(p:last-child) {
+    margin-top: 3rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+</style>

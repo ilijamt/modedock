@@ -1,27 +1,38 @@
 ---
+import { ui, type Lang } from "../i18n/ui";
+
+const t = ui[Astro.props.lang as Lang].install;
 const brew = "brew install --cask ilijamt/tap/modedock";
 ---
 
 <div class="install">
-  <a class="download" href="https://github.com/ilijamt/modedock/releases/latest">Download for macOS</a>
+  <a class="download" href="https://github.com/ilijamt/modedock/releases/latest">{t.download}</a>
   <div class="brew">
     <code><span class="prompt" aria-hidden="true">$</span> {brew}</code>
-    <button type="button" class="copy" data-copy={brew} aria-label="Copy the Homebrew command">Copy</button>
+    <button
+      type="button"
+      class="copy"
+      data-copy={brew}
+      data-copied={t.copied}
+      data-fallback={t.fallback}
+      aria-label={t.copyLabel}>{t.copy}</button
+    >
   </div>
 </div>
 
 <script>
   for (const button of document.querySelectorAll<HTMLButtonElement>("button[data-copy]")) {
+    const label = button.textContent ?? "";
     button.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(button.dataset.copy ?? "");
-        button.textContent = "Copied";
+        button.textContent = button.dataset.copied ?? "";
         button.classList.add("done");
       } catch {
-        button.textContent = "Select it";
+        button.textContent = button.dataset.fallback ?? "";
       }
       setTimeout(() => {
-        button.textContent = "Copy";
+        button.textContent = label;
         button.classList.remove("done");
       }, 1600);
     });
