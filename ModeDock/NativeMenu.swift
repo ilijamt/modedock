@@ -293,7 +293,7 @@ final class NativeMenu {
                 switch power.keepAwake?.endsAt {
                 case .some(let endsAt):
                     String(localized: "On until \(endsAt.formatted(date: .omitted, time: .shortened))")
-                case .none: power.isKeepingAwake ? String(localized: "On until turned off") : "Off"
+                case .none: power.isKeepingAwake ? String(localized: "On until turned off") : String(localized: "Off")
                 }
         }
         let durations = NSMenu()
@@ -411,11 +411,12 @@ final class NativeMenu {
         }
         if showStandby && screen.supportsDDC && display.isEnabled {
             submenu.addItem(
-                ActionItem(screen.isInStandby ? String(localized: "Wake") : "Standby") { [screens] in
+                ActionItem(screen.isInStandby ? String(localized: "Wake") : String(localized: "Standby")) { [screens] in
                     Task { await screens.setStandby(!screen.isInStandby, screen: screen.id) }
                 })
         }
-        let power = ActionItem(display.isEnabled ? "Turn Off" : String(localized: "Turn On")) { [screens] in
+        let power = ActionItem(display.isEnabled ? String(localized: "Turn Off") : String(localized: "Turn On")) {
+            [screens] in
             Telemetry.shared.record(.screenToggle)
             screens.setEnabled(!display.isEnabled, screen: screen.id)
         }
@@ -428,8 +429,8 @@ final class NativeMenu {
     private func subtitle(_ screen: ScreenController.Screen, _ screenModes: DisplayModeController.ScreenModes?)
         -> String
     {
-        guard screen.display.isEnabled else { return "Off" }
-        if screen.isInStandby { return "Standby" }
+        guard screen.display.isEnabled else { return String(localized: "Off") }
+        if screen.isInStandby { return String(localized: "Standby") }
         return screenModes?.current?.summary ?? ""
     }
 }
@@ -456,7 +457,8 @@ private final class BrightnessMenuView: NSView {
         var views: [NSView] = [Self.icon("sun.min"), slider, Self.icon("sun.max")]
         if let auto = level.autoBrightness {
             // A checkbox: the "on" look of a push button is too faint to read in a menu.
-            let button = NSButton(checkboxWithTitle: "Auto", target: self, action: #selector(toggleAuto(_:)))
+            let button = NSButton(
+                checkboxWithTitle: String(localized: "Auto"), target: self, action: #selector(toggleAuto(_:)))
             button.controlSize = .small
             button.state = auto ? .on : .off
             button.toolTip = String(localized: "Adjust brightness to the light around you.")

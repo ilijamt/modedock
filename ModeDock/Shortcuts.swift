@@ -69,7 +69,7 @@ final class ShortcutActions {
             self?.toggle("True Tone", "sun.max.fill", { $0.trueTone }) { $0.setTrueTone($1) }
         }
         onKeyUp(.toggleDesktopIcons) { [weak self] in
-            self?.toggle(String(localized: "Desktop Icons"), "square.grid.2x2", { $0.desktopIcons }) {
+            self?.toggle("Desktop Icons", "square.grid.2x2", { $0.desktopIcons }) {
                 $0.setDesktopIcons($1)
             }
         }
@@ -138,9 +138,10 @@ final class ShortcutActions {
     }
 
     private func toggle(
-        _ title: String, _ systemImage: String, _ state: (UtilityState) -> Bool?,
+        _ resource: LocalizedStringResource, _ systemImage: String, _ state: (UtilityState) -> Bool?,
         set: (UtilitiesController, Bool) -> Void
     ) {
+        let title = String(localized: resource)
         utilities.refresh()
         guard let isOn = state(utilities.state) else {
             hud.show(String(localized: "\(title) isn't available on this Mac"), systemImage: systemImage)

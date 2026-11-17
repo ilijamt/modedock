@@ -321,7 +321,7 @@ private struct ProfileEditors: View {
             }
         case .renaming(let id):
             if shows(id), let profile = profile(id) {
-                ProfileNameEditor(initialName: profile.name, actionTitle: "Rename") {
+                ProfileNameEditor(initialName: profile.name, actionTitle: String(localized: "Rename")) {
                     profiles.rename(id, to: $0)
                 } onDone: {
                     edit = nil
@@ -361,7 +361,7 @@ private struct ProfileEditors: View {
 
     private func deleteConfirmation(_ profile: DisplayProfile) -> some View {
         HStack {
-            Text(verbatim: "Delete \u{201C}\(profile.name)\u{201D}?")
+            Text("Delete \(profile.name)?")
                 .font(.callout)
                 .lineLimit(2)
             Spacer()

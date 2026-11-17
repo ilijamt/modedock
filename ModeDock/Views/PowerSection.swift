@@ -212,16 +212,13 @@ private struct KeepAwakeMenu: View {
     }
 
     private var customTitle: String {
-        KeepAwakeSettings.customLabel(power.keepAwake?.minutes).map { "✓ \($0)…" } ?? "Custom…"
+        KeepAwakeSettings.customLabel(power.keepAwake?.minutes).map { "✓ \($0)…" } ?? String(localized: "Custom…")
     }
 
     @ViewBuilder private var status: some View {
         if let keepAwake = power.keepAwake {
             if let endsAt = keepAwake.endsAt {
-                HStack(spacing: 0) {
-                    Text(timerInterval: Date.now...max(endsAt, .now), countsDown: true).monospacedDigit()
-                    Text(verbatim: " left")
-                }
+                Text("\(Text(timerInterval: Date.now...max(endsAt, .now), countsDown: true).monospacedDigit()) left")
             } else {
                 Text("Until turned off")
             }

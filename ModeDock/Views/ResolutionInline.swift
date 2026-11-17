@@ -37,8 +37,9 @@ extension DisplayModeController.ScreenModes {
 
     func label(for option: ResolutionOption) -> String {
         var text = "\(option.width) × \(option.height)"
-        if isLowResolution(option) { text += " (low resolution)" }
-        if option.isNative { text += " · Native" }
+        // "1x" like the tag in the cards list; it needs no translating.
+        if isLowResolution(option) { text += " (1x)" }
+        if option.isNative { text += " · " + String(localized: "Native") }
         return text
     }
 }
@@ -182,8 +183,9 @@ struct RevertCountdown: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let remaining = max(0, Int(change.deadline.timeIntervalSince(context.date).rounded(.up)))
-            // Plain string: Text would format the numbers for the locale ("1.920").
-            Text(verbatim: "Going back to \(change.previous.width) × \(change.previous.height) in \(remaining) s.")
+            // The size goes in as a string: Text would format its numbers for the locale ("1.920").
+            let size = "\(change.previous.width) × \(change.previous.height)"
+            Text("Going back to \(size) in \(remaining) s.")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
         }

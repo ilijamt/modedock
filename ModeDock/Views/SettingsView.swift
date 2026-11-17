@@ -135,7 +135,7 @@ private struct AdvancedSettingsView: View {
 
             LabeledContent("Bug reports:") {
                 CopyButton("Copy Diagnostics") { Diagnostics.copy(screens: screens, modes: modes) }
-                .help("Copy screen and macOS details for a bug report.")
+                    .help("Copy screen and macOS details for a bug report.")
             }
         }
         .confirmationDialog("Reset ModeDock settings?", isPresented: $confirmingReset) {
@@ -662,7 +662,7 @@ private struct ConfigurationSection: View {
             switch sheet {
             case .export:
                 ConfigGroupPicker(
-                    title: String(localized: "Export Configuration"), action: "Export…",
+                    title: String(localized: "Export Configuration"), action: String(localized: "Export…"),
                     available: ConfigGroup.allCases,
                     note: nil
                 ) { groups in
@@ -778,6 +778,11 @@ private struct UpdatesSection: View {
             .onChange(of: installs) { _, on in Updater.shared.installsAutomatically = on }
         Button("Check Now") { Updater.shared.checkForUpdates() }
             .disabled(!Updater.shared.canCheck)
+            // Sparkle keeps these in UserDefaults, and the setup assistant changes them too.
+            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+                checks = Updater.shared.checksAutomatically
+                installs = Updater.shared.installsAutomatically
+            }
     }
 }
 
@@ -882,10 +887,15 @@ private struct DebugLogSection: View {
                 if on { AppLog.app.notice("Debug logging on. \(AppLog.versionLine)") }
             }
         HStack {
+            // Always enabled: the log is written and cleared in the background, so whether it
+            // exists can't be known when this is drawn. Without one, its folder is shown.
             Button("Show in Finder") {
-                NSWorkspace.shared.activateFileViewerSelecting([LogFile.url])
+                var target = LogFile.url
+                while !FileManager.default.fileExists(atPath: target.path), target.pathComponents.count > 1 {
+                    target.deleteLastPathComponent()
+                }
+                NSWorkspace.shared.activateFileViewerSelecting([target])
             }
-            .disabled(!FileManager.default.fileExists(atPath: LogFile.url.path))
             CopyButton("Copy Log") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(LogFile.contents(), forType: .string)
@@ -1442,7 +1452,11 @@ private struct ProfileEditor: View {
                     Text(verbatim: screen.resolution ?? key).tag(key)
                 }
                 ForEach(all) { mode in
-                    Text(verbatim: mode.summary + (mode.isHiDPI ? "" : " (1x)")).tag(mode.key)
+                    // Only a 1x copy of a HiDPI size is marked, as in the panel.
+                    let isLow =
+                        !mode.isHiDPI
+                        && all.contains { $0.isHiDPI && $0.width == mode.width && $0.height == mode.height }
+                    Text(verbatim: mode.summary + (isLow ? " (1x)" : "")).tag(mode.key)
                 }
             }
             .labelsHidden()
@@ -1503,7 +1517,7 @@ private struct AboutView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack(spacing: 8) {
-                Text(verbatim: "Version \(Bundle.main.versionString)")
+                Text("Version \(Bundle.main.versionString)")
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                 Button("Check for Updates…") { Updater.shared.checkForUpdates() }
@@ -1661,10 +1675,11 @@ extension View {
                 if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
             }
             .help("Drag to change the order")
-            .onDrag({
-                dragging.wrappedValue = item
-                return NSItemProvider(object: id as NSString)
-            }, preview: preview)
+            .onDrag(
+                {
+                    dragging.wrappedValue = item
+                    return NSItemProvider(object: id as NSString)
+                }, preview: preview)
     }
 }
 

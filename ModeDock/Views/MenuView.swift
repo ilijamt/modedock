@@ -399,7 +399,7 @@ private struct ScreenCard: View {
                 showingModes.toggle()
             } label: {
                 HStack(spacing: 3) {
-                    Text(verbatim: screenModes.current?.summary ?? "Resolution")
+                    Text(verbatim: screenModes.current?.summary ?? String(localized: "Resolution"))
                     Image(systemName: showingModes ? "chevron.up" : "chevron.down")
                         .font(.system(size: 8, weight: .bold))
                 }

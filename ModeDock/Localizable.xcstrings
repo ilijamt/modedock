@@ -2962,6 +2962,16 @@
     "Get Started": {
 
     },
+    "Going back to %@ in %lld s.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Going back to %1$@ in %2$lld s."
+          }
+        }
+      }
+    },
     "Grouped rows with switches, like Settings.": {
       "localizations": {
         "ja": {
@@ -7246,6 +7256,9 @@
           }
         }
       }
+    },
+    "Version %@": {
+
     },
     "Wait before capturing": {
       "localizations": {
