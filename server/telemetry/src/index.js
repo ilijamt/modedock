@@ -98,19 +98,16 @@ async function updateStats(env) {
       return results;
     };
     const { results: features } = await env.DB.prepare(
-      `SELECT c.key AS name, COUNT(DISTINCT r.install) AS installs, SUM(c.value) AS uses
+      `SELECT c.key AS name, COUNT(DISTINCT r.install) AS installs
        FROM reports r, json_each(r.counts) c
        WHERE r.day >= ?1 AND c.value > 0 AND c.key NOT LIKE 'app.%' AND c.key NOT LIKE 'error.%' AND c.key NOT LIKE 'source.%'
-       GROUP BY c.key HAVING installs >= ?2 ORDER BY installs DESC, uses DESC LIMIT 25`,
+       GROUP BY c.key HAVING installs >= ?2 ORDER BY installs DESC, SUM(c.value) DESC LIMIT 25`,
     )
       .bind(since, MIN_INSTALLS)
       .all();
     Object.assign(stats, {
       installs: total,
-      versions: await group("app_version"),
       macos: await group("os_version"),
-      architectures: await group("architecture"),
-      languages: await group("language"),
       countries: await group("country"),
       features,
     });

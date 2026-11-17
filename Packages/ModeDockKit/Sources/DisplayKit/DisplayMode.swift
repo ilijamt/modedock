@@ -109,10 +109,15 @@ public enum ModeCatalog {
     private static func uniqueByRefreshRate(_ modes: [DisplayMode]) -> [DisplayMode] {
         let byRate = Dictionary(grouping: modes, by: \.roundedRefreshRate)
         return byRate.values
-            .compactMap { group in
-                group.max { ($0.isNative ? 1 : 0, $0.pixelWidth) < ($1.isNative ? 1 : 0, $1.pixelWidth) }
-            }
+            .compactMap { $0.preferred() }
             .sorted { $0.refreshRate > $1.refreshRate }
+    }
+}
+
+extension Sequence<DisplayMode> {
+    /// Among modes that look the same (different pixel encodings): the native one, then the largest.
+    public func preferred() -> DisplayMode? {
+        self.max { ($0.isNative ? 1 : 0, $0.pixelWidth) < ($1.isNative ? 1 : 0, $1.pixelWidth) }
     }
 }
 

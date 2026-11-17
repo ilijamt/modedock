@@ -504,14 +504,10 @@ private struct PermissionsPage: View {
                 row(permission)
             }
         }
-        // System Settings doesn't tell apps when a permission changes.
-        .task {
-            while !Task.isCancelled {
-                accessibility = BrightnessKeys.isTrusted
-                screenshots.refreshPermission()
-                automation = await Task.detached { FinderAutomation.status() }.value
-                try? await Task.sleep(for: .seconds(2))
-            }
+        .pollingPermissions {
+            accessibility = BrightnessKeys.isTrusted
+            screenshots.refreshPermission()
+            automation = await Task.detached { FinderAutomation.status() }.value
         }
     }
 

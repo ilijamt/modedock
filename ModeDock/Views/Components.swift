@@ -28,6 +28,16 @@ extension View {
     func surface(_ shape: some Shape, tint: Color? = nil, interactive: Bool = true) -> some View {
         modifier(Surface(shape: shape, tint: tint, interactive: interactive))
     }
+
+    /// System Settings doesn't tell apps when a permission changes, so it's checked every 2 seconds.
+    func pollingPermissions(_ check: @escaping @MainActor () async -> Void) -> some View {
+        task {
+            while !Task.isCancelled {
+                await check()
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
 }
 
 struct Card<Content: View>: View {

@@ -115,7 +115,6 @@ private struct AdvancedSettingsView: View {
     let modes: DisplayModeController
     let profiles: ProfileController
     @State private var confirmingReset = false
-    @State private var copied = false
 
     var body: some View {
         SettingsPage {
@@ -135,10 +134,7 @@ private struct AdvancedSettingsView: View {
             SettingsGap()
 
             LabeledContent("Bug reports:") {
-                Button(copied ? "Copied" : "Copy Diagnostics") {
-                    Diagnostics.copy(screens: screens, modes: modes)
-                    copied = true
-                }
+                CopyButton("Copy Diagnostics") { Diagnostics.copy(screens: screens, modes: modes) }
                 .help("Copy screen and macOS details for a bug report.")
             }
         }
@@ -200,14 +196,10 @@ private struct PermissionsSettingsView: View {
             }
             SettingsNote("Empty Trash needs this to ask Finder.")
         }
-        // System Settings doesn't tell apps when a permission changes.
-        .task {
-            while !Task.isCancelled {
-                accessibility = BrightnessKeys.isTrusted
-                screenshots.refreshPermission()
-                automation = await Task.detached { FinderAutomation.status() }.value
-                try? await Task.sleep(for: .seconds(2))
-            }
+        .pollingPermissions {
+            accessibility = BrightnessKeys.isTrusted
+            screenshots.refreshPermission()
+            automation = await Task.detached { FinderAutomation.status() }.value
         }
     }
 
@@ -329,15 +321,7 @@ private struct MenuSettingsView: View {
                 Spacer()
                 Image(systemName: "line.3.horizontal").foregroundStyle(.tertiary)
             }
-            .contentShape(Rectangle())
-            .onHover { inside in
-                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
-            }
-            .help("Drag to change the order")
-            .onDrag {
-                dragging = section
-                return NSItemProvider(object: section.rawValue as NSString)
-            } preview: {
+            .reorderHandle(section, id: section.rawValue, dragging: $dragging) {
                 Label(section.title, systemImage: section.systemImage).padding(6)
             }
 
@@ -589,12 +573,7 @@ private struct BrightnessKeysToggle: View {
             .onChange(of: enabled) { _, on in
                 if on, !BrightnessKeys.isTrusted { BrightnessKeys.requestAccess() }
             }
-            .task {
-                while !Task.isCancelled {
-                    trusted = BrightnessKeys.isTrusted
-                    try? await Task.sleep(for: .seconds(2))
-                }
-            }
+            .pollingPermissions { trusted = BrightnessKeys.isTrusted }
         if enabled, !trusted {
             HStack(spacing: 8) {
                 Label("Needs Accessibility access.", systemImage: "exclamationmark.triangle.fill")
@@ -892,7 +871,6 @@ private struct UsageDataView: View {
 
 private struct DebugLogSection: View {
     @AppStorage(LogFile.enabledKey) private var enabled = false
-    @State private var copied = false
 
     var body: some View {
         Toggle("Write a debug log", isOn: $enabled)
@@ -908,15 +886,11 @@ private struct DebugLogSection: View {
                 NSWorkspace.shared.activateFileViewerSelecting([LogFile.url])
             }
             .disabled(!FileManager.default.fileExists(atPath: LogFile.url.path))
-            Button(copied ? "Copied" : "Copy Log") {
+            CopyButton("Copy Log") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(LogFile.contents(), forType: .string)
-                copied = true
             }
-            Button("Clear") {
-                LogFile.clear()
-                copied = false
-            }
+            Button("Clear") { LogFile.clear() }
         }
 
     }
@@ -1002,13 +976,7 @@ private struct ScreenshotSettingsView: View {
             case .capturing: capturing
             }
         }
-        // Picks up a permission granted in System Settings while this window is open.
-        .task {
-            while !Task.isCancelled {
-                screenshots.refreshPermission()
-                try? await Task.sleep(for: .seconds(2))
-            }
-        }
+        .pollingPermissions { screenshots.refreshPermission() }
     }
 
     private var saving: some View {
@@ -1281,15 +1249,7 @@ private struct ProfileSettingsView: View {
             .font(.caption)
             .foregroundStyle(.tertiary)
             .frame(width: 14, height: 18)
-            .contentShape(Rectangle())
-            .onHover { inside in
-                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
-            }
-            .help("Drag to change the order")
-            .onDrag {
-                dragging = profile.id
-                return NSItemProvider(object: profile.id.uuidString as NSString)
-            } preview: {
+            .reorderHandle(profile.id, id: profile.id.uuidString, dragging: $dragging) {
                 Text(verbatim: profile.name).padding(6)
             }
     }
@@ -1619,24 +1579,27 @@ private struct AcknowledgementsView: View {
     }
 }
 
-private struct ItemChip: View {
-    let title: String
-    @Binding var isOn: Bool
+/// Says "Copied" for a moment after copying, so a second copy is visible too.
+private struct CopyButton: View {
+    let title: LocalizedStringKey
+    let copy: () -> Void
+    @State private var copied = false
+
+    init(_ title: LocalizedStringKey, copy: @escaping () -> Void) {
+        self.title = title
+        self.copy = copy
+    }
 
     var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            Label(title, systemImage: isOn ? "checkmark" : "plus")
-                .font(.callout)
-                .foregroundStyle(isOn ? .white : .primary)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .background(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary.opacity(0.08)), in: Capsule())
-                .contentShape(Capsule())
+        Button(copied ? "Copied" : title) {
+            copy()
+            copied = true
         }
-        .buttonStyle(.plain)
-        .help(isOn ? "Shown. Click to hide it." : "Hidden. Click to show it.")
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(2))
+            copied = false
+        }
     }
 }
 
@@ -1685,6 +1648,23 @@ private struct FlowLayout: Layout {
             rows[rows.count - 1] = row
         }
         return rows
+    }
+}
+
+extension View {
+    /// Makes this the handle that drags `item` to a new place in its list.
+    fileprivate func reorderHandle<Item: Equatable, Preview: View>(
+        _ item: Item, id: String, dragging: Binding<Item?>, @ViewBuilder preview: () -> Preview
+    ) -> some View {
+        contentShape(Rectangle())
+            .onHover { inside in
+                if inside { NSCursor.openHand.push() } else { NSCursor.pop() }
+            }
+            .help("Drag to change the order")
+            .onDrag({
+                dragging.wrappedValue = item
+                return NSItemProvider(object: id as NSString)
+            }, preview: preview)
     }
 }
 

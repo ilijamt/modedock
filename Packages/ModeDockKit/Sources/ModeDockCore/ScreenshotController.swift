@@ -168,9 +168,9 @@ public final class ScreenshotController {
         let combines = mode == .allScreens && options.combinesScreens
         // Screens that get combined, and captures that are only copied, are written somewhere
         // temporary first.
-        let keepsCaptures = options.destination.folder != nil && !combines
-        let captureFolder =
-            keepsCaptures ? options.destination.folder ?? system.temporaryFolder() : system.temporaryFolder()
+        let keptFolder = combines ? nil : options.destination.folder
+        let keepsCaptures = keptFolder != nil
+        let captureFolder = keptFolder ?? system.temporaryFolder()
         let files = fileURLs(
             in: captureFolder, count: mode == .allScreens ? max(displays.count, 1) : 1, options: options, date: date)
         let index = display.flatMap { displays.firstIndex(of: $0) }.map { $0 + 1 }

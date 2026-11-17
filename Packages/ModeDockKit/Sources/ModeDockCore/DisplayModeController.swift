@@ -64,11 +64,7 @@ public final class DisplayModeController {
     /// For modes known to work, such as the ones saved in a profile.
     public func applyKnownMode(key: String, for display: CGDirectDisplayID) throws {
         if configurator.currentMode(for: display)?.key == key { return }
-        // Several modes can share a key (different pixel encodings); prefer the native, then the largest.
-        guard
-            let mode = configurator.modes(for: display, includeDuplicates: true)
-                .filter({ $0.key == key })
-                .max(by: { ($0.isNative ? 1 : 0, $0.pixelWidth) < ($1.isNative ? 1 : 0, $1.pixelWidth) })
+        guard let mode = configurator.modes(for: display, includeDuplicates: true).filter({ $0.key == key }).preferred()
         else { throw DisplayError.modeUnavailable }
         if pending?.display == display {
             revertTask?.cancel()
