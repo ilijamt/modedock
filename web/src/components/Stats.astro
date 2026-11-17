@@ -152,7 +152,8 @@ const t = ui[lang].stats;
   }
 
   function show(stats: Stats, total: number) {
-    const features = rows(stats.features, (name) => t.labels[name] ?? null, total);
+    // Own keys only: a name like "constructor" mustn't find the object's built-ins.
+    const features = rows(stats.features, (name) => (Object.hasOwn(t.labels, name) ? t.labels[name] : null), total);
     const macos = rows(stats.macos, (name) => name, total);
     const countries = rows(stats.countries, (name) => countryNames.of(name) ?? name, total);
 

@@ -102,12 +102,22 @@ cp "$dmg" "$feed/"
 "$sparkle/generate_appcast" "$feed" --embed-release-notes \
     --download-url-prefix "https://github.com/$repo/releases/download/$tag/"
 
+step "Uploading a draft of $tag"
+# Uploaded before anything is pushed, so a failed upload leaves nothing to undo and a rerun starts
+# clean. The tag isn't on GitHub yet (checked above), so a release under it is a draft left by
+# an earlier failed run.
+gh release delete "$tag" --repo "$repo" --yes >/dev/null 2>&1 || true
+gh release create "$tag" "$dmg" "$feed/appcast.xml" --repo "$repo" --title "ModeDock $version" \
+    --notes-file "$notes" --draft
+
 step "Publishing $tag"
 git commit -q -am "chore: release $version"
 committed=true
 git tag "$tag"
-git push -q origin main "$tag"
-gh release create "$tag" "$dmg" "$feed/appcast.xml" --repo "$repo" --title "ModeDock $version" \
-    --notes-file "$notes"
+resume="git push origin main $tag && gh release edit $tag --repo $repo --draft=false"
+git push -q origin main "$tag" || fail "the push failed. To finish: $resume"
+# Publishing is what the app's update check and the Homebrew workflow see.
+gh release edit "$tag" --repo "$repo" --draft=false >/dev/null ||
+    fail "publishing failed. To finish: gh release edit $tag --repo $repo --draft=false"
 
 step "Done. The Homebrew workflow updates the cask."

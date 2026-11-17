@@ -5,6 +5,15 @@ const UUID = /^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A
 const KEY = /^[A-Za-z0-9._-]{1,64}$/;
 // Cloudflare uses XX for unknown and T1 for Tor; neither is a country.
 const COUNTRY = /^(?!XX$|T1$)[A-Z]{2}$/;
+// The stats are public, so only values the app can send are kept. Anything else is stored as
+// UNKNOWN rather than rejected: the app keeps a rejected report and resends it forever.
+const CONTEXT = {
+  appVersion: /^\d{1,4}(\.\d{1,4}){0,3}$/,
+  osVersion: /^\d{1,3}\.\d{1,3}$/,
+  language: /^[A-Za-z]{2,8}([-_][A-Za-z0-9]{1,8}){0,3}$/,
+  architecture: /^(arm64|x86_64)$/,
+};
+const UNKNOWN = "?";
 const STATS_DAYS = 30;
 // No number in the public stats describes fewer installs than this, so nobody can be singled out.
 const MIN_INSTALLS = 5;
@@ -28,7 +37,7 @@ export default {
 
 async function receive(request, env) {
   const body = await request.text();
-  if (body.length === 0 || body.length > MAX_BODY) return new Response(null, { status: 413 });
+  if (body.length > MAX_BODY) return new Response(null, { status: 413 });
 
   let report;
   try {
@@ -80,17 +89,23 @@ async function serveStats(env) {
 }
 
 async function updateStats(env) {
-  const since = new Date(Date.now() - STATS_DAYS * 86_400_000).toISOString().slice(0, 10);
+  // Today and the days before it, STATS_DAYS in all.
+  const since = new Date(Date.now() - (STATS_DAYS - 1) * 86_400_000).toISOString().slice(0, 10);
   const total = await env.DB.prepare("SELECT COUNT(DISTINCT install) AS n FROM reports WHERE day >= ?1")
     .bind(since)
     .first("n");
 
   const stats = { updated: new Date().toISOString(), days: STATS_DAYS, minimum: MIN_INSTALLS, installs: null };
   if (total >= MIN_INSTALLS) {
+    // Each install counts once, with its latest value, so an install that updated macOS or
+    // travelled isn't in two groups and the rest left over is exact.
     const group = async (column) => {
       const { results } = await env.DB.prepare(
-        `SELECT ${column} AS name, COUNT(DISTINCT install) AS installs FROM reports
-         WHERE day >= ?1 AND ${column} IS NOT NULL GROUP BY ${column}
+        `SELECT name, COUNT(*) AS installs FROM (
+           SELECT ${column} AS name,
+             ROW_NUMBER() OVER (PARTITION BY install ORDER BY day DESC, rowid DESC) AS latest
+           FROM reports WHERE day >= ?1)
+         WHERE latest = 1 AND name IS NOT NULL AND name != '${UNKNOWN}' GROUP BY name
          HAVING installs >= ?2 ORDER BY installs DESC LIMIT 20`,
       )
         .bind(since, MIN_INSTALLS)
@@ -107,8 +122,8 @@ async function updateStats(env) {
       .all();
     Object.assign(stats, {
       installs: total,
-      macos: await group("os_version"),
-      countries: await group("country"),
+      macos: leaveNoSmallRest(await group("os_version"), total),
+      countries: leaveNoSmallRest(await group("country"), total),
       features,
     });
   }
@@ -121,15 +136,26 @@ async function updateStats(env) {
     .run();
 }
 
+// Each install is in one group (see `group`), so the total minus the groups shown is a number too; drops the
+// smallest groups until that rest is none or at least MIN_INSTALLS. `groups` is largest first.
+function leaveNoSmallRest(groups, total) {
+  const kept = [...groups];
+  let rest = total - kept.reduce((sum, row) => sum + row.installs, 0);
+  while (rest > 0 && rest < MIN_INSTALLS && kept.length > 0) rest += kept.pop().installs;
+  return kept;
+}
+
 function parse(value) {
   check(isObject(value) && value.schema === 1);
   check(typeof value.install === "string" && UUID.test(value.install));
   check(typeof value.report === "string" && UUID.test(value.report));
 
-  const context = value.context;
-  check(isObject(context));
-  for (const field of ["appVersion", "osVersion", "language", "architecture"]) {
-    check(typeof context[field] === "string" && context[field].length <= 32);
+  check(isObject(value.context));
+  const context = {};
+  for (const [field, pattern] of Object.entries(CONTEXT)) {
+    const text = value.context[field];
+    check(typeof text === "string" && text.length <= 32);
+    context[field] = pattern.test(text) ? text : UNKNOWN;
   }
 
   const counts = value.counts;

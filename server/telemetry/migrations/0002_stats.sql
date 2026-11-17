@@ -1,4 +1,4 @@
--- One row, recomputed daily, so serving the stats is a single read.
+-- One row, recomputed hourly, so serving the stats is a single read.
 CREATE TABLE stats (
   id INTEGER PRIMARY KEY CHECK (id = 1),
   body TEXT NOT NULL CHECK (json_valid(body)),

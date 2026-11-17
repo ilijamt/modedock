@@ -35,7 +35,11 @@ sent it. Anything malformed gets a 4xx.
 ## Public stats
 
 `GET /v1/stats` serves totals for the last 30 days to the website. A cron at 17 minutes past each hour
-recomputes them. Groups under 5 installs are left out, so no single install shows.
+recomputes them. Groups under 5 installs are left out, so no single install shows. For macOS
+versions and countries, each install counts once, with its latest value. The total minus the
+groups shown is then a number too, so more small groups are left out until that rest is none or
+at least 5. Context values the app can't send
+are stored as `?` and never shown.
 
 To run the cron locally:
 
