@@ -3037,6 +3037,7 @@
       }
     },
     "Hidden. Click to show it.": {
+      "extractionState": "stale",
       "localizations": {
         "ja": {
           "stringUnit": {
@@ -6094,6 +6095,7 @@
       }
     },
     "Shown. Click to hide it.": {
+      "extractionState": "stale",
       "localizations": {
         "ja": {
           "stringUnit": {
