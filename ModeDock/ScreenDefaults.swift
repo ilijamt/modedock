@@ -27,7 +27,9 @@ enum ScreenDefaults {
     /// Screens and the launch-at-login item are left as they are.
     static func resetSettings(modes: DisplayModeController) {
         for key in SettingsKey.all { UserDefaults.standard.removeObject(forKey: key) }
-        KeyboardShortcuts.reset(.togglePanel, .turnAllScreensOn, .captureArea, .captureWindow, .captureScreen)
+        // Clearing the capture shortcuts alone would leave ⇧⌘3 and ⇧⌘4 off in macOS too.
+        if SystemScreenshotKeys.areHeldByModeDock { SystemScreenshotKeys.takeOver(false) }
+        Configuration.applyShortcuts([:], for: .shortcuts)
         modes.forgetConfirmedModes()
         AppAppearance.apply()
     }

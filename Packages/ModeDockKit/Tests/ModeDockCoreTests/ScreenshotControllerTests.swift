@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import ImageIO
 import Testing
 
 @testable import ModeDockCore
@@ -253,5 +254,36 @@ struct ScreenshotControllerTests {
         system.permission = true
         #expect(await controller.capture(.area, options: options(), date: date) != .needsPermission)
         #expect(controller.hasPermission)
+    }
+}
+
+@MainActor
+struct MacScreenshotSystemTests {
+    /// Like screencapture's PDFs: a page in points around a bitmap at twice that size.
+    @Test func combinesPDFCapturesAtFullResolution() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let pdf = folder.appendingPathComponent("capture.pdf")
+        let bitmap = try #require(
+            CGContext(
+                data: nil, width: 200, height: 100, bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        bitmap.setFillColor(red: 1, green: 0, blue: 0, alpha: 1)
+        bitmap.fill(CGRect(x: 0, y: 0, width: 200, height: 100))
+        let image = try #require(bitmap.makeImage())
+        var box = CGRect(x: 0, y: 0, width: 100, height: 50)
+        let page = try #require(CGContext(pdf as CFURL, mediaBox: &box, nil))
+        page.beginPDFPage(nil)
+        page.draw(image, in: box)
+        page.endPDFPage()
+        page.closePDF()
+
+        let output = folder.appendingPathComponent("combined.png")
+        #expect(
+            MacScreenshotSystem().combineImages(
+                [pdf], arrangedIn: [CGRect(x: 0, y: 0, width: 100, height: 50)], into: output, format: .png, hdr: false))
+        let source = try #require(CGImageSourceCreateWithURL(output as CFURL, nil))
+        #expect(CGImageSourceCreateImageAtIndex(source, 0, nil)?.width == 200)
     }
 }

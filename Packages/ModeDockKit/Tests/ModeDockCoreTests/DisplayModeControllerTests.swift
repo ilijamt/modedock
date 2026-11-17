@@ -121,6 +121,28 @@ struct DisplayModeControllerTests {
         #expect(controller.pending == nil)
     }
 
+    @Test func knownModeEqualToPendingOneEndsTheCountdown() async throws {
+        let (controller, configurator) = make(timeout: .milliseconds(50))
+        controller.select(small, for: 5)
+        try controller.applyKnownMode(key: small.key, for: 5)
+        #expect(controller.pending == nil)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(configurator.current[5] == small)
+        // Confirmed like Keep, so choosing it again doesn't ask. Switching away through the
+        // configurator, since `select` would confirm the mode it leaves.
+        configurator.current[5] = native
+        controller.select(small, for: 5)
+        #expect(controller.pending == nil)
+    }
+
+    @Test func unavailableKnownModeKeepsTheCountdown() async throws {
+        let (controller, configurator) = make(timeout: .milliseconds(50))
+        controller.select(small, for: 5)
+        #expect(throws: DisplayError.modeUnavailable) { try controller.applyKnownMode(key: "missing", for: 5) }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(configurator.current[5] == native)
+    }
+
     @Test func ignoresSelectionWhileConfirmationPending() {
         let (controller, configurator) = make()
         controller.select(small, for: 5)

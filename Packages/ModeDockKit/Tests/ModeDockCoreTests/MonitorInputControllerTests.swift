@@ -17,6 +17,8 @@ private actor FakeInputDDC: DDCControlling {
 
     func refresh() {}
 
+    func setCapabilities(_ capabilities: String?) { self.capabilities = capabilities }
+
     func read(_ code: UInt8, from display: DisplayIdentity) throws -> DDCPacket.Reply {
         DDCPacket.Reply(current: current, maximum: 0)
     }
@@ -56,6 +58,23 @@ struct MonitorInputControllerTests {
         let controller = MonitorInputController(ddc: FakeInputDDC(current: 0x1B, capabilities: nil))
         await controller.refresh(displays: [monitor])
         #expect(controller.screens[5]?.available == [0x1B] + MonitorInputController.commonInputs)
+    }
+
+    @Test func retriesCapabilitiesAfterAFailedRead() async {
+        let ddc = FakeInputDDC(current: 0x0F, capabilities: nil)
+        let controller = MonitorInputController(ddc: ddc)
+        await controller.refresh(displays: [monitor])
+        await ddc.setCapabilities("vcp(60(0F 10 11 1B))")
+        await controller.refresh(displays: [monitor])
+        #expect(controller.screens[5]?.available == [0x0F, 0x10, 0x11, 0x1B])
+    }
+
+    @Test func stopsRetryingCapabilitiesThatKeepFailing() async {
+        let ddc = FakeInputDDC(current: 0x0F, capabilities: nil)
+        let controller = MonitorInputController(ddc: ddc)
+        for _ in 0..<5 { await controller.refresh(displays: [monitor]) }
+        #expect(await ddc.capabilityReads == MonitorInputController.capabilityAttempts)
+        #expect(controller.screens[5]?.available == MonitorInputController.commonInputs)
     }
 
     @Test func switchesInput() async {

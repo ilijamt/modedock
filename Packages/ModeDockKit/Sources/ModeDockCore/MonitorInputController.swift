@@ -24,6 +24,9 @@ public final class MonitorInputController {
     private var identities: [CGDirectDisplayID: DisplayIdentity] = [:]
     /// Reading capabilities takes most of a second, and they don't change.
     private var listed: [DisplayIdentity: [UInt8]] = [:]
+    private var failedReads: [DisplayIdentity: Int] = [:]
+    /// Refreshes run on every panel open, and a failed read holds up DDC brightness meanwhile.
+    static let capabilityAttempts = 3
 
     public init(ddc: DDCControlling) {
         self.ddc = ddc
@@ -37,8 +40,15 @@ public final class MonitorInputController {
             // Some monitors set flags in the high byte; the input is the low byte.
             let current = UInt8(reply.current & 0xFF)
             if listed[display.identity] == nil {
-                let capabilities = (try? await ddc.capabilities(of: display.identity)) ?? ""
-                listed[display.identity] = DDCPacket.inputSources(inCapabilities: capabilities)
+                if let capabilities = try? await ddc.capabilities(of: display.identity) {
+                    listed[display.identity] = DDCPacket.inputSources(inCapabilities: capabilities)
+                } else {
+                    // Tried again on the next few refreshes, then it keeps the common inputs.
+                    failedReads[display.identity, default: 0] += 1
+                    if failedReads[display.identity, default: 0] >= Self.capabilityAttempts {
+                        listed[display.identity] = []
+                    }
+                }
             }
             var available = listed[display.identity] ?? []
             if available.isEmpty { available = Self.commonInputs }

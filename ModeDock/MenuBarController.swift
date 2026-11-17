@@ -143,7 +143,8 @@ private final class MenuPanel: FloatingPanel {
         super.init(level: .popUpMenu)
     }
 
+    /// Through the controller, so a pending resolution change still moves into its own prompt.
     override func cancelOperation(_ sender: Any?) {
-        orderOut(nil)
+        (delegate as? MenuBarController)?.close()
     }
 }

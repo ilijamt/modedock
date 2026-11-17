@@ -63,12 +63,20 @@ public final class DisplayModeController {
 
     /// For modes known to work, such as the ones saved in a profile.
     public func applyKnownMode(key: String, for display: CGDirectDisplayID) throws {
-        if configurator.currentMode(for: display)?.key == key { return }
-        guard let mode = configurator.modes(for: display, includeDuplicates: true).filter({ $0.key == key }).preferred()
-        else { throw DisplayError.modeUnavailable }
+        let isCurrent = configurator.currentMode(for: display)?.key == key
+        let mode = configurator.modes(for: display, includeDuplicates: true).filter({ $0.key == key }).preferred()
+        // A missing mode leaves the countdown running, so an unconfirmed mode still goes back.
+        guard isCurrent || mode != nil else { throw DisplayError.modeUnavailable }
+        // A profile that sets a mode, or asks for the one being confirmed, confirms it.
         if pending?.display == display {
             revertTask?.cancel()
             pending = nil
+        }
+        guard !isCurrent, let mode else {
+            if let current = configurator.currentMode(for: display), let identity = identity(of: display) {
+                markConfirmed(current, on: identity)
+            }
+            return
         }
         try configurator.setMode(mode, for: display)
         if let identity = identity(of: display) { markConfirmed(mode, on: identity) }

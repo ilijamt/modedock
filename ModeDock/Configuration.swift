@@ -224,7 +224,7 @@ enum Configuration {
         AppLanguage.apply()
     }
 
-    private static func applyShortcuts(_ shortcuts: [String: KeyboardShortcuts.Shortcut?], for group: ConfigGroup) {
+    static func applyShortcuts(_ shortcuts: [String: KeyboardShortcuts.Shortcut?], for group: ConfigGroup) {
         let current = UserDefaults.standard.dictionaryRepresentation().keys
             .filter { $0.hasPrefix(shortcutPrefix) }
             .map { String($0.dropFirst(shortcutPrefix.count)) }

@@ -20,7 +20,11 @@ private final class FakeBrightnessSystem: BrightnessSystem {
 
     func canControl(_ display: CGDirectDisplayID) -> Bool { controllable.contains(display) }
     func brightness(of display: CGDirectDisplayID) -> Double? { levels[display] }
-    func setBrightness(_ value: Double, of display: CGDirectDisplayID) throws { levels[display] = value }
+    var failsSet = false
+    func setBrightness(_ value: Double, of display: CGDirectDisplayID) throws {
+        if failsSet { throw DisplayError.coreGraphics(1000) }
+        levels[display] = value
+    }
     func setSoftwareDimming(_ value: Double, of display: CGDirectDisplayID) { dimming[display] = value }
 
     func resetSoftwareDimming() {
@@ -85,6 +89,14 @@ struct BrightnessControllerTests {
         let (controller, system, _) = await make()
         controller.set(0.3, for: 1)
         #expect(system.levels[1] == 0.3)
+    }
+
+    /// Profiles report what `set` returns, so an earlier failure on another screen isn't theirs.
+    @Test func setReturnsOnlyItsOwnError() async {
+        let (controller, system, _) = await make()
+        system.failsSet = true
+        #expect(controller.set(0.3, for: 1) != nil)
+        #expect(controller.set(0.5, for: 7) == nil)
     }
 
     @Test func coalescesDDCWritesWhileDragging() async throws {

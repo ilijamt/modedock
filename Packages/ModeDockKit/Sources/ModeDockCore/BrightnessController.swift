@@ -90,8 +90,10 @@ public final class BrightnessController {
         }
     }
 
-    public func set(_ value: Double, for display: CGDirectDisplayID) {
-        guard var screen = screens[display] else { return }
+    /// Returns this change's error. DDC writes happen later and report theirs in `lastError`.
+    @discardableResult
+    public func set(_ value: Double, for display: CGDirectDisplayID) -> String? {
+        guard var screen = screens[display] else { return nil }
         screen.value = min(max(value, screen.minimum), 1)
         screens[display] = screen
         changes[display, default: 0] += 1
@@ -99,12 +101,14 @@ public final class BrightnessController {
         switch screen.backend {
         case .system:
             lastError = errorMessage { try system.setBrightness(screen.value, of: display) }
+            return lastError
         case .ddc(let maximum):
             pendingDDC[display] = screen.value
             startDDCWriter(for: display, maximum: maximum)
         case .software:
             system.setSoftwareDimming(screen.value, of: display)
         }
+        return nil
     }
 
     public func setAutoBrightness(_ enabled: Bool, for display: CGDirectDisplayID) {

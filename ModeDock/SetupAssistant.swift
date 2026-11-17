@@ -63,19 +63,22 @@ final class SetupAssistant: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         alert.window.level = .modalPanel
         if alert.runModal() == .alertFirstButtonReturn {
-            show(since: Self.seenRevision)
+            show(since: Self.seenRevision, isUpdate: true)
             return true
         }
         markSeen()
         return false
     }
 
-    /// Shows the pages added after `since`; 0 shows them all.
-    func show(since: Int = 0) {
+    /// Shows the pages added after `since`; 0 shows them all. `isUpdate` welcomes people who
+    /// upgraded, which `since` can't tell: it's 0 for everyone from before the assistant.
+    func show(since: Int = 0, isUpdate: Bool = false) {
+        // Replacing the window isn't closing the assistant, so `onClose` mustn't run.
+        window?.delegate = nil
         window?.close()
         let steps = SetupStep.allCases.filter { $0.revision == 0 || $0.revision > since }
         let view = SetupView(
-            steps: steps, isUpdate: since > 0, screenshots: screenshots,
+            steps: steps, isUpdate: isUpdate, screenshots: screenshots,
             onOpenPanel: { [weak self] in
                 self?.window?.close()
                 self?.openPanel()

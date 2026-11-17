@@ -234,8 +234,7 @@ public final class ProfileController {
             guard let value = saved.brightness, let screen = connected(saved.identity),
                 let current = brightness.screens[screen.id], abs(current.value - value) > 0.005
             else { continue }
-            brightness.set(value, for: screen.id)
-            note(brightness.lastError)
+            note(brightness.set(value, for: screen.id))
         }
 
         if let utilities, !profile.system.isEmpty {

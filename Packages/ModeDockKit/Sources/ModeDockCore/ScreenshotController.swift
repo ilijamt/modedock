@@ -373,9 +373,55 @@ public struct MacScreenshotSystem: ScreenshotSystem {
 
     private static func loadImages(_ files: [URL]) -> [CGImage] {
         files.compactMap { url in
-            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
-            return CGImageSourceCreateImageAtIndex(source, 0, nil)
+            if let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
+            {
+                return image
+            }
+            return renderPDF(url)
         }
+    }
+
+    /// ImageIO can't read PDFs. screencapture's page is in points around a full-resolution
+    /// bitmap, so the page is drawn at that bitmap's size to keep Retina detail.
+    private static func renderPDF(_ url: URL) -> CGImage? {
+        guard let page = CGPDFDocument(url as CFURL)?.page(at: 1) else { return nil }
+        let box = page.getBoxRect(.mediaBox)
+        guard box.width > 0, box.height > 0 else { return nil }
+        let scale = widestImage(on: page).map { max(CGFloat($0) / box.width, 1) } ?? 1
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+            let context = CGContext(
+                data: nil, width: Int((box.width * scale).rounded()), height: Int((box.height * scale).rounded()),
+                bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        context.interpolationQuality = .high
+        context.scaleBy(x: scale, y: scale)
+        context.translateBy(x: -box.minX, y: -box.minY)
+        context.drawPDFPage(page)
+        return context.makeImage()
+    }
+
+    private static func widestImage(on page: CGPDFPage) -> Int? {
+        var resources: CGPDFDictionaryRef?
+        var objects: CGPDFDictionaryRef?
+        guard let dictionary = page.dictionary, CGPDFDictionaryGetDictionary(dictionary, "Resources", &resources),
+            let resources, CGPDFDictionaryGetDictionary(resources, "XObject", &objects), let objects
+        else { return nil }
+        var widest = 0
+        CGPDFDictionaryApplyBlock(
+            objects,
+            { _, object, _ in
+                var stream: CGPDFStreamRef?
+                var width: CGPDFInteger = 0
+                if CGPDFObjectGetValue(object, .stream, &stream), let stream,
+                    let info = CGPDFStreamGetDictionary(stream), CGPDFDictionaryGetInteger(info, "Width", &width)
+                {
+                    widest = max(widest, width)
+                }
+                return true
+            }, nil)
+        return widest > 0 ? widest : nil
     }
 
     /// Drawn at the sharpest screen's scale so Retina detail is kept. HDR captures are drawn at

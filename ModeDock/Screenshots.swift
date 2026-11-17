@@ -162,6 +162,7 @@ final class ScreenshotCoordinator {
         notice.close()
         controller.refreshPermission()
         guard controller.hasPermission else {
+            pointerStamp.end()
             notice.show(.permission, controller: controller)
             return
         }
@@ -448,6 +449,16 @@ enum SystemScreenshotKeys {
         return entries.keys.allSatisfy { ((keys[$0] as? [String: Any])?["enabled"] as? Bool) == false }
     }
 
+    /// Off in macOS because ModeDock has them, not because the user turned them off for another app.
+    static var areHeldByModeDock: Bool {
+        areTakenOver
+            && (KeyboardShortcuts.getShortcut(for: .captureScreen) == screen
+                || KeyboardShortcuts.getShortcut(for: .captureArea) == area)
+    }
+
+    private static let screen = KeyboardShortcuts.Shortcut(.three, modifiers: [.shift, .command])
+    private static let area = KeyboardShortcuts.Shortcut(.four, modifiers: [.shift, .command])
+
     static func takeOver(_ on: Bool) {
         var keys = hotKeys
         for (id, parameters) in entries {
@@ -469,8 +480,6 @@ enum SystemScreenshotKeys {
         try? activate.run()
         activate.waitUntilExit()
 
-        let screen = KeyboardShortcuts.Shortcut(.three, modifiers: [.shift, .command])
-        let area = KeyboardShortcuts.Shortcut(.four, modifiers: [.shift, .command])
         if on {
             KeyboardShortcuts.setShortcut(screen, for: .captureScreen)
             KeyboardShortcuts.setShortcut(area, for: .captureArea)
