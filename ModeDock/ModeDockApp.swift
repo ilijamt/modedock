@@ -56,6 +56,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private lazy var settingsWindow = SettingsWindowController(
         launchAtLogin: launchAtLogin, screens: screens, modes: modes, brightness: brightness, power: power,
         profiles: profiles, screenshots: screenshots.controller)
+    private lazy var setup = SetupAssistant(
+        launchAtLogin: launchAtLogin, screenshots: screenshots.controller,
+        openPanel: { [weak self] in
+            guard let self, let menuBar = self.menuBar, !menuBar.isPanelVisible else { return }
+            menuBar.toggle()
+        })
     private var menuBar: MenuBarController?
     private var displayObserver: DisplayObserver?
 
@@ -73,10 +79,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         quitOtherBuild()
         Telemetry.shared.record(.appLaunch)
         AppLog.app.notice("Started. \(AppLog.versionLine)")
-        // After the menu bar item is up, so the question doesn't come before the app.
+        // After the menu bar item is up, so the questions don't come before the app. The assistant
+        // asks about usage data itself; the alert only comes if it was closed before that page.
+        setup.onClose = { UsageDataPrompt.askIfNeeded() }
+        NotificationCenter.default.addObserver(forName: .openSetupAssistant, object: nil, queue: .main) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.setup.show() }
+        }
         Task {
             try? await Task.sleep(for: .seconds(2))
-            UsageDataPrompt.askIfNeeded()
+            // Launches for screenshots open Settings and mustn't wait on a question.
+            let defaults = UserDefaults.standard
+            guard defaults.string(forKey: "settingsTab") == nil, defaults.string(forKey: "setupStep") == nil else {
+                return
+            }
+            if !setup.showIfNeeded() { UsageDataPrompt.askIfNeeded() }
         }
         AppAppearance.apply()
         applyDDCWriteInterval()
@@ -122,6 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         // `-settingsTab` launches are for screenshots.
         if UserDefaults.standard.string(forKey: "settingsTab") != nil { settingsWindow.show() }
+        if UserDefaults.standard.string(forKey: "setupStep") != nil { setup.show() }
         screenshots.closePanel = { [weak self] in self?.menuBar?.close() }
         menuBar?.onClose = { [weak self] in
             if let change = self?.modes.pending { self?.confirmation.show(for: change) }

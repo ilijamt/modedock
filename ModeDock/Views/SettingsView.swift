@@ -63,6 +63,13 @@ private struct GeneralSettingsView: View {
 
     var body: some View {
         SettingsPage {
+            LabeledContent("Setup:") {
+                Button("Setup Assistant…") { NotificationCenter.default.post(name: .openSetupAssistant, object: nil) }
+                    .help("Walks you through the main settings, one question at a time.")
+            }
+
+            SettingsGap()
+
             Picker("Appearance:", selection: $appearance) {
                 ForEach(AppAppearance.allCases) { Text($0.title).tag($0.rawValue) }
             }

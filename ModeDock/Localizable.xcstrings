@@ -505,6 +505,12 @@
         }
       }
     },
+    "A few last things": {
+
+    },
+    "A few quick questions and you're done. You can change everything later in Settings.": {
+
+    },
     "A file per screen": {
       "localizations": {
         "ja": {
@@ -857,6 +863,9 @@
         }
       }
     },
+    "Allow access": {
+
+    },
     "Allowed": {
       "localizations": {
         "ja": {
@@ -1177,6 +1186,9 @@
         }
       }
     },
+    "Back": {
+
+    },
     "Battery": {
       "localizations": {
         "ja": {
@@ -1208,6 +1220,9 @@
           }
         }
       }
+    },
+    "Both": {
+
     },
     "Both can be on. All Screens copies one image of every screen.": {
       "localizations": {
@@ -1257,6 +1272,9 @@
         }
       }
     },
+    "Brightness keys": {
+
+    },
     "Brightness keys change every screen": {
       "localizations": {
         "ja": {
@@ -1272,6 +1290,9 @@
           }
         }
       }
+    },
+    "Brightness keys work on every screen": {
+
     },
     "Brightness of %@": {
       "localizations": {
@@ -1689,6 +1710,9 @@
         }
       }
     },
+    "Change resolution and brightness, or turn screens off.": {
+
+    },
     "Change resolution and refresh rate": {
       "localizations": {
         "ja": {
@@ -1865,6 +1889,9 @@
         }
       }
     },
+    "Choose where your screenshots go and which keys take them.": {
+
+    },
     "Choose…": {
       "localizations": {
         "ja": {
@@ -1935,6 +1962,15 @@
         }
       }
     },
+    "Click the ModeDock icon in the menu bar at the top of your screen, or press %@.": {
+
+    },
+    "Click the ModeDock icon in the menu bar at the top of your screen.": {
+
+    },
+    "Click the box and press the keys you want, or keep this one.": {
+
+    },
     "Clipboard": {
       "localizations": {
         "ja": {
@@ -1998,6 +2034,9 @@
           }
         }
       }
+    },
+    "Continue": {
+
     },
     "Copied": {
       "localizations": {
@@ -2079,6 +2118,9 @@
         }
       }
     },
+    "Copy, ready to paste": {
+
+    },
     "Couldn't export: %@": {
       "localizations": {
         "ja": {
@@ -2094,6 +2136,9 @@
           }
         }
       }
+    },
+    "Counts of which features you use, how ModeDock is set up, and your country. Nothing personal. It helps decide what to improve.": {
+
     },
     "Counts of which features you use, how ModeDock is set up, and your country. Nothing personal. You can change this in Settings → General.": {
       "localizations": {
@@ -2238,6 +2283,9 @@
           }
         }
       }
+    },
+    "Dark Mode, Night Shift, hide the Dock and more.": {
+
     },
     "Delete": {
       "localizations": {
@@ -2911,6 +2959,9 @@
         }
       }
     },
+    "Get Started": {
+
+    },
     "Grouped rows with switches, like Settings.": {
       "localizations": {
         "ja": {
@@ -3054,6 +3105,9 @@
           }
         }
       }
+    },
+    "How should ModeDock look?": {
+
     },
     "If the buttons stay off after allowing it, reopen ModeDock.": {
       "localizations": {
@@ -3215,6 +3269,9 @@
         }
       }
     },
+    "Installs updates by itself. Recommended.": {
+
+    },
     "Its shortcut is removed too. This can't be undone.": {
       "localizations": {
         "ja": {
@@ -3327,6 +3384,9 @@
         }
       }
     },
+    "Keep ModeDock up to date": {
+
+    },
     "Keep Screens On": {
       "localizations": {
         "ja": {
@@ -3359,6 +3419,9 @@
         }
       }
     },
+    "Keep the Mac awake, put it to sleep or lock it.": {
+
+    },
     "Keep this panel in the screenshot": {
       "localizations": {
         "ja": {
@@ -3390,6 +3453,12 @@
           }
         }
       }
+    },
+    "Kept in a folder, like the macOS screenshots.": {
+
+    },
+    "Keyboard": {
+
     },
     "Language:": {
       "localizations": {
@@ -3470,6 +3539,12 @@
           }
         }
       }
+    },
+    "Lets ModeDock ask Finder to empty the Trash.": {
+
+    },
+    "Lets the brightness keys reach every screen.": {
+
     },
     "Light": {
       "localizations": {
@@ -3807,6 +3882,9 @@
         }
       }
     },
+    "ModeDock Setup": {
+
+    },
     "ModeDock can't switch back. Use the monitor's buttons or the other device.": {
       "localizations": {
         "ja": {
@@ -3822,6 +3900,12 @@
           }
         }
       }
+    },
+    "ModeDock has new options": {
+
+    },
+    "ModeDock lives in the menu bar at the top of your screen. It puts your screens, brightness, screenshots and everyday Mac switches one click away.": {
+
     },
     "ModeDock needs Screen Recording permission to take screenshots.": {
       "localizations": {
@@ -4143,6 +4227,9 @@
         }
       }
     },
+    "Not Now": {
+
+    },
     "Not allowed": {
       "localizations": {
         "ja": {
@@ -4351,6 +4438,12 @@
         }
       }
     },
+    "Open ModeDock Now": {
+
+    },
+    "Open ModeDock with": {
+
+    },
     "Open ModeDock:": {
       "localizations": {
         "ja": {
@@ -4479,6 +4572,9 @@
         }
       }
     },
+    "Paste it straight into a message or document. Nothing is saved.": {
+
+    },
     "Permission:": {
       "localizations": {
         "ja": {
@@ -4510,6 +4606,9 @@
           }
         }
       }
+    },
+    "Pick the parts you want. The others stay out of your way.": {
+
     },
     "Picture": {
       "localizations": {
@@ -4831,6 +4930,12 @@
         }
       }
     },
+    "Recommended settings are a good start.": {
+
+    },
+    "Recommended, so it's always there.": {
+
+    },
     "Refresh Rate": {
       "localizations": {
         "ja": {
@@ -5135,6 +5240,9 @@
         }
       }
     },
+    "Run this again any time from Settings → General → Setup Assistant.": {
+
+    },
     "Save": {
       "localizations": {
         "ja": {
@@ -5183,6 +5291,9 @@
         }
       }
     },
+    "Save a file and copy it too.": {
+
+    },
     "Save a file in the screenshot folder": {
       "localizations": {
         "ja": {
@@ -5198,6 +5309,9 @@
           }
         }
       }
+    },
+    "Save as a file": {
+
     },
     "Save current setup": {
       "localizations": {
@@ -5631,6 +5745,9 @@
         }
       }
     },
+    "Set Up…": {
+
+    },
     "Set brightness": {
       "localizations": {
         "ja": {
@@ -5646,6 +5763,9 @@
           }
         }
       }
+    },
+    "Set them up in a few clicks? You can do it later from Settings → General → Setup Assistant.": {
+
     },
     "Settings (⌘,)": {
       "localizations": {
@@ -5678,6 +5798,12 @@
           }
         }
       }
+    },
+    "Setup Assistant…": {
+
+    },
+    "Setup:": {
+
     },
     "Share": {
       "localizations": {
@@ -5758,6 +5884,9 @@
           }
         }
       }
+    },
+    "Shortcuts are optional. You can always click ModeDock in the menu bar instead.": {
+
     },
     "Show %@": {
       "localizations": {
@@ -5902,6 +6031,9 @@
           }
         }
       }
+    },
+    "Show sections:": {
+
     },
     "Show the image in the preview": {
       "localizations": {
@@ -6207,6 +6339,9 @@
         }
       }
     },
+    "Start ModeDock when you log in": {
+
+    },
     "Starts open": {
       "localizations": {
         "ja": {
@@ -6235,6 +6370,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opstarten:"
+          }
+        }
+      }
+    },
+    "Step %lld of %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Step %1$lld of %2$lld"
           }
         }
       }
@@ -6383,6 +6528,9 @@
         }
       }
     },
+    "Take a picture of an area, a window or the whole screen.": {
+
+    },
     "That isn't a duration.": {
       "localizations": {
         "ja": {
@@ -6431,6 +6579,9 @@
         }
       }
     },
+    "The brightness keys on your keyboard also dim external monitors.": {
+
+    },
     "The macOS shortcuts for these keys are off.": {
       "localizations": {
         "ja": {
@@ -6462,6 +6613,9 @@
           }
         }
       }
+    },
+    "The usual screenshot keys use the choice above instead of the macOS settings. Turn this off later to get the macOS ones back.": {
+
     },
     "This Mac": {
       "localizations": {
@@ -6542,6 +6696,12 @@
           }
         }
       }
+    },
+    "This is what opens when you click ModeDock in the menu bar.": {
+
+    },
+    "This update added a few things you can set up. It only takes a minute.": {
+
     },
     "Timer": {
       "localizations": {
@@ -7135,6 +7295,9 @@
         }
       }
     },
+    "Walks you through the main settings, one question at a time.": {
+
+    },
     "Warmer colours on every screen.": {
       "localizations": {
         "ja": {
@@ -7166,6 +7329,12 @@
           }
         }
       }
+    },
+    "Welcome to ModeDock": {
+
+    },
+    "What would you like to use?": {
+
     },
     "When off, screens can sleep while the Mac stays awake.": {
       "localizations": {
@@ -7294,6 +7463,15 @@
           }
         }
       }
+    },
+    "You're all set": {
+
+    },
+    "macOS asks you before ModeDock can do some things. Click Allow, then turn ModeDock on in the window that opens.": {
+
+    },
+    "macOS calls this Screen Recording. ModeDock only takes pictures and never records audio.": {
+
     },
     "macOS keys:": {
       "localizations": {

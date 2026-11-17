@@ -341,6 +341,10 @@ final class NativeMenu {
         let settings = ActionItem(String(localized: "Settings…"), action: onOpenSettings)
         settings.keyEquivalent = ","
         menu.addItem(settings)
+        menu.addItem(
+            ActionItem(String(localized: "Setup Assistant…")) {
+                NotificationCenter.default.post(name: .openSetupAssistant, object: nil)
+            })
         let update = ActionItem(String(localized: "Check for Updates…")) { Updater.shared.checkForUpdates() }
         update.isEnabled = Updater.shared.canCheck
         menu.addItem(update)
